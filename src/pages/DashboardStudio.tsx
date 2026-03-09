@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { Pencil, Trash2 } from "lucide-react";
 import { api } from "../api";
 
 type Equipment = { id: number; label: string; description: string; sort_order: number };
@@ -23,6 +24,16 @@ export default function DashboardStudio() {
         await api.put(`/dashboard/studio-equipment/${editing.id}`, editing);
       }
       setEditing(null);
+      load();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed");
+    }
+  }
+
+  async function remove(id: number) {
+    if (!confirm("Delete this equipment item?")) return;
+    try {
+      await api.delete(`/dashboard/studio-equipment/${id}`);
       load();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed");
@@ -71,14 +82,29 @@ export default function DashboardStudio() {
       ) : (
         <div className="space-y-4">
           {list.map((e) => (
-            <div key={e.id} className="bg-icube-gray border border-white/10 rounded-sm p-4 flex justify-between items-center">
+            <div key={e.id} className="bg-icube-gray border border-white/10 rounded-sm p-4 flex justify-between items-center gap-3">
               <div>
                 <p className="font-semibold text-white">{e.label}</p>
                 <p className="text-gray-500 text-sm">{e.description}</p>
               </div>
-              <button onClick={() => setEditing({ ...e })} className="px-3 py-1.5 text-sm bg-icube-gold text-icube-dark rounded-sm">
-                Edit
-              </button>
+              <div className="flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditing({ ...e })}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/5 border border-white/15 text-gray-300 hover:border-icube-gold hover:text-icube-gold transition-colors"
+                  aria-label="Edit equipment"
+                >
+                  <Pencil size={15} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => remove(e.id)}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-red-500/5 border border-red-500/30 text-red-400 hover:bg-red-500/15 transition-colors"
+                  aria-label="Delete equipment"
+                >
+                  <Trash2 size={15} />
+                </button>
+              </div>
             </div>
           ))}
         </div>

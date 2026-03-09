@@ -3,6 +3,8 @@ import { useAuth } from "../AuthContext";
 
 import type { ReactNode } from "react";
 
+const ADMIN_EMAIL = "admin@icube.ae";
+
 export default function ProtectedRoute({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   const location = useLocation();
@@ -17,5 +19,10 @@ export default function ProtectedRoute({ children }: { children: ReactNode }) {
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
+
+  if (user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+    return <Navigate to="/" replace />;
+  }
+
   return <>{children}</>;
 }

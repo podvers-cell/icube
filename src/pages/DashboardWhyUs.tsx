@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { Pencil, Trash2 } from "lucide-react";
 import { api } from "../api";
 
 type Why = { id: number; icon: string; title: string; description: string; sort_order: number };
@@ -23,6 +24,16 @@ export default function DashboardWhyUs() {
         await api.put(`/dashboard/why-us/${editing.id}`, editing);
       }
       setEditing(null);
+      load();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed");
+    }
+  }
+
+  async function remove(id: number) {
+    if (!confirm("Delete this item?")) return;
+    try {
+      await api.delete(`/dashboard/why-us/${id}`);
       load();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed");
@@ -72,14 +83,29 @@ export default function DashboardWhyUs() {
       ) : (
         <div className="space-y-4">
           {list.map((w) => (
-            <div key={w.id} className="bg-icube-gray border border-white/10 rounded-sm p-4 flex justify-between items-start">
+            <div key={w.id} className="bg-icube-gray border border-white/10 rounded-sm p-4 flex justify-between items-start gap-3">
               <div>
                 <p className="font-semibold text-white">{w.title}</p>
                 <p className="text-gray-500 text-sm line-clamp-2">{w.description}</p>
               </div>
-              <button onClick={() => setEditing({ ...w })} className="px-3 py-1.5 text-sm bg-icube-gold text-icube-dark rounded-sm">
-                Edit
-              </button>
+              <div className="flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditing({ ...w })}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/5 border border-white/15 text-gray-300 hover:border-icube-gold hover:text-icube-gold transition-colors"
+                  aria-label="Edit item"
+                >
+                  <Pencil size={15} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => remove(w.id)}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-red-500/5 border border-red-500/30 text-red-400 hover:bg-red-500/15 transition-colors"
+                  aria-label="Delete item"
+                >
+                  <Trash2 size={15} />
+                </button>
+              </div>
             </div>
           ))}
         </div>

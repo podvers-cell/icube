@@ -56,9 +56,9 @@ export default function DashboardLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#050509] via-[#050509] to-[#12121c] text-white">
+    <div className="min-h-screen bg-gradient-to-br from-[#181e30] via-[#21283c] to-[#2b3450] text-white">
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-10 flex gap-5 lg:gap-8">
-        <aside className="hidden sm:flex w-64 flex-col bg-black/40 border border-white/10 rounded-2xl shadow-xl backdrop-blur-xl">
+        <aside className="hidden sm:flex w-64 flex-col bg-white/5 border border-white/10 rounded-2xl shadow-xl backdrop-blur-xl">
           <div className="px-4 py-4 border-b border-white/10 flex items-center gap-3">
             <div className="h-9 w-9 rounded-lg bg-icube-gold flex items-center justify-center">
               <img src="/icube-logo.svg" alt="ICUBE" className="h-6 w-auto" />
@@ -133,8 +133,8 @@ export default function DashboardLayout() {
           </div>
         </aside>
 
-        <main className="flex-1">
-          <div className="bg-black/40 border border-white/10 rounded-2xl shadow-2xl backdrop-blur-xl h-full overflow-hidden">
+           <main className="flex-1">
+             <div className="bg-white/5 border border-white/10 rounded-2xl shadow-2xl backdrop-blur-xl h-full overflow-hidden">
             <div className="px-4 md:px-6 py-4 border-b border-white/10 flex items-center justify-between sm:hidden">
               <div>
                 <h1 className="font-display text-lg font-semibold">Dashboard</h1>

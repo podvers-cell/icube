@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { Pencil, Trash2 } from "lucide-react";
 import { api } from "../api";
 
 type Project = { id: number; title: string; category: string; image_url: string; sort_order: number };
@@ -93,18 +94,22 @@ export default function DashboardPortfolio() {
               <div className="p-4">
                 <p className="font-semibold text-white">{p.title}</p>
                 <p className="text-gray-500 text-sm">{p.category}</p>
-                <div className="flex gap-2 mt-2">
+                <div className="flex gap-2 mt-2 justify-end">
                   <button
+                    type="button"
                     onClick={() => setEditing({ ...p })}
-                    className="px-3 py-1.5 text-sm bg-icube-gold text-icube-dark rounded-sm"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/5 border border-white/15 text-gray-300 hover:border-icube-gold hover:text-icube-gold transition-colors"
+                    aria-label="Edit project"
                   >
-                    Edit
+                    <Pencil size={15} />
                   </button>
                   <button
+                    type="button"
                     onClick={() => remove(p.id)}
-                    className="px-3 py-1.5 text-sm bg-red-500/20 text-red-400 rounded-sm"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-red-500/5 border border-red-500/30 text-red-400 hover:bg-red-500/15 transition-colors"
+                    aria-label="Delete project"
                   >
-                    Delete
+                    <Trash2 size={15} />
                   </button>
                 </div>
               </div>

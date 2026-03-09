@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { Pencil, Trash2 } from "lucide-react";
 import { api } from "../api";
 
 type Pkg = { id: number; name: string; price_aed: number; duration: string; features: string; is_popular: number; sort_order: number };
@@ -32,6 +33,16 @@ export default function DashboardPackages() {
         await api.put(`/dashboard/packages/${editing.id}`, editing);
       }
       setEditing(null);
+      load();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed");
+    }
+  }
+
+  async function remove(id: number) {
+    if (!confirm("Delete this package?")) return;
+    try {
+      await api.delete(`/dashboard/packages/${id}`);
       load();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed");
@@ -87,18 +98,30 @@ export default function DashboardPackages() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {list.map((p) => (
             <div key={p.id} className="bg-icube-gray border border-white/10 rounded-sm p-4">
-              <div className="flex justify-between items-start">
+              <div className="flex justify-between items-start gap-3">
                 <div>
                   <p className="font-semibold text-white">{p.name}</p>
                   <p className="text-icube-gold text-xl font-bold">{p.price_aed} AED</p>
                   <p className="text-gray-500 text-sm">{p.duration}</p>
                 </div>
-                <button
-                  onClick={() => setEditing({ ...p })}
-                  className="px-3 py-1.5 text-sm bg-icube-gold text-icube-dark rounded-sm"
-                >
-                  Edit
-                </button>
+                <div className="flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditing({ ...p })}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/5 border border-white/15 text-gray-300 hover:border-icube-gold hover:text-icube-gold transition-colors"
+                    aria-label="Edit package"
+                  >
+                    <Pencil size={15} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => remove(p.id)}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-red-500/5 border border-red-500/30 text-red-400 hover:bg-red-500/15 transition-colors"
+                    aria-label="Delete package"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
               </div>
             </div>
           ))}

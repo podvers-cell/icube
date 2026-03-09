@@ -1,38 +1,111 @@
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { Play, ArrowRight } from "lucide-react";
 import { useSiteData } from "../SiteDataContext";
 
+function getYouTubeEmbedUrl(raw: string): string | null {
+  try {
+    if (!raw) return null;
+
+    // Short URL: https://youtu.be/VIDEOID
+    const shortIdx = raw.indexOf("youtu.be/");
+    if (shortIdx !== -1) {
+      const idPart = raw.slice(shortIdx + "youtu.be/".length).split(/[?&]/)[0];
+      if (idPart) {
+        return `https://www.youtube.com/embed/${idPart}?autoplay=1&mute=1&controls=0&showinfo=0&loop=1&playlist=${idPart}&modestbranding=1&rel=0&playsinline=1&iv_load_policy=3&disablekb=1`;
+      }
+    }
+
+    // Watch URL: https://www.youtube.com/watch?v=VIDEOID
+    const watchIdx = raw.indexOf("watch?");
+    if (raw.includes("youtube.com") && watchIdx !== -1) {
+      const params = new URL(raw).searchParams;
+      const v = params.get("v");
+      if (v) {
+        return `https://www.youtube.com/embed/${v}?autoplay=1&mute=1&controls=0&showinfo=0&loop=1&playlist=${v}&modestbranding=1&rel=0&playsinline=1&iv_load_policy=3&disablekb=1`;
+      }
+    }
+
+    // Already embed URL
+    const embedIdx = raw.indexOf("youtube.com/embed/");
+    if (embedIdx !== -1) {
+      const idPart = raw.slice(embedIdx + "youtube.com/embed/".length).split(/[?&]/)[0];
+      if (idPart) {
+        return `https://www.youtube.com/embed/${idPart}?autoplay=1&mute=1&controls=0&showinfo=0&loop=1&playlist=${idPart}&modestbranding=1&rel=0&playsinline=1&iv_load_policy=3&disablekb=1`;
+      }
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
 export default function Hero() {
   const { settings, loading } = useSiteData();
-  const tagline = settings.hero_tagline || "Premium Media Agency – Dubai";
-  const t1 = settings.hero_title_1 || "CREATE.";
-  const t2 = settings.hero_title_2 || "RECORD.";
-  const t3 = settings.hero_title_3 || "AMPLIFY.";
+  const phrase1 =
+    settings.hero_title_1 || "Premium media & podcast studio crafting cinematic stories for modern brands.";
+  const phrase2 =
+    settings.hero_title_2 || "Dubai‑based production house for creators, podcasts, and brand content.";
+  const phrase3 =
+    settings.hero_title_3 || "From idea to final cut – we produce, record, and amplify your vision.";
+  const phrases = [phrase1, phrase2, phrase3];
   const subtitle =
     settings.hero_subtitle ||
-    "Professional media production and podcast studio in Dubai. Elevate your content with cinematic quality.";
+    "ICUBE is a Dubai-based media and podcast studio helping brands, founders, and creators produce cinematic content for the region.";
   const bgType = settings.hero_bg_type || "image";
   const bgImage =
     settings.hero_bg_image_url ||
     "https://images.unsplash.com/photo-1598550880863-4e8aa3d0edb4?q=80&w=2070&auto=format&fit=crop";
   const bgVideo = settings.hero_bg_video_url || "";
+  const youtubeEmbed = bgVideo ? getYouTubeEmbedUrl(bgVideo) : null;
 
-  if (loading) return null;
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % phrases.length);
+    }, 5000);
+    return () => window.clearInterval(id);
+  }, [phrases.length]);
 
   return (
-    <section className="relative h-screen w-full flex items-center justify-center overflow-hidden">
+    <section id="home" className="relative h-screen w-full flex items-center justify-center overflow-hidden">
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-gradient-to-b from-icube-dark/60 via-icube-dark/40 to-icube-dark z-10" />
         {bgType === "video" && bgVideo ? (
-          <video
-            className="w-full h-full object-cover opacity-70"
-            autoPlay
-            muted
-            loop
-            playsInline
-          >
-            <source src={bgVideo} />
-          </video>
+          youtubeEmbed ? (
+            <div className="absolute inset-0 overflow-hidden">
+              <iframe
+                src={youtubeEmbed}
+                className="absolute top-1/2 left-1/2 pointer-events-none"
+                style={{
+                  width: "130%",
+                  height: "130%",
+                  transform: "translate(-50%, -50%) scale(1.15)",
+                }}
+                allow="autoplay; fullscreen; picture-in-picture"
+                frameBorder="0"
+                title="Hero Background Video"
+              />
+            </div>
+          ) : (
+            <div className="absolute inset-0 overflow-hidden">
+              <video
+                className="absolute top-1/2 left-1/2 object-cover opacity-70"
+                style={{
+                  width: "130%",
+                  height: "130%",
+                  transform: "translate(-50%, -50%) scale(1.15)",
+                }}
+                autoPlay
+                muted
+                loop
+                playsInline
+              >
+                <source src={bgVideo} />
+              </video>
+            </div>
+          )
         ) : (
           <img
             src={bgImage}
@@ -43,39 +116,26 @@ export default function Hero() {
         )}
       </div>
 
-      <div className="relative z-20 max-w-7xl mx-auto px-6 md:px-12 w-full flex flex-col items-start mt-20">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="flex items-center gap-3 mb-6"
-        >
-          <div className="w-12 h-[2px] bg-icube-gold" />
-          <span className="text-icube-gold font-semibold tracking-[0.2em] uppercase text-sm">
-            {tagline}
-          </span>
-        </motion.div>
-
-        <motion.h1
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          className="text-6xl md:text-8xl lg:text-9xl font-display font-bold leading-[0.9] tracking-tighter mb-6"
-        >
-          {t1}
-          <br />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500">
-            {t2}
-          </span>
-          <br />
-          {t3}
-        </motion.h1>
+      <div className="relative z-20 max-w-7xl mx-auto px-6 md:px-12 w-full flex flex-col items-center text-center gap-8">
+        <div className="mb-4 min-h-[6rem] md:min-h-[7rem] flex items-center justify-center">
+          <motion.h1
+            key={activeIndex}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="text-5xl md:text-7xl lg:text-9xl font-display font-extrabold tracking-tight text-white leading-tight"
+            style={{ textShadow: "0 0 32px rgba(212,175,55,0.65)" }}
+          >
+            {phrases[activeIndex]}
+          </motion.h1>
+        </div>
 
         <motion.p
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="text-lg md:text-xl text-gray-400 max-w-2xl mb-10 font-light"
+          transition={{ duration: 0.9, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          className="max-w-2xl text-sm md:text-base text-gray-300/90 leading-relaxed"
         >
           {subtitle}
         </motion.p>

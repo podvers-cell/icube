@@ -5,7 +5,7 @@ import { useSiteData } from "../SiteDataContext";
 import { submitContact } from "../api";
 
 export default function Contact() {
-  const { settings, loading } = useSiteData();
+  const { settings } = useSiteData();
   const [form, setForm] = useState({ name: "", email: "", subject: "Studio Booking", message: "" });
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
@@ -33,21 +33,27 @@ export default function Contact() {
     }
   }
 
-  if (loading) return null;
-
   return (
-    <section id="contact" className="py-32 bg-icube-dark relative overflow-hidden">
+    <section
+      id="contact"
+      className="py-32 bg-gradient-to-b from-icube-dark via-icube-gray/70 to-icube-dark/90 relative overflow-hidden"
+    >
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-          <motion.div initial={{ opacity: 0, x: -50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }}>
-            <div className="flex items-center gap-3 mb-4">
+          <motion.div
+            initial={{ opacity: 0, x: -50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+          >
+            <div className="flex items-center gap-3 mb-3">
               <div className="w-8 h-[2px] bg-icube-gold" />
-              <span className="text-icube-gold font-semibold tracking-[0.2em] uppercase text-sm">Get In Touch</span>
+              <span className="text-icube-gold font-semibold tracking-[0.18em] uppercase text-xs md:text-sm">
+                Get in touch
+              </span>
             </div>
-            <h2 className="text-5xl md:text-7xl font-display font-bold leading-none tracking-tighter mb-8">
-              LET'S
-              <br />
-              <span className="text-gray-500">CONNECT</span>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-display font-bold tracking-tight mb-6">
+              Let&apos;s connect
             </h2>
             <p className="text-gray-400 font-light text-lg mb-12 leading-relaxed">
               Ready to elevate your content? Reach out from Dubai or anywhere in the UAE to schedule a tour, discuss a project, or book your next session.
@@ -107,7 +113,12 @@ export default function Contact() {
             </div>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, x: 50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="bg-icube-gray border border-white/10 p-8 md:p-12 rounded-sm h-full flex flex-col justify-center">
+          <motion.div
+            initial={{ opacity: 0, x: 50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="bg-white/5 border border-white/10 p-8 md:p-12 rounded-xl h-full flex flex-col justify-center shadow-[0_18px_45px_rgba(0,0,0,0.4)]"
+          >
             <h3 className="text-3xl font-display font-bold mb-8">Send a Message</h3>
             <form onSubmit={handleSubmit} className="space-y-6">
               {submitted && <p className="text-icube-gold text-sm">Message sent. We'll get back to you soon.</p>}

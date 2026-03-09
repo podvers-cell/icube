@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { Pencil, Trash2 } from "lucide-react";
 import { api } from "../api";
 
 type Testimonial = { id: number; quote: string; author: string; role: string; image_url: string; sort_order: number };
@@ -29,6 +30,16 @@ export default function DashboardTestimonials() {
         await api.put(`/dashboard/testimonials/${editing.id}`, editing);
       }
       setEditing(null);
+      load();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed");
+    }
+  }
+
+  async function remove(id: number) {
+    if (!confirm("Delete this testimonial?")) return;
+    try {
+      await api.delete(`/dashboard/testimonials/${id}`);
       load();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed");
@@ -81,19 +92,31 @@ export default function DashboardTestimonials() {
       ) : (
         <div className="space-y-4">
           {list.map((t) => (
-            <div key={t.id} className="bg-icube-gray border border-white/10 rounded-sm p-4 flex gap-4">
+            <div key={t.id} className="bg-icube-gray border border-white/10 rounded-sm p-4 flex gap-4 items-start">
               <img src={t.image_url} alt={t.author} className="w-14 h-14 rounded-full object-cover" />
               <div className="flex-1 min-w-0">
                 <p className="text-gray-300 text-sm line-clamp-2">{t.quote}</p>
                 <p className="font-semibold text-white mt-1">{t.author}</p>
                 <p className="text-icube-gold text-xs">{t.role}</p>
               </div>
-              <button
-                onClick={() => setEditing({ ...t })}
-                className="px-3 py-1.5 text-sm bg-icube-gold text-icube-dark rounded-sm shrink-0"
-              >
-                Edit
-              </button>
+              <div className="flex flex-col gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setEditing({ ...t })}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/5 border border-white/15 text-gray-300 hover:border-icube-gold hover:text-icube-gold transition-colors"
+                  aria-label="Edit testimonial"
+                >
+                  <Pencil size={15} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => remove(t.id)}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-red-500/5 border border-red-500/30 text-red-400 hover:bg-red-500/15 transition-colors"
+                  aria-label="Delete testimonial"
+                >
+                  <Trash2 size={15} />
+                </button>
+              </div>
             </div>
           ))}
         </div>

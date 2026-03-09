@@ -3,22 +3,29 @@ import { Quote } from "lucide-react";
 import { useSiteData } from "../SiteDataContext";
 
 export default function Testimonials() {
-  const { testimonials, loading } = useSiteData();
-
-  if (loading) return null;
+  const { testimonials } = useSiteData();
 
   return (
-    <section id="testimonials" className="py-32 bg-icube-gray relative overflow-hidden">
+    <section
+      id="testimonials"
+      className="py-32 bg-gradient-to-b from-icube-gray via-icube-dark/80 to-icube-gray relative overflow-hidden"
+    >
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mb-20">
-          <div className="flex items-center gap-3 mb-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mb-16 text-center"
+        >
+          <div className="flex items-center justify-center gap-3 mb-3">
             <div className="w-8 h-[2px] bg-icube-gold" />
-            <span className="text-icube-gold font-semibold tracking-[0.2em] uppercase text-sm">Client Stories</span>
+            <span className="text-icube-gold font-semibold tracking-[0.18em] uppercase text-xs md:text-sm">
+              Client stories
+            </span>
+            <div className="w-8 h-[2px] bg-icube-gold" />
           </div>
-          <h2 className="text-5xl md:text-7xl font-display font-bold leading-none tracking-tighter">
-            HEAR FROM
-            <br />
-            <span className="text-gray-500">CREATORS</span>
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-display font-bold tracking-tight">
+            What our clients say
           </h2>
         </motion.div>
 
@@ -30,7 +37,7 @@ export default function Testimonials() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
               transition={{ duration: 0.6, delay: i * 0.2 }}
-              className="bg-icube-dark p-8 border border-white/5 rounded-sm relative group hover:border-icube-gold/30 transition-colors duration-500"
+              className="bg-white/5 p-8 border border-white/10 rounded-xl relative group hover:border-icube-gold/30 shadow-[0_18px_45px_rgba(0,0,0,0.35)] transition-colors duration-500"
             >
               <Quote size={48} className="text-white/5 absolute top-6 right-6 group-hover:text-icube-gold/10 transition-colors duration-500" />
               <p className="text-gray-300 font-light leading-relaxed mb-8 relative z-10">"{t.quote}"</p>

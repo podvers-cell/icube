@@ -1,60 +1,48 @@
 import { useState, type FormEvent } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { useAuth } from "../AuthContext";
+import { GoogleAuthProvider, createUserWithEmailAndPassword, signInWithPopup, updateProfile } from "firebase/auth";
 import { firebaseAuth } from "../firebase";
 
-const ADMIN_EMAIL = "admin@icube.ae";
-
-export default function Login() {
+export default function Signup() {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [googleSubmitting, setGoogleSubmitting] = useState(false);
 
-  const { login } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/dashboard";
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError("");
     setSubmitting(true);
     try {
-      const trimmedEmail = email.trim().toLowerCase();
-      await login(trimmedEmail, password);
-      if (trimmedEmail === ADMIN_EMAIL.toLowerCase()) {
-        navigate(from, { replace: true });
-      } else {
-        navigate("/", { replace: true });
+      const cred = await createUserWithEmailAndPassword(firebaseAuth, email.trim(), password);
+      if (name && cred.user) {
+        await updateProfile(cred.user, { displayName: name });
       }
+      navigate("/", { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      setError(err instanceof Error ? err.message : "Sign up failed");
     } finally {
       setSubmitting(false);
     }
   }
 
-  async function handleGoogleSignIn() {
+  async function handleGoogleSignUp() {
     setError("");
     setGoogleSubmitting(true);
     try {
       const provider = new GoogleAuthProvider();
-      const cred = await signInWithPopup(firebaseAuth, provider);
-      const userEmail = cred.user.email?.toLowerCase() ?? "";
-      if (userEmail === ADMIN_EMAIL.toLowerCase()) {
-        navigate(from, { replace: true });
-      } else {
-        navigate("/", { replace: true });
-      }
+      await signInWithPopup(firebaseAuth, provider);
+      navigate("/", { replace: true });
     } catch (err: any) {
       if (err?.code === "auth/popup-closed-by-user") {
-        // Silent fail if user closed the popup
+        // ignore
       } else {
-        setError(err instanceof Error ? err.message : "Google sign-in failed");
+        setError(err instanceof Error ? err.message : "Google sign-up failed");
       }
     } finally {
       setGoogleSubmitting(false);
@@ -71,15 +59,14 @@ export default function Login() {
         <div className="p-8">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-xl font-display font-semibold text-white tracking-tight">
-              Welcome back
+              Create your account
             </h1>
             <a href="/" className="text-[11px] text-gray-400 hover:text-icube-gold transition-colors">
               Back to site
             </a>
           </div>
           <p className="text-gray-400 text-xs mb-6">
-            Sign in with your email or continue with Google. Admins go to the dashboard,
-            clients&nbsp;to the site.
+            Sign up as a client or creator to manage bookings and stay connected with ICUBE.
           </p>
 
           {error && (
@@ -90,7 +77,7 @@ export default function Login() {
 
           <button
             type="button"
-            onClick={handleGoogleSignIn}
+            onClick={handleGoogleSignUp}
             disabled={googleSubmitting}
             className="w-full mb-4 flex items-center justify-center gap-2 rounded-md border border-white/20 bg-white/5 py-2.5 text-xs font-medium text-gray-50 hover:bg-white/10 transition-colors disabled:opacity-60"
           >
@@ -105,7 +92,17 @@ export default function Login() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-3">
-
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1">Full name</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="w-full bg-black/60 border border-white/10 px-3 py-2 rounded-md text-sm text-white focus:outline-none focus:border-icube-gold"
+                placeholder="Your name"
+              />
+            </div>
             <div>
               <label className="block text-xs font-medium text-gray-400 mb-1">Email</label>
               <input
@@ -125,7 +122,7 @@ export default function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 className="w-full bg-black/60 border border-white/10 px-3 py-2 rounded-md text-sm text-white focus:outline-none focus:border-icube-gold"
-                placeholder="••••••••"
+                placeholder="Choose a secure password"
               />
             </div>
             <button
@@ -133,24 +130,21 @@ export default function Login() {
               disabled={submitting}
               className="w-full py-2.5 bg-icube-gold text-icube-dark text-sm font-semibold rounded-md hover:bg-icube-gold-light transition-colors disabled:opacity-50"
             >
-              {submitting ? "Signing in…" : "Sign in"}
+              {submitting ? "Creating account…" : "Sign up"}
             </button>
-            <p className="text-gray-500 text-[11px] text-center mt-2">
-              Admin (local): admin@icube.ae / admin123
-            </p>
             <p className="text-gray-400 text-xs text-center mt-4">
-              Don&apos;t have an account?{" "}
+              Already have an account?{" "}
               <a
-                href="/signup"
+                href="/login"
                 className="text-icube-gold hover:text-icube-gold-light underline-offset-2 hover:underline"
               >
-                Sign up
+                Sign in
               </a>
             </p>
           </form>
         </div>
-
       </motion.div>
     </div>
   );
 }
+

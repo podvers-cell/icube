@@ -3,23 +3,26 @@ import { useSiteData } from "../SiteDataContext";
 import { getIcon } from "../lib/icons";
 
 export default function WhyIcube() {
-  const { whyUs, loading } = useSiteData();
-
-  if (loading) return null;
+  const { whyUs } = useSiteData();
 
   return (
-    <section id="why-us" className="py-32 bg-icube-gray relative overflow-hidden">
+    <section
+      id="why-us"
+      className="py-32 bg-gradient-to-b from-icube-gray via-icube-dark/80 to-icube-gray relative overflow-hidden"
+    >
       <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white via-transparent to-transparent mix-blend-overlay pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
-        <div className="text-center mb-20">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="flex items-center justify-center gap-3 mb-4">
+        <div className="text-center mb-16">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="flex items-center justify-center gap-3 mb-3">
             <div className="w-8 h-[2px] bg-icube-gold" />
-            <span className="text-icube-gold font-semibold tracking-[0.2em] uppercase text-sm">The Difference</span>
+            <span className="text-icube-gold font-semibold tracking-[0.18em] uppercase text-xs md:text-sm">
+              The Difference
+            </span>
             <div className="w-8 h-[2px] bg-icube-gold" />
           </motion.div>
-          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }} className="text-5xl md:text-7xl font-display font-bold leading-none tracking-tighter">
-            WHY CHOOSE <span className="text-icube-gold">ICUBE</span>
+          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }} className="text-3xl md:text-4xl lg:text-5xl font-display font-bold tracking-tight">
+            Why creators choose <span className="text-icube-gold">ICUBE</span>
           </motion.h2>
         </div>
 

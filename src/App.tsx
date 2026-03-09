@@ -4,6 +4,7 @@ import { SiteDataProvider } from "./SiteDataContext";
 import ProtectedRoute from "./pages/ProtectedRoute";
 import DashboardLayout from "./pages/DashboardLayout";
 import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 import PublicSite from "./PublicSite";
 import DashboardOverview from "./pages/DashboardOverview";
 import DashboardSettings from "./pages/DashboardSettings";
@@ -23,6 +24,7 @@ export default function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
           <Route
             path="/dashboard"
             element={

@@ -3,36 +3,35 @@ import { Play } from "lucide-react";
 import { useSiteData } from "../SiteDataContext";
 
 export default function Portfolio() {
-  const { portfolio, loading } = useSiteData();
-
-  if (loading) return null;
+  const { portfolio } = useSiteData();
 
   return (
-    <section id="portfolio" className="py-32 bg-icube-dark relative">
+    <section
+      id="portfolio"
+      className="py-32 bg-gradient-to-b from-icube-dark via-icube-gray/70 to-icube-dark/80 relative"
+    >
       <div className="max-w-7xl mx-auto px-6 md:px-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="mb-20 flex flex-col md:flex-row md:items-end justify-between gap-8"
+          className="mb-16 flex flex-col items-center text-center gap-4"
         >
-          <div>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-[2px] bg-icube-gold" />
-              <span className="text-icube-gold font-semibold tracking-[0.2em] uppercase text-sm">
-                Selected Works
-              </span>
-            </div>
-            <h2 className="text-5xl md:text-7xl font-display font-bold leading-none tracking-tighter">
-              OUR
-              <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-600">
-                PORTFOLIO
-              </span>
-            </h2>
+          <div className="flex items-center justify-center gap-3 mb-1">
+            <div className="w-8 h-[2px] bg-icube-gold" />
+            <span className="text-icube-gold font-semibold tracking-[0.18em] uppercase text-xs md:text-sm">
+              Selected work
+            </span>
+            <div className="w-8 h-[2px] bg-icube-gold" />
           </div>
-          <a href="#contact" className="text-sm font-semibold uppercase tracking-wider text-white hover:text-icube-gold transition-colors border-b border-white/20 pb-1 hover:border-icube-gold">
-            Get in touch
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-display font-bold tracking-tight">
+            Portfolio highlights
+          </h2>
+          <a
+            href="#contact"
+            className="text-xs md:text-sm font-semibold uppercase tracking-wider text-white/80 hover:text-icube-gold transition-colors border-b border-white/20 pb-1 hover:border-icube-gold"
+          >
+            Get in touch about a project
           </a>
         </motion.div>
 

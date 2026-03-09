@@ -27,10 +27,11 @@ export default function Studio() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [selected, images.length]);
 
-  if (loading) return null;
-
   return (
-    <section id="studio" className="py-32 bg-[#0a0a0a] relative overflow-hidden">
+    <section
+      id="studio"
+      className="py-32 bg-gradient-to-b from-icube-gray via-icube-dark/90 to-icube-gray/80 relative overflow-hidden"
+    >
       <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
       <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-icube-gold/5 rounded-full blur-[120px] pointer-events-none" />
 
@@ -40,21 +41,20 @@ export default function Studio() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.8 }}
-          className="mb-16 flex flex-col md:flex-row md:items-end justify-between gap-8"
+          className="mb-16 flex flex-col items-center text-center gap-4"
         >
-          <div>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-[2px] bg-icube-gold" />
-              <span className="text-icube-gold font-semibold tracking-[0.2em] uppercase text-sm">Studios for Rent</span>
-            </div>
-            <h2 className="text-5xl md:text-7xl font-display font-bold leading-none tracking-tighter">
-              OUR
-              <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-600">STUDIOS</span>
-            </h2>
+          <div className="flex items-center justify-center gap-3 mb-1">
+            <div className="w-8 h-[2px] bg-icube-gold" />
+            <span className="text-icube-gold font-semibold tracking-[0.18em] uppercase text-xs md:text-sm">
+              Studio spaces
+            </span>
+            <div className="w-8 h-[2px] bg-icube-gold" />
           </div>
-          <p className="text-gray-400 max-w-md font-light">
-            Explore our Dubai studio spaces. Tap any studio to view photos, capacity, size, and pricing.
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-display font-bold tracking-tight">
+            Our Dubai studios
+          </h2>
+          <p className="text-gray-400 max-w-2xl font-light">
+            Explore our studio spaces, then tap a card to see photos, capacity, size, and pricing details.
           </p>
         </motion.div>
 
@@ -68,7 +68,7 @@ export default function Studio() {
               viewport={{ once: true, margin: "-50px" }}
               transition={{ duration: 0.6, delay: idx * 0.08 }}
               onClick={() => setOpenId(s.id)}
-              className="text-left group bg-icube-gray border border-white/10 rounded-sm overflow-hidden hover:border-icube-gold/40 transition-colors"
+              className="text-left group bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-icube-gold/40 shadow-[0_18px_45px_rgba(0,0,0,0.4)] transition-colors"
             >
               <div className="relative aspect-[4/3] overflow-hidden">
                 <img

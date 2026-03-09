@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { Pencil, Trash2 } from "lucide-react";
 import { api } from "../api";
 
 type Service = { id: number; title: string; description: string; icon: string; sort_order: number };
@@ -48,6 +49,16 @@ export default function DashboardServices() {
     });
   }
 
+  async function remove(id: number) {
+    if (!confirm("Delete this service?")) return;
+    try {
+      await api.delete(`/dashboard/services/${id}`);
+      load();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed");
+    }
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -84,15 +95,27 @@ export default function DashboardServices() {
                 <p className="font-semibold text-white">{s.title}</p>
                 <p className="text-gray-500 text-sm line-clamp-1">{s.description}</p>
               </div>
-              <button
-                onClick={() => {
-                  setCreating(false);
-                  setEditing({ ...s });
-                }}
-                className="px-3 py-1.5 text-sm bg-white/10 rounded-sm hover:bg-icube-gold hover:text-icube-dark"
-              >
-                Edit
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCreating(false);
+                    setEditing({ ...s });
+                  }}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/5 border border-white/15 text-gray-300 hover:border-icube-gold hover:text-icube-gold transition-colors"
+                  aria-label="Edit service"
+                >
+                  <Pencil size={15} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => remove(s.id)}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-red-500/5 border border-red-500/30 text-red-400 hover:bg-red-500/15 transition-colors"
+                  aria-label="Delete service"
+                >
+                  <Trash2 size={15} />
+                </button>
+              </div>
             </div>
           ))}
         </div>

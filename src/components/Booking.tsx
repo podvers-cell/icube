@@ -14,7 +14,7 @@ function parseFeatures(s: string): string[] {
 }
 
 export default function Booking() {
-  const { packages: pkgs, loading } = useSiteData();
+  const { packages: pkgs } = useSiteData();
   const [submitted, setSubmitted] = useState(false);
   const [customSubmitting, setCustomSubmitting] = useState(false);
   const [customForm, setCustomForm] = useState({ first_name: "", last_name: "", email: "", project_details: "" });
@@ -43,21 +43,30 @@ export default function Booking() {
     }
   }
 
-  if (loading) return null;
-
   return (
-    <section id="booking" className="py-32 bg-icube-dark relative overflow-hidden">
+    <section
+      id="booking"
+      className="py-32 bg-gradient-to-b from-icube-dark via-icube-gray/70 to-icube-dark/80 relative overflow-hidden"
+    >
       <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-icube-gold/5 rounded-full blur-[150px] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
-        <div className="text-center mb-20">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="flex items-center justify-center gap-3 mb-4">
+        <div className="text-center mb-16">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="flex items-center justify-center gap-3 mb-3">
             <div className="w-8 h-[2px] bg-icube-gold" />
-            <span className="text-icube-gold font-semibold tracking-[0.2em] uppercase text-sm">Reserve Your Spot</span>
+            <span className="text-icube-gold font-semibold tracking-[0.18em] uppercase text-xs md:text-sm">
+              Reserve your spot
+            </span>
             <div className="w-8 h-[2px] bg-icube-gold" />
           </motion.div>
-          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }} className="text-5xl md:text-7xl font-display font-bold leading-none tracking-tighter">
-            BOOK A <span className="text-transparent bg-clip-text bg-gradient-to-r from-icube-gold to-icube-bronze">SESSION</span>
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="text-3xl md:text-4xl lg:text-5xl font-display font-bold tracking-tight"
+          >
+            Book a studio session
           </motion.h2>
         </div>
 
@@ -71,7 +80,9 @@ export default function Booking() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-50px" }}
                 transition={{ duration: 0.6, delay: i * 0.2 }}
-                className={`relative bg-icube-gray border ${pkg.is_popular ? "border-icube-gold" : "border-white/10"} p-8 rounded-sm hover:border-icube-gold/50 transition-colors duration-500`}
+                className={`relative bg-white/5 border ${
+                  pkg.is_popular ? "border-icube-gold" : "border-white/10"
+                } p-8 rounded-xl hover:border-icube-gold/50 shadow-[0_18px_45px_rgba(0,0,0,0.4)] transition-colors duration-500`}
               >
                 {pkg.is_popular && (
                   <div className="absolute top-0 right-0 bg-icube-gold text-icube-dark text-xs font-bold uppercase tracking-wider py-1 px-3 rounded-bl-sm rounded-tr-sm">
@@ -113,7 +124,7 @@ export default function Booking() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, delay: 0.6 }}
-          className="mt-20 bg-icube-gray border border-white/10 p-8 md:p-12 rounded-sm"
+          className="mt-20 bg-white/5 border border-white/10 p-8 md:p-12 rounded-xl shadow-[0_18px_45px_rgba(0,0,0,0.4)]"
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <div>

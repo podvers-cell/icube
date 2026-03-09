@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { Pencil, Trash2 } from "lucide-react";
 import { api } from "../api";
 
 type Studio = {
@@ -111,19 +112,29 @@ export default function DashboardStudios() {
         {sorted.map((s) => (
           <div key={s.id} className="bg-icube-gray border border-white/10 rounded-sm overflow-hidden">
             <img src={s.cover_image_url} alt={s.name} className="w-full h-40 object-cover" referrerPolicy="no-referrer" />
-            <div className="p-4">
-              <p className="font-semibold text-white">{s.name}</p>
-              <p className="text-gray-500 text-sm line-clamp-2">{s.short_description}</p>
-              <p className="text-icube-gold text-sm mt-2">{s.price_aed_per_hour} AED/hr</p>
-              <div className="flex gap-2 mt-3">
-                <button onClick={() => openEdit(s)} className="px-3 py-1.5 text-sm bg-icube-gold text-icube-dark rounded-sm">
-                  Edit
-                </button>
-                <button onClick={() => remove(s.id)} className="px-3 py-1.5 text-sm bg-red-500/20 text-red-400 rounded-sm">
-                  Delete
-                </button>
+              <div className="p-4">
+                <p className="font-semibold text-white">{s.name}</p>
+                <p className="text-gray-500 text-sm line-clamp-2">{s.short_description}</p>
+                <p className="text-icube-gold text-sm mt-2">{s.price_aed_per_hour} AED/hr</p>
+                <div className="flex gap-2 mt-3 justify-end">
+                  <button
+                    type="button"
+                    onClick={() => openEdit(s)}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/5 border border-white/15 text-gray-300 hover:border-icube-gold hover:text-icube-gold transition-colors"
+                    aria-label="Edit studio"
+                  >
+                    <Pencil size={15} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => remove(s.id)}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-red-500/5 border border-red-500/30 text-red-400 hover:bg-red-500/15 transition-colors"
+                    aria-label="Delete studio"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
               </div>
-            </div>
           </div>
         ))}
       </div>

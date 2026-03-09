@@ -237,14 +237,18 @@ export const api = {
   },
 
   delete: async <T>(path: string): Promise<T> => {
-    const m = path.match(/^\/dashboard\/(services|portfolio|testimonials|packages|studios)\/([^/]+)$/);
+    const m = path.match(/^\/dashboard\/(services|portfolio|testimonials|packages|why-us|studio-equipment|studios)\/([^/]+)$/);
     if (m) {
       assertAuth();
       const [, kind, id] = m;
       const col =
         kind === "packages"
           ? "booking_packages"
-          : kind;
+          : kind === "why-us"
+            ? "why_us"
+            : kind === "studio-equipment"
+              ? "studio_equipment"
+              : kind;
       await deleteDoc(doc(firestore, col, id));
       return { success: true } as T;
     }
