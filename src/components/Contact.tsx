@@ -1,0 +1,169 @@
+import { useState, type FormEvent } from "react";
+import { motion } from "motion/react";
+import { Mail, Phone, MapPin, Instagram, Youtube, Twitter } from "lucide-react";
+import { useSiteData } from "../SiteDataContext";
+import { submitContact } from "../api";
+
+export default function Contact() {
+  const { settings, loading } = useSiteData();
+  const [form, setForm] = useState({ name: "", email: "", subject: "Studio Booking", message: "" });
+  const [submitted, setSubmitted] = useState(false);
+  const [sending, setSending] = useState(false);
+
+  const address = settings.contact_address || "Dubai Media City, Building 1\nDubai, United Arab Emirates";
+  const email = settings.contact_email || "hello@icube.ae";
+  const emailBookings = settings.contact_email_bookings || "bookings@icube.ae";
+  const phone = settings.contact_phone || "+971 4 123 4567";
+  const hours = settings.contact_hours || "Sun–Thu, 9am – 6pm GST";
+  const instagram = settings.social_instagram || "#";
+  const youtube = settings.social_youtube || "#";
+  const twitter = settings.social_twitter || "#";
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setSending(true);
+    try {
+      await submitContact({ name: form.name, email: form.email, subject: form.subject, message: form.message });
+      setSubmitted(true);
+      setForm({ name: "", email: "", subject: "Studio Booking", message: "" });
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to send. Try again.");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  if (loading) return null;
+
+  return (
+    <section id="contact" className="py-32 bg-icube-dark relative overflow-hidden">
+      <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+          <motion.div initial={{ opacity: 0, x: -50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-[2px] bg-icube-gold" />
+              <span className="text-icube-gold font-semibold tracking-[0.2em] uppercase text-sm">Get In Touch</span>
+            </div>
+            <h2 className="text-5xl md:text-7xl font-display font-bold leading-none tracking-tighter mb-8">
+              LET'S
+              <br />
+              <span className="text-gray-500">CONNECT</span>
+            </h2>
+            <p className="text-gray-400 font-light text-lg mb-12 leading-relaxed">
+              Ready to elevate your content? Reach out from Dubai or anywhere in the UAE to schedule a tour, discuss a project, or book your next session.
+            </p>
+
+            <div className="space-y-8">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-icube-gray rounded-sm flex items-center justify-center shrink-0 border border-white/5">
+                  <MapPin size={20} className="text-icube-gold" />
+                </div>
+                <div>
+                  <h4 className="font-display font-semibold text-xl mb-1">Studio Location</h4>
+                  <p className="text-gray-400 font-light whitespace-pre-line">{address}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-icube-gray rounded-sm flex items-center justify-center shrink-0 border border-white/5">
+                  <Mail size={20} className="text-icube-gold" />
+                </div>
+                <div>
+                  <h4 className="font-display font-semibold text-xl mb-1">Email Us</h4>
+                  <p className="text-gray-400 font-light">
+                    {email}
+                    <br />
+                    {emailBookings}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-icube-gray rounded-sm flex items-center justify-center shrink-0 border border-white/5">
+                  <Phone size={20} className="text-icube-gold" />
+                </div>
+                <div>
+                  <h4 className="font-display font-semibold text-xl mb-1">Call Us</h4>
+                  <p className="text-gray-400 font-light">
+                    {phone}
+                    <br />
+                    {hours}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-12 pt-12 border-t border-white/10">
+              <h4 className="font-display font-semibold text-lg mb-6 tracking-tight uppercase">Follow Our Work</h4>
+              <div className="flex gap-4">
+                <a href={instagram} target="_blank" rel="noreferrer" className="w-12 h-12 bg-icube-gray border border-white/5 rounded-sm flex items-center justify-center hover:border-icube-gold hover:text-icube-gold transition-all duration-300">
+                  <Instagram size={20} />
+                </a>
+                <a href={youtube} target="_blank" rel="noreferrer" className="w-12 h-12 bg-icube-gray border border-white/5 rounded-sm flex items-center justify-center hover:border-icube-gold hover:text-icube-gold transition-all duration-300">
+                  <Youtube size={20} />
+                </a>
+                <a href={twitter} target="_blank" rel="noreferrer" className="w-12 h-12 bg-icube-gray border border-white/5 rounded-sm flex items-center justify-center hover:border-icube-gold hover:text-icube-gold transition-all duration-300">
+                  <Twitter size={20} />
+                </a>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0, x: 50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="bg-icube-gray border border-white/10 p-8 md:p-12 rounded-sm h-full flex flex-col justify-center">
+            <h3 className="text-3xl font-display font-bold mb-8">Send a Message</h3>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {submitted && <p className="text-icube-gold text-sm">Message sent. We'll get back to you soon.</p>}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Name</label>
+                <input
+                  type="text"
+                  required
+                  value={form.name}
+                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                  className="w-full bg-icube-dark border border-white/10 p-4 rounded-sm focus:outline-none focus:border-icube-gold text-white transition-colors"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Email</label>
+                <input
+                  type="email"
+                  required
+                  value={form.email}
+                  onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                  className="w-full bg-icube-dark border border-white/10 p-4 rounded-sm focus:outline-none focus:border-icube-gold text-white transition-colors"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Subject</label>
+                <select
+                  value={form.subject}
+                  onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
+                  className="w-full bg-icube-dark border border-white/10 p-4 rounded-sm focus:outline-none focus:border-icube-gold text-white transition-colors appearance-none"
+                >
+                  <option>Studio Booking</option>
+                  <option>Video Production</option>
+                  <option>General Inquiry</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Message</label>
+                <textarea
+                  rows={5}
+                  required
+                  value={form.message}
+                  onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
+                  className="w-full bg-icube-dark border border-white/10 p-4 rounded-sm focus:outline-none focus:border-icube-gold text-white transition-colors resize-none"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={sending}
+                className="w-full py-4 bg-icube-gold text-icube-dark font-semibold uppercase tracking-wider rounded-sm hover:bg-icube-gold-light transition-colors disabled:opacity-50"
+              >
+                {sending ? "Sending…" : "Send Message"}
+              </button>
+            </form>
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  );
+}

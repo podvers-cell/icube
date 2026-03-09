@@ -1,0 +1,39 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // Public readable content
+    match /site_settings/main {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /services/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /portfolio/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /testimonials/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /booking_packages/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /why_us/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /studio_equipment/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /studios/{id} { allow read: if true; allow write: if isAdmin(); }
+
+    // Public submits (write only), admin reads
+    match /bookings/{id} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+    match /contact_messages/{id} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Admins collection (only admins can manage)
+    match /admins/{uid} {
+      allow read: if isAdmin() && request.auth.uid == uid;
+      allow write: if false; // manage via Firebase Console
+    }
+  }
+}
+
