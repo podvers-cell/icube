@@ -8,7 +8,14 @@ export default function Hero() {
   const t1 = settings.hero_title_1 || "CREATE.";
   const t2 = settings.hero_title_2 || "RECORD.";
   const t3 = settings.hero_title_3 || "AMPLIFY.";
-  const subtitle = settings.hero_subtitle || "Professional media production and podcast studio in Dubai. Elevate your content with cinematic quality.";
+  const subtitle =
+    settings.hero_subtitle ||
+    "Professional media production and podcast studio in Dubai. Elevate your content with cinematic quality.";
+  const bgType = settings.hero_bg_type || "image";
+  const bgImage =
+    settings.hero_bg_image_url ||
+    "https://images.unsplash.com/photo-1598550880863-4e8aa3d0edb4?q=80&w=2070&auto=format&fit=crop";
+  const bgVideo = settings.hero_bg_video_url || "";
 
   if (loading) return null;
 
@@ -16,12 +23,24 @@ export default function Hero() {
     <section className="relative h-screen w-full flex items-center justify-center overflow-hidden">
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-gradient-to-b from-icube-dark/60 via-icube-dark/40 to-icube-dark z-10" />
-        <img
-          src="https://images.unsplash.com/photo-1598550880863-4e8aa3d0edb4?q=80&w=2070&auto=format&fit=crop"
-          alt="Cinematic Studio Background"
-          className="w-full h-full object-cover opacity-60 scale-105 animate-slow-zoom"
-          referrerPolicy="no-referrer"
-        />
+        {bgType === "video" && bgVideo ? (
+          <video
+            className="w-full h-full object-cover opacity-70"
+            autoPlay
+            muted
+            loop
+            playsInline
+          >
+            <source src={bgVideo} />
+          </video>
+        ) : (
+          <img
+            src={bgImage}
+            alt="Hero Background"
+            className="w-full h-full object-cover opacity-60 scale-105 animate-slow-zoom"
+            referrerPolicy="no-referrer"
+          />
+        )}
       </div>
 
       <div className="relative z-20 max-w-7xl mx-auto px-6 md:px-12 w-full flex flex-col items-start mt-20">

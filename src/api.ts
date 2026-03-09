@@ -166,6 +166,18 @@ export const api = {
       const ref = await addDoc(collection(firestore, "booking_packages"), { ...p, created_at: serverTimestamp() });
       return { id: ref.id, ...p } as T;
     }
+    if (path === "/dashboard/why-us") {
+      assertAuth();
+      const w = body as any;
+      const ref = await addDoc(collection(firestore, "why_us"), { ...w, created_at: serverTimestamp() });
+      return { id: ref.id, ...w } as T;
+    }
+    if (path === "/dashboard/studio-equipment") {
+      assertAuth();
+      const e = body as any;
+      const ref = await addDoc(collection(firestore, "studio_equipment"), { ...e, created_at: serverTimestamp() });
+      return { id: ref.id, ...e } as T;
+    }
     if (path === "/dashboard/studios") {
       assertAuth();
       const s = body as any;

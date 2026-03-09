@@ -15,6 +15,7 @@ import DashboardBookings from "./pages/DashboardBookings";
 import DashboardMessages from "./pages/DashboardMessages";
 import DashboardWhyUs from "./pages/DashboardWhyUs";
 import DashboardStudio from "./pages/DashboardStudio";
+import DashboardHero from "./pages/DashboardHero";
 
 export default function App() {
   return (
@@ -32,6 +33,7 @@ export default function App() {
           >
             <Route index element={<DashboardOverview />} />
             <Route path="settings" element={<DashboardSettings />} />
+            <Route path="hero" element={<DashboardHero />} />
             <Route path="services" element={<DashboardServices />} />
             <Route path="portfolio" element={<DashboardPortfolio />} />
             <Route path="testimonials" element={<DashboardTestimonials />} />

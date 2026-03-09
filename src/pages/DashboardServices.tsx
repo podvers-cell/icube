@@ -8,6 +8,7 @@ const ICONS = ["Mic", "MonitorPlay", "Share2", "Video", "Clapperboard"];
 export default function DashboardServices() {
   const [list, setList] = useState<Service[]>([]);
   const [editing, setEditing] = useState<Service | null>(null);
+  const [creating, setCreating] = useState(false);
 
   function load() {
     api.get<Service[]>("/dashboard/services").then(setList).catch(() => {});
@@ -18,41 +19,91 @@ export default function DashboardServices() {
     e.preventDefault();
     if (!editing) return;
     try {
-      await api.put(`/dashboard/services/${editing.id}`, editing);
+      if (creating) {
+        await api.post("/dashboard/services", {
+          title: editing.title,
+          description: editing.description,
+          icon: editing.icon,
+          sort_order: editing.sort_order ?? list.length,
+        });
+      } else {
+        await api.put(`/dashboard/services/${editing.id}`, editing);
+      }
       setEditing(null);
+      setCreating(false);
       load();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed");
     }
   }
 
+  function openCreate() {
+    setCreating(true);
+    setEditing({
+      id: 0,
+      title: "",
+      description: "",
+      icon: ICONS[0],
+      sort_order: list.length,
+    });
+  }
+
   return (
     <div>
-      <h1 className="text-3xl font-display font-bold text-white mb-8">Services</h1>
-      <div className="space-y-4">
-        {list.map((s) => (
-          <div
-            key={s.id}
-            className="bg-icube-gray border border-white/10 rounded-sm p-4 flex items-center justify-between"
-          >
-            <div>
-              <p className="font-semibold text-white">{s.title}</p>
-              <p className="text-gray-500 text-sm line-clamp-1">{s.description}</p>
-            </div>
-            <button
-              onClick={() => setEditing({ ...s })}
-              className="px-3 py-1.5 text-sm bg-white/10 rounded-sm hover:bg-icube-gold hover:text-icube-dark"
-            >
-              Edit
-            </button>
-          </div>
-        ))}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-display font-bold text-white">Services</h1>
+          <p className="text-gray-500 text-sm mt-1">Create and manage the production services shown on the public website.</p>
+        </div>
+        <button
+          onClick={openCreate}
+          className="px-4 py-2 bg-icube-gold text-icube-dark font-semibold rounded-sm hover:bg-icube-gold-light"
+        >
+          Add Service
+        </button>
       </div>
+
+      {list.length === 0 ? (
+        <div className="bg-icube-gray border border-dashed border-white/15 rounded-sm p-8 text-center text-gray-400">
+          <p className="mb-3">No services yet.</p>
+          <button
+            onClick={openCreate}
+            className="px-4 py-2 bg-icube-gold text-icube-dark font-semibold rounded-sm hover:bg-icube-gold-light"
+          >
+            Create the first service
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {list.map((s) => (
+            <div
+              key={s.id}
+              className="bg-icube-gray border border-white/10 rounded-sm p-4 flex items-center justify-between"
+            >
+              <div>
+                <p className="font-semibold text-white">{s.title}</p>
+                <p className="text-gray-500 text-sm line-clamp-1">{s.description}</p>
+              </div>
+              <button
+                onClick={() => {
+                  setCreating(false);
+                  setEditing({ ...s });
+                }}
+                className="px-3 py-1.5 text-sm bg-white/10 rounded-sm hover:bg-icube-gold hover:text-icube-dark"
+              >
+                Edit
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {editing && (
         <form onSubmit={save} className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-icube-gray border border-white/10 rounded-sm p-6 max-w-lg w-full space-y-4">
-            <h2 className="text-xl font-display font-bold text-white">Edit Service</h2>
+            <h2 className="text-xl font-display font-bold text-white">
+              {creating ? "Add Service" : "Edit Service"}
+            </h2>
             <input
               value={editing.title}
               onChange={(e) => setEditing((x) => (x ? { ...x, title: e.target.value } : null))}

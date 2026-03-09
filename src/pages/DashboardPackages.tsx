@@ -6,6 +6,7 @@ type Pkg = { id: number; name: string; price_aed: number; duration: string; feat
 export default function DashboardPackages() {
   const [list, setList] = useState<Pkg[]>([]);
   const [editing, setEditing] = useState<Pkg | null>(null);
+  const isCreating = editing && editing.id === 0;
 
   function load() {
     api.get<Pkg[]>("/dashboard/packages").then(setList).catch(() => {});
@@ -25,7 +26,11 @@ export default function DashboardPackages() {
     e.preventDefault();
     if (!editing) return;
     try {
-      await api.put(`/dashboard/packages/${editing.id}`, editing);
+      if (editing.id === 0) {
+        await api.post("/dashboard/packages", editing);
+      } else {
+        await api.put(`/dashboard/packages/${editing.id}`, editing);
+      }
       setEditing(null);
       load();
     } catch (err) {
@@ -35,31 +40,77 @@ export default function DashboardPackages() {
 
   return (
     <div>
-      <h1 className="text-3xl font-display font-bold text-white mb-8">Booking Packages (AED)</h1>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {list.map((p) => (
-          <div key={p.id} className="bg-icube-gray border border-white/10 rounded-sm p-4">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="font-semibold text-white">{p.name}</p>
-                <p className="text-icube-gold text-xl font-bold">{p.price_aed} AED</p>
-                <p className="text-gray-500 text-sm">{p.duration}</p>
-              </div>
-              <button
-                onClick={() => setEditing({ ...p })}
-                className="px-3 py-1.5 text-sm bg-icube-gold text-icube-dark rounded-sm"
-              >
-                Edit
-              </button>
-            </div>
-          </div>
-        ))}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-display font-bold text-white">Booking Packages (AED)</h1>
+          <p className="text-gray-500 text-sm mt-1">Session bundles and pricing shown on the booking section.</p>
+        </div>
+        <button
+          onClick={() =>
+            setEditing({
+              id: 0,
+              name: "",
+              price_aed: 0,
+              duration: "",
+              features: "[]",
+              is_popular: 0,
+              sort_order: list.length,
+            })
+          }
+          className="px-4 py-2 bg-icube-gold text-icube-dark font-semibold rounded-sm hover:bg-icube-gold-light"
+        >
+          Add Package
+        </button>
       </div>
+
+      {list.length === 0 ? (
+        <div className="bg-icube-gray border border-dashed border-white/15 rounded-sm p-8 text-center text-gray-400">
+          <p className="mb-3">No booking packages yet.</p>
+          <button
+            onClick={() =>
+              setEditing({
+                id: 0,
+                name: "",
+                price_aed: 0,
+                duration: "",
+                features: "[]",
+                is_popular: 0,
+                sort_order: list.length,
+              })
+            }
+            className="px-4 py-2 bg-icube-gold text-icube-dark font-semibold rounded-sm hover:bg-icube-gold-light"
+          >
+            Create first package
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {list.map((p) => (
+            <div key={p.id} className="bg-icube-gray border border-white/10 rounded-sm p-4">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="font-semibold text-white">{p.name}</p>
+                  <p className="text-icube-gold text-xl font-bold">{p.price_aed} AED</p>
+                  <p className="text-gray-500 text-sm">{p.duration}</p>
+                </div>
+                <button
+                  onClick={() => setEditing({ ...p })}
+                  className="px-3 py-1.5 text-sm bg-icube-gold text-icube-dark rounded-sm"
+                >
+                  Edit
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {editing && (
         <form onSubmit={save} className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-icube-gray border border-white/10 rounded-sm p-6 max-w-lg w-full space-y-4">
-            <h2 className="text-xl font-display font-bold text-white">Edit Package (AED)</h2>
+            <h2 className="text-xl font-display font-bold text-white">
+              {isCreating ? "Add Package (AED)" : "Edit Package (AED)"}
+            </h2>
             <input
               value={editing.name}
               onChange={(e) => setEditing((x) => (x ? { ...x, name: e.target.value } : null))}

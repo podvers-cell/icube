@@ -55,6 +55,10 @@ const FALLBACK_SETTINGS: Record<string, string> = {
   hero_title_2: "RECORD.",
   hero_title_3: "AMPLIFY.",
   hero_subtitle: "Professional media production and podcast studio in Dubai. Elevate your content with cinematic quality.",
+  hero_bg_type: "image",
+  hero_bg_image_url:
+    "https://images.unsplash.com/photo-1598550880863-4e8aa3d0edb4?q=80&w=2070&auto=format&fit=crop",
+  hero_bg_video_url: "",
   contact_address: "Dubai Media City, Building 1\nDubai, United Arab Emirates",
   contact_email: "hello@icube.ae",
   contact_email_bookings: "bookings@icube.ae",

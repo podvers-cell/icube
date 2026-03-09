@@ -6,6 +6,7 @@ type Project = { id: number; title: string; category: string; image_url: string;
 export default function DashboardPortfolio() {
   const [list, setList] = useState<Project[]>([]);
   const [editing, setEditing] = useState<Project | null>(null);
+  const isCreating = editing && editing.id === 0;
 
   function load() {
     api.get<Project[]>("/dashboard/portfolio").then(setList).catch(() => {});
@@ -16,7 +17,16 @@ export default function DashboardPortfolio() {
     e.preventDefault();
     if (!editing) return;
     try {
-      await api.put(`/dashboard/portfolio/${editing.id}`, editing);
+      if (editing.id === 0) {
+        await api.post("/dashboard/portfolio", {
+          title: editing.title,
+          category: editing.category,
+          image_url: editing.image_url,
+          sort_order: editing.sort_order ?? list.length,
+        });
+      } else {
+        await api.put(`/dashboard/portfolio/${editing.id}`, editing);
+      }
       setEditing(null);
       load();
     } catch (err) {
@@ -36,37 +46,79 @@ export default function DashboardPortfolio() {
 
   return (
     <div>
-      <h1 className="text-3xl font-display font-bold text-white mb-8">Portfolio</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {list.map((p) => (
-          <div key={p.id} className="bg-icube-gray border border-white/10 rounded-sm overflow-hidden">
-            <img src={p.image_url} alt={p.title} className="w-full h-40 object-cover" />
-            <div className="p-4">
-              <p className="font-semibold text-white">{p.title}</p>
-              <p className="text-gray-500 text-sm">{p.category}</p>
-              <div className="flex gap-2 mt-2">
-                <button
-                  onClick={() => setEditing({ ...p })}
-                  className="px-3 py-1.5 text-sm bg-icube-gold text-icube-dark rounded-sm"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => remove(p.id)}
-                  className="px-3 py-1.5 text-sm bg-red-500/20 text-red-400 rounded-sm"
-                >
-                  Delete
-                </button>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-display font-bold text-white">Portfolio</h1>
+          <p className="text-gray-500 text-sm mt-1">Projects and case studies shown on the public site.</p>
+        </div>
+        <button
+          onClick={() =>
+            setEditing({
+              id: 0,
+              title: "",
+              category: "",
+              image_url: "",
+              sort_order: list.length,
+            })
+          }
+          className="px-4 py-2 bg-icube-gold text-icube-dark font-semibold rounded-sm hover:bg-icube-gold-light"
+        >
+          Add Project
+        </button>
+      </div>
+
+      {list.length === 0 ? (
+        <div className="bg-icube-gray border border-dashed border-white/15 rounded-sm p-8 text-center text-gray-400">
+          <p className="mb-3">No projects yet.</p>
+          <button
+            onClick={() =>
+              setEditing({
+                id: 0,
+                title: "",
+                category: "",
+                image_url: "",
+                sort_order: list.length,
+              })
+            }
+            className="px-4 py-2 bg-icube-gold text-icube-dark font-semibold rounded-sm hover:bg-icube-gold-light"
+          >
+            Create first project
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {list.map((p) => (
+            <div key={p.id} className="bg-icube-gray border border-white/10 rounded-sm overflow-hidden">
+              <img src={p.image_url} alt={p.title} className="w-full h-40 object-cover" />
+              <div className="p-4">
+                <p className="font-semibold text-white">{p.title}</p>
+                <p className="text-gray-500 text-sm">{p.category}</p>
+                <div className="flex gap-2 mt-2">
+                  <button
+                    onClick={() => setEditing({ ...p })}
+                    className="px-3 py-1.5 text-sm bg-icube-gold text-icube-dark rounded-sm"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => remove(p.id)}
+                    className="px-3 py-1.5 text-sm bg-red-500/20 text-red-400 rounded-sm"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {editing && (
         <form onSubmit={save} className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-icube-gray border border-white/10 rounded-sm p-6 max-w-lg w-full space-y-4">
-            <h2 className="text-xl font-display font-bold text-white">Edit Project</h2>
+            <h2 className="text-xl font-display font-bold text-white">
+              {isCreating ? "Add Project" : "Edit Project"}
+            </h2>
             <input
               value={editing.title}
               onChange={(e) => setEditing((x) => (x ? { ...x, title: e.target.value } : null))}
