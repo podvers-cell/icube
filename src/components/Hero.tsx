@@ -69,7 +69,10 @@ export default function Hero() {
   }, [phrases.length]);
 
   return (
-    <section id="home" className="relative h-screen w-full flex items-center justify-center overflow-hidden">
+    <section
+      id="home"
+      className="relative h-screen min-h-[100dvh] w-full flex items-end md:items-center justify-center overflow-hidden pt-16 md:pt-0"
+    >
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-gradient-to-b from-icube-dark/60 via-icube-dark/40 to-icube-dark z-10" />
         {bgType === "video" && bgVideo ? (
