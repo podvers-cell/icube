@@ -3,17 +3,23 @@
 import { useState, type FormEvent } from "react";
 import { Mail, Phone, MapPin, Instagram, Youtube, Twitter } from "lucide-react";
 import { useSiteData } from "../SiteDataContext";
-import { submitContact } from "../api";
+import { submitContact, sendContactEmailNotification } from "../api";
+import { CONTACT_EMAIL, CONTACT_SUBJECT_OPTIONS } from "../constants/contact";
 import AnimatedStaggerItem from "./AnimatedStaggerItem";
 
 export default function Contact() {
   const { settings } = useSiteData();
-  const [form, setForm] = useState({ name: "", email: "", subject: "Studio Booking", message: "" });
+  const [form, setForm] = useState<{ name: string; email: string; subject: string; message: string }>({
+    name: "",
+    email: "",
+    subject: CONTACT_SUBJECT_OPTIONS[0],
+    message: "",
+  });
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
 
   const address = settings.contact_address || "Dubai Media City, Building 1\nDubai, United Arab Emirates";
-  const email = settings.contact_email || "hello@icube.ae";
+  const email = settings.contact_email || CONTACT_EMAIL;
   const emailBookings = settings.contact_email_bookings || "bookings@icube.ae";
   const phone = settings.contact_phone || "+971 4 123 4567";
   const hours = settings.contact_hours || "Sun–Thu, 9am – 6pm GST";
@@ -24,10 +30,16 @@ export default function Contact() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setSending(true);
+    const data = { name: form.name, email: form.email, subject: form.subject, message: form.message };
     try {
-      await submitContact({ name: form.name, email: form.email, subject: form.subject, message: form.message });
+      await submitContact(data);
+      try {
+        await sendContactEmailNotification(data);
+      } catch {
+        // Message already saved to Firestore; email is best-effort
+      }
       setSubmitted(true);
-      setForm({ name: "", email: "", subject: "Studio Booking", message: "" });
+      setForm({ name: "", email: "", subject: CONTACT_SUBJECT_OPTIONS[0], message: "" });
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to send. Try again.");
     } finally {
@@ -152,9 +164,11 @@ export default function Contact() {
                     onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
                     className="w-full bg-icube-dark border border-white/10 p-4 rounded-sm focus:outline-none focus:border-icube-gold text-white transition-colors appearance-none"
                   >
-                    <option>Studio Booking</option>
-                    <option>Video Production</option>
-                    <option>General Inquiry</option>
+                    {CONTACT_SUBJECT_OPTIONS.map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div className="space-y-2">

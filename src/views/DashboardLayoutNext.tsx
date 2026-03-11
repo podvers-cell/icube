@@ -20,6 +20,8 @@ import {
   LogOut,
   Home,
   Building2,
+  Menu,
+  X,
 } from "lucide-react";
 import { api, getSiteSettings } from "../api";
 import UserProfile from "../components/UserProfile";
@@ -47,6 +49,7 @@ const nav: NavItem[] = [
   { href: "/dashboard/why-us", end: false, label: "Why Us", icon: Sparkles },
   { href: "/dashboard/studios", end: false, label: "Studios", icon: Building2 },
   { href: "/dashboard/studio", end: false, label: "Studio Equipment", icon: Video },
+  { href: "/dashboard/videos", end: false, label: "Videos", icon: Video },
 ];
 
 type BookingRow = { id: string; status?: string; package_id?: string | null };
@@ -56,6 +59,7 @@ export default function DashboardLayoutNext({ children }: { children: React.Reac
   const { user, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [cloudStatus, setCloudStatus] = useState<"checking" | "online" | "offline">("checking");
   const [notificationCounts, setNotificationCounts] = useState({
     bookings: 0,
@@ -110,10 +114,48 @@ export default function DashboardLayoutNext({ children }: { children: React.Reac
     router.replace("/");
   }
 
+  useEffect(() => {
+    if (mobileNavOpen) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = prev;
+      };
+    }
+  }, [mobileNavOpen]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#181e30] via-[#21283c] to-[#2b3450] text-white">
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-10 flex gap-5 lg:gap-8">
-        <aside className="hidden sm:flex w-64 flex-col bg-white/5 border border-white/10 rounded-2xl shadow-xl backdrop-blur-xl">
+        {/* Mobile nav toggle – visible only when sidebar is hidden */}
+        <div className="sm:hidden fixed top-4 left-4 z-50 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setMobileNavOpen((o) => !o)}
+            className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 border border-white/20 text-white hover:bg-white/15 transition-colors"
+            aria-label={mobileNavOpen ? "Close menu" : "Open menu"}
+          >
+            {mobileNavOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+          <span className="font-display text-sm font-semibold text-gray-200">Dashboard</span>
+        </div>
+
+        {/* Mobile nav overlay */}
+        {mobileNavOpen && (
+          <div
+            className="sm:hidden fixed inset-0 z-40 bg-black/80 backdrop-blur-sm"
+            aria-hidden
+            onClick={() => setMobileNavOpen(false)}
+          />
+        )}
+        <aside
+          className={`sm:flex w-64 flex-col bg-white/5 border border-white/10 rounded-2xl shadow-xl backdrop-blur-xl ${
+            mobileNavOpen
+              ? "fixed inset-y-0 left-0 z-40 flex mt-0 rounded-none border-r border-white/10"
+              : "hidden"
+          }`}
+          onClick={() => mobileNavOpen && setMobileNavOpen(false)}
+        >
           <div className="px-4 py-4 border-b border-white/10 flex items-center gap-3">
             <div className="h-9 w-9 rounded-lg bg-icube-gold flex items-center justify-center">
               <img src="/icube-logo.svg" alt="ICUBE" className="h-6 w-auto" />
@@ -197,7 +239,7 @@ export default function DashboardLayoutNext({ children }: { children: React.Reac
           </div>
         </aside>
 
-        <main className="flex-1">
+        <main className="flex-1 pt-14 sm:pt-0">
           <div className="bg-white/5 border border-white/10 rounded-2xl shadow-2xl backdrop-blur-xl h-full overflow-hidden">
             <header className="px-4 md:px-6 py-4 border-b border-white/10 flex items-center justify-between gap-4">
               <div className="flex items-center gap-3 min-w-0">

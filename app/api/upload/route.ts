@@ -15,7 +15,19 @@ function getConfig() {
   return null;
 }
 
+function getUploadKey(): string | null {
+  return process.env.UPLOAD_API_KEY ?? process.env.NEXT_PUBLIC_UPLOAD_API_KEY ?? null;
+}
+
 export async function POST(request: NextRequest) {
+  const uploadKey = getUploadKey();
+  if (uploadKey) {
+    const provided = request.headers.get("x-upload-key") ?? request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+    if (!provided || provided !== uploadKey) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+  }
+
   const config = getConfig();
   if (!config) {
     return NextResponse.json(

@@ -53,24 +53,26 @@ function MobileServicesCarousel({
     <div className="space-y-4">
       <div className="flex items-center justify-between text-xs text-gray-400 px-1">
         <button
-          type="button"
-          onClick={goPrev}
-          className="inline-flex items-center justify-center px-3 py-1.5 rounded-full border border-white/20 text-gray-200 hover:bg-white/10"
-        >
-          <ChevronLeft size={14} className="mr-1" />
-          Previous
-        </button>
+            type="button"
+            onClick={goPrev}
+            className="inline-flex items-center justify-center px-3 py-1.5 rounded-full border border-white/20 text-gray-200 hover:bg-white/10"
+            aria-label="Previous service"
+          >
+            <ChevronLeft size={14} className="mr-1" />
+            Previous
+          </button>
         <span className="tracking-[0.18em] uppercase text-[11px]">
           {index + 1} / {services.length}
         </span>
         <button
-          type="button"
-          onClick={goNext}
-          className="inline-flex items-center justify-center px-3 py-1.5 rounded-full border border-white/20 text-gray-200 hover:bg-white/10"
-        >
-          Next
-          <ChevronRight size={14} className="ml-1" />
-        </button>
+            type="button"
+            onClick={goNext}
+            className="inline-flex items-center justify-center px-3 py-1.5 rounded-full border border-white/20 text-gray-200 hover:bg-white/10"
+            aria-label="Next service"
+          >
+            Next
+            <ChevronRight size={14} className="ml-1" />
+          </button>
       </div>
       <div className="overflow-hidden">
         <motion.div

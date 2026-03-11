@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Play, ChevronLeft, ChevronRight } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useSiteData } from "../SiteDataContext";
@@ -86,19 +87,34 @@ export default function Portfolio({ limit, sectionLabel = "Selected work", title
           )}
         </div>
 
-        {/* Mobile: arrow-controlled carousel, one card at a time */}
-        <div className="md:hidden">
-          <MobilePortfolioCarousel items={items} setPlayingProject={setPlayingProject} />
-        </div>
+        {items.length === 0 ? (
+          <div className="text-center py-16 px-6 rounded-2xl bg-white/5 border border-white/10">
+            <p className="text-gray-400 font-light mb-6">No projects to show yet.</p>
+            <button
+              type="button"
+              onClick={openContact}
+              className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-icube-gold hover:text-icube-gold-light transition-colors border-b border-icube-gold/50 pb-1 hover:border-icube-gold"
+            >
+              Get in touch about a project
+            </button>
+          </div>
+        ) : (
+          <>
+            {/* Mobile: arrow-controlled carousel, one card at a time */}
+            <div className="md:hidden">
+              <MobilePortfolioCarousel items={items} setPlayingProject={setPlayingProject} />
+            </div>
 
-        {/* Desktop / tablet: original grid */}
-        <div className="hidden md:grid md:grid-cols-2 gap-8">
-          {items.map((project, index) => (
-            <AnimatedStaggerItem key={project.id} index={index}>
-              <PortfolioCard project={project} setPlayingProject={setPlayingProject} />
-            </AnimatedStaggerItem>
-          ))}
-        </div>
+            {/* Desktop / tablet: original grid */}
+            <div className="hidden md:grid md:grid-cols-2 gap-8">
+              {items.map((project, index) => (
+                <AnimatedStaggerItem key={project.id} index={index}>
+                  <PortfolioCard project={project} setPlayingProject={setPlayingProject} />
+                </AnimatedStaggerItem>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       {playingProject && (() => {
@@ -133,14 +149,16 @@ function PortfolioCard({
       onKeyDown={(e) => hasVideo && (e.key === "Enter" || e.key === " ") && setPlayingProject(project)}
       className="group relative aspect-[4/3] overflow-hidden rounded-2xl cursor-pointer border border-white/10 bg-white/5 shadow-[0_12px_40px_rgba(0,0,0,0.3)] hover:border-icube-gold/30 hover:shadow-[0_24px_56px_rgba(0,0,0,0.4)] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
     >
-      <img
-        src={project.image_url}
-        alt={project.title}
-        loading="lazy"
-        decoding="async"
-        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
-        referrerPolicy="no-referrer"
-      />
+      <div className="relative w-full h-full">
+        <Image
+          src={project.image_url}
+          alt={project.title}
+          fill
+          sizes="(max-width: 768px) 100vw, 50vw"
+          className="object-cover group-hover:scale-105 transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
+          referrerPolicy="no-referrer"
+        />
+      </div>
       <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent/80 opacity-85 group-hover:opacity-95 transition-opacity duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]" />
       <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
         <div className="w-20 h-20 rounded-full flex items-center justify-center bg-white/15 border border-white/30 shadow-[0_0_28px_rgba(212,175,55,0.5),0_0_56px_rgba(212,175,55,0.25)]">
@@ -180,6 +198,7 @@ function MobilePortfolioCarousel({
           type="button"
           onClick={goPrev}
           className="inline-flex items-center justify-center px-3 py-1.5 rounded-full border border-white/20 text-gray-200 hover:bg-white/10"
+          aria-label="Previous project"
         >
           <ChevronLeft size={14} className="mr-1" />
           Previous
@@ -191,6 +210,7 @@ function MobilePortfolioCarousel({
           type="button"
           onClick={goNext}
           className="inline-flex items-center justify-center px-3 py-1.5 rounded-full border border-white/20 text-gray-200 hover:bg-white/10"
+          aria-label="Next project"
         >
           Next
           <ChevronRight size={14} className="ml-1" />

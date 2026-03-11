@@ -22,6 +22,7 @@ export function uploadToCloudinaryWithProgress(
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
+    const uploadKey = typeof process !== "undefined" && process.env?.NEXT_PUBLIC_UPLOAD_API_KEY;
 
     xhr.upload.addEventListener("progress", (e) => {
       if (e.lengthComputable && onProgress) {
@@ -54,6 +55,9 @@ export function uploadToCloudinaryWithProgress(
     xhr.addEventListener("abort", () => reject(new Error("Upload cancelled")));
 
     xhr.open("POST", "/api/upload");
+    if (uploadKey) {
+      xhr.setRequestHeader("x-upload-key", uploadKey);
+    }
     xhr.send(formData);
   });
 }

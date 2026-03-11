@@ -4,20 +4,9 @@ import { createContext, useContext, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
 import { useSiteData } from "./SiteDataContext";
-import { submitContact } from "./api";
+import { submitContact, sendContactEmailNotification } from "./api";
+import { CONTACT_SUBJECT_OPTIONS } from "./constants/contact";
 import type { FormEvent } from "react";
-
-const AREAS_OF_INTEREST = [
-  "Studio Booking",
-  "Video Production",
-  "Podcast Production",
-  "Branded Content",
-  "Social Media",
-  "Photography",
-  "Commercial / TVC",
-  "Post-Production & Editing",
-  "General Inquiry",
-];
 
 const COUNTRY_OPTIONS = [
   { value: "+971", label: "United Arab Emirates" },
@@ -79,12 +68,18 @@ function ContactModalInner() {
       ]
         .filter(Boolean)
         .join("\n");
-      await submitContact({
+      const data = {
         name: [form.first_name, form.last_name].filter(Boolean).join(" ") || "—",
         email: form.email,
         subject: form.area_of_interest,
         message: message || "No additional details.",
-      });
+      };
+      await submitContact(data);
+      try {
+        await sendContactEmailNotification(data);
+      } catch {
+        // Message already saved; email is best-effort
+      }
       setSubmitted(true);
       setForm({ first_name: "", last_name: "", email: "", company_name: "", country: "", phone: "", area_of_interest: "" });
       setAreaError(false);
@@ -191,7 +186,7 @@ function ContactModalInner() {
                 style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23191e2e' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 12px center" }}
               >
                 <option value="">Select area of interest</option>
-                {AREAS_OF_INTEREST.map((area) => (
+                {CONTACT_SUBJECT_OPTIONS.map((area) => (
                   <option key={area} value={area}>
                     {area}
                   </option>
@@ -205,7 +200,7 @@ function ContactModalInner() {
             {/* Privacy */}
             <p className="text-gray-400 text-xs leading-relaxed">
               We&apos;re committed to your privacy. ICUBE uses the information you provide to contact you about our relevant content, products, and services. You may unsubscribe at any time. For more information, see our{" "}
-              <Link href="/#contact" onClick={closeContact} className="text-icube-gold hover:underline">
+              <Link href="/privacy" onClick={closeContact} className="text-icube-gold hover:underline">
                 Privacy Policy
               </Link>
               .

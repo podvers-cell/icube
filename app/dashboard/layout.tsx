@@ -1,15 +1,12 @@
-"use client";
+import type { Metadata } from "next";
+import DashboardLayoutClient from "@/views/DashboardLayoutClient";
 
-import ProtectedRouteNext from "@/views/ProtectedRouteNext";
-import DashboardLayoutNext from "@/views/DashboardLayoutNext";
-import { ToastProvider } from "@/ToastContext";
+export const metadata: Metadata = {
+  title: "Dashboard | ICUBE Media Studio",
+  description: "Admin dashboard",
+  robots: "noindex, nofollow",
+};
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <ProtectedRouteNext>
-      <ToastProvider>
-        <DashboardLayoutNext>{children}</DashboardLayoutNext>
-      </ToastProvider>
-    </ProtectedRouteNext>
-  );
+  return <DashboardLayoutClient>{children}</DashboardLayoutClient>;
 }

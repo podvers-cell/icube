@@ -35,7 +35,7 @@ function useHash() {
 }
 
 export default function PublicSite() {
-  const { loading } = useSiteData();
+  const { loading, error, refresh } = useSiteData();
   const hash = useHash();
   const [showSplash, setShowSplash] = useState(true);
   const [progress, setProgress] = useState(0);
@@ -138,6 +138,18 @@ export default function PublicSite() {
         Skip to main content
       </a>
       <Navbar />
+      {error && (
+        <div className="sticky top-0 z-40 flex items-center justify-between gap-4 bg-red-900/90 backdrop-blur-sm border-b border-red-500/30 px-4 py-3 text-sm">
+          <span className="text-red-100">Failed to load content. {error}</span>
+          <button
+            type="button"
+            onClick={() => refresh()}
+            className="shrink-0 px-4 py-2 rounded-lg bg-white/20 text-white font-medium hover:bg-white/30 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      )}
       <main id="main-content">
         <AnimatedSection>
           <Hero />
@@ -179,11 +191,11 @@ export default function PublicSite() {
         <Footer />
       </AnimatedSection>
 
-      {/* Back to top – appears on scroll */}
+      {/* Back to top – above WhatsApp on mobile to avoid overlap */}
       {showBackToTop && (
         <motion.a
           href="#home"
-          className="fixed bottom-36 right-4 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-icube-gold text-icube-dark shadow-lg hover:bg-icube-gold-light focus:outline-none hover:shadow-[0_6px_24px_rgba(212,175,55,0.5)]"
+          className="fixed bottom-24 right-4 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-icube-gold text-icube-dark shadow-lg hover:bg-icube-gold-light focus:outline-none hover:shadow-[0_6px_24px_rgba(212,175,55,0.5)] sm:bottom-36"
           aria-label="Back to top"
           whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.95 }}
@@ -250,7 +262,7 @@ export default function PublicSite() {
               </svg>
             </span>
             <span className="max-w-0 overflow-hidden whitespace-nowrap text-xs font-medium opacity-0 transition-[max-width,opacity] duration-300 ease-out md:group-hover:max-w-[220px] md:group-hover:opacity-100 md:group-hover:pl-2 md:group-hover:pr-4">
-              Any questions? Ask in Whatsapp
+              Any questions? Ask in WhatsApp
             </span>
           </a>
         </div>

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent, type ChangeEvent } from "react";
 import { api } from "../api";
-import { firebaseStorage } from "../firebase";
+import { requireStorage } from "../firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { uploadToCloudinaryWithProgress } from "../lib/uploadCloudinary";
 
@@ -84,7 +84,7 @@ export default function DashboardHero() {
         });
       } catch {
         const path = `hero/${kind}-${Date.now()}-${file.name}`;
-        const storageRef = ref(firebaseStorage, path);
+        const storageRef = ref(requireStorage(), path);
         await uploadBytes(storageRef, file);
         url = await getDownloadURL(storageRef);
       }

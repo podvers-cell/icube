@@ -14,20 +14,38 @@ import {
   where,
 } from "firebase/firestore";
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
-import { firebaseAuth, firestore } from "./firebase";
+import { requireAuth, requireFirestore } from "./firebase";
+import { contactFormSchema } from "./schemas/contact";
+import { bookingPayloadSchema } from "./schemas/booking";
 
 type IdDoc<T> = T & { id: string };
 
 function assertAuth() {
-  if (!firebaseAuth.currentUser) throw new Error("Unauthorized");
+  if (!requireAuth().currentUser) throw new Error("Unauthorized");
 }
 
 function stripUndefined<T extends Record<string, unknown>>(obj: T): Partial<T> {
   return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined)) as Partial<T>;
 }
 
+/** Map dashboard path kind to Firestore collection name. */
+function dashboardKindToCollection(kind: string): string {
+  switch (kind) {
+    case "packages":
+      return "booking_packages";
+    case "addons":
+      return "booking_addons";
+    case "why-us":
+      return "why_us";
+    case "studio-equipment":
+      return "studio_equipment";
+    default:
+      return kind;
+  }
+}
+
 async function getSettingsDoc() {
-  const ref = doc(firestore, "site_settings", "main");
+  const ref = doc(requireFirestore(), "site_settings", "main");
   const snap = await getDoc(ref);
   if (!snap.exists()) {
     // Create empty doc (will require permissive rules or admin)
@@ -38,13 +56,13 @@ async function getSettingsDoc() {
 }
 
 async function listCollection<T>(name: string) {
-  const q = query(collection(firestore, name), orderBy("sort_order", "asc"));
+  const q = query(collection(requireFirestore(), name), orderBy("sort_order", "asc"));
   const snaps = await getDocs(q);
   return snaps.docs.map((d) => ({ id: d.id, ...(d.data() as T) })) as IdDoc<T>[];
 }
 
 async function listByCreatedAtDesc<T>(name: string, max = 500) {
-  const q = query(collection(firestore, name), orderBy("created_at", "desc"), limit(max));
+  const q = query(collection(requireFirestore(), name), orderBy("created_at", "desc"), limit(max));
   const snaps = await getDocs(q);
   return snaps.docs.map((d) => ({ id: d.id, ...(d.data() as T) })) as IdDoc<T>[];
 }
@@ -118,23 +136,13 @@ export const api = {
 
   post: async <T>(path: string, body: unknown): Promise<T> => {
     if (path === "/booking") {
-      const b = body as {
-        first_name: string;
-        last_name: string;
-        email: string;
-        phone?: string;
-        project_details?: string;
-        package_id?: string;
-        studio_id?: string;
-        studio_name?: string;
-        booking_duration_hours?: number;
-        studio_total_aed?: number;
-        booking_date?: string;
-        time_slot?: string;
-        addon_ids?: string[];
-        addons_total_aed?: number;
-      };
-      await addDoc(collection(firestore, "bookings"), {
+      const parsed = bookingPayloadSchema.safeParse(body);
+      if (!parsed.success) {
+        const msg = parsed.error.issues[0]?.message ?? parsed.error.flatten().formErrors?.[0] ?? "Invalid booking data";
+        throw new Error(typeof msg === "string" ? msg : "Invalid booking data");
+      }
+      const b = parsed.data;
+      await addDoc(collection(requireFirestore(), "bookings"), {
         ...stripUndefined(b),
         status: "pending",
         created_at: serverTimestamp(),
@@ -142,8 +150,13 @@ export const api = {
       return { success: true } as T;
     }
     if (path === "/contact") {
-      const m = body as { name: string; email: string; subject: string; message: string };
-      await addDoc(collection(firestore, "contact_messages"), {
+      const parsed = contactFormSchema.safeParse(body);
+      if (!parsed.success) {
+        const msg = parsed.error.issues[0]?.message ?? parsed.error.flatten().formErrors?.[0] ?? "Invalid contact data";
+        throw new Error(typeof msg === "string" ? msg : "Invalid contact data");
+      }
+      const m = parsed.data;
+      await addDoc(collection(requireFirestore(), "contact_messages"), {
         ...m,
         read_at: null,
         created_at: serverTimestamp(),
@@ -154,11 +167,11 @@ export const api = {
     // Auth
     if (path === "/login") {
       const { email, password } = body as { email: string; password: string };
-      await signInWithEmailAndPassword(firebaseAuth, email, password);
-      return { success: true, user: { id: firebaseAuth.currentUser?.uid, email } } as T;
+      await signInWithEmailAndPassword(requireAuth(), email, password);
+      return { success: true, user: { id: requireAuth().currentUser?.uid, email } } as T;
     }
     if (path === "/logout") {
-      await signOut(firebaseAuth);
+      await signOut(requireAuth());
       return { success: true } as T;
     }
 
@@ -166,7 +179,7 @@ export const api = {
     if (path === "/dashboard/services") {
       assertAuth();
       const s = body as any;
-      const ref = await addDoc(collection(firestore, "services"), {
+      const ref = await addDoc(collection(requireFirestore(), "services"), {
         ...s,
         created_at: serverTimestamp(),
       });
@@ -175,49 +188,49 @@ export const api = {
     if (path === "/dashboard/portfolio") {
       assertAuth();
       const p = body as any;
-      const ref = await addDoc(collection(firestore, "portfolio"), { ...p, created_at: serverTimestamp() });
+      const ref = await addDoc(collection(requireFirestore(), "portfolio"), { ...p, created_at: serverTimestamp() });
       return { id: ref.id, ...p } as T;
     }
     if (path === "/dashboard/testimonials") {
       assertAuth();
       const t = body as any;
-      const ref = await addDoc(collection(firestore, "testimonials"), { ...t, created_at: serverTimestamp() });
+      const ref = await addDoc(collection(requireFirestore(), "testimonials"), { ...t, created_at: serverTimestamp() });
       return { id: ref.id, ...t } as T;
     }
     if (path === "/dashboard/packages") {
       assertAuth();
       const p = body as any;
-      const ref = await addDoc(collection(firestore, "booking_packages"), { ...p, created_at: serverTimestamp() });
+      const ref = await addDoc(collection(requireFirestore(), "booking_packages"), { ...p, created_at: serverTimestamp() });
       return { id: ref.id, ...p } as T;
     }
     if (path === "/dashboard/addons") {
       assertAuth();
       const a = body as any;
-      const ref = await addDoc(collection(firestore, "booking_addons"), { ...a, created_at: serverTimestamp() });
+      const ref = await addDoc(collection(requireFirestore(), "booking_addons"), { ...a, created_at: serverTimestamp() });
       return { id: ref.id, ...a } as T;
     }
     if (path === "/dashboard/why-us") {
       assertAuth();
       const w = body as any;
-      const ref = await addDoc(collection(firestore, "why_us"), { ...w, created_at: serverTimestamp() });
+      const ref = await addDoc(collection(requireFirestore(), "why_us"), { ...w, created_at: serverTimestamp() });
       return { id: ref.id, ...w } as T;
     }
     if (path === "/dashboard/studio-equipment") {
       assertAuth();
       const e = body as any;
-      const ref = await addDoc(collection(firestore, "studio_equipment"), { ...e, created_at: serverTimestamp() });
+      const ref = await addDoc(collection(requireFirestore(), "studio_equipment"), { ...e, created_at: serverTimestamp() });
       return { id: ref.id, ...e } as T;
     }
     if (path === "/dashboard/studios") {
       assertAuth();
       const s = body as any;
-      const ref = await addDoc(collection(firestore, "studios"), { ...s, created_at: serverTimestamp() });
+      const ref = await addDoc(collection(requireFirestore(), "studios"), { ...s, created_at: serverTimestamp() });
       return { id: ref.id, ...s } as T;
     }
     if (path === "/dashboard/videos") {
       assertAuth();
       const v = body as any;
-      const ref = await addDoc(collection(firestore, "videos"), { ...v, created_at: serverTimestamp() });
+      const ref = await addDoc(collection(requireFirestore(), "videos"), { ...v, created_at: serverTimestamp() });
       return { id: ref.id, ...v } as T;
     }
 
@@ -228,7 +241,7 @@ export const api = {
     // Settings
     if (path === "/dashboard/settings") {
       assertAuth();
-      await setDoc(doc(firestore, "site_settings", "main"), { ...(body as any), updated_at: serverTimestamp() }, { merge: true });
+      await setDoc(doc(requireFirestore(), "site_settings", "main"), { ...(body as any), updated_at: serverTimestamp() }, { merge: true });
       return { success: true } as T;
     }
 
@@ -236,17 +249,8 @@ export const api = {
     if (m) {
       assertAuth();
       const [, kind, id] = m;
-      const col =
-        kind === "packages"
-          ? "booking_packages"
-          : kind === "addons"
-            ? "booking_addons"
-            : kind === "why-us"
-              ? "why_us"
-              : kind === "studio-equipment"
-                ? "studio_equipment"
-                : kind;
-      await setDoc(doc(firestore, col, id), { ...(body as any), updated_at: serverTimestamp() }, { merge: true });
+      const col = dashboardKindToCollection(kind!);
+      await setDoc(doc(requireFirestore(), col, id!), { ...(body as any), updated_at: serverTimestamp() }, { merge: true });
       return { success: true } as T;
     }
 
@@ -259,7 +263,7 @@ export const api = {
     if (b) {
       assertAuth();
       const id = b[1];
-      await updateDoc(doc(firestore, "bookings", id), { ...(body as any), updated_at: serverTimestamp() });
+      await updateDoc(doc(requireFirestore(), "bookings", id), { ...(body as any), updated_at: serverTimestamp() });
       return { success: true } as T;
     }
     // messages read
@@ -267,7 +271,7 @@ export const api = {
     if (r) {
       assertAuth();
       const id = r[1];
-      await updateDoc(doc(firestore, "contact_messages", id), { read_at: serverTimestamp() });
+      await updateDoc(doc(requireFirestore(), "contact_messages", id), { read_at: serverTimestamp() });
       return { success: true } as T;
     }
 
@@ -279,24 +283,15 @@ export const api = {
     if (b) {
       assertAuth();
       const id = b[1];
-      await deleteDoc(doc(firestore, "bookings", id));
+      await deleteDoc(doc(requireFirestore(), "bookings", id));
       return { success: true } as T;
     }
     const m = path.match(/^\/dashboard\/(services|portfolio|testimonials|packages|addons|why-us|studio-equipment|studios|videos)\/([^/]+)$/);
     if (m) {
       assertAuth();
       const [, kind, id] = m;
-      const col =
-        kind === "packages"
-          ? "booking_packages"
-          : kind === "addons"
-            ? "booking_addons"
-            : kind === "why-us"
-              ? "why_us"
-              : kind === "studio-equipment"
-                ? "studio_equipment"
-                : kind;
-      await deleteDoc(doc(firestore, col, id));
+      const col = dashboardKindToCollection(kind!);
+      await deleteDoc(doc(requireFirestore(), col, id!));
       return { success: true } as T;
     }
     throw new Error(`Unknown DELETE path: ${path}`);
@@ -396,7 +391,7 @@ const MAX_SLOT_HOUR = 22; // 10:00 PM
 export async function getBookedSlots(bookingDate: string, studioId?: string): Promise<string[]> {
   try {
     const q = query(
-      collection(firestore, "bookings"),
+      collection(requireFirestore(), "bookings"),
       where("booking_date", "==", bookingDate)
     );
     const snaps = await getDocs(q);
@@ -434,6 +429,24 @@ export function submitContact(data: { name: string; email: string; subject: stri
   return api.post<{ success: boolean }>("/contact", data);
 }
 
+/** Sends a copy of the contact form to info@icubeproduction.com via the API. Call after submitContact. */
+export async function sendContactEmailNotification(data: {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+}): Promise<void> {
+  const base = typeof window !== "undefined" ? "" : process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "";
+  const res = await fetch(`${base}/api/send-contact-email`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok && res.status !== 503) {
+    throw new Error((await res.json().catch(() => ({}))).error || "Failed to send email notification");
+  }
+}
+
 // Auth
 export async function login(email: string, password: string) {
   return api.post<{ success: boolean; user: { id: number; email: string } }>("/login", { email, password });
@@ -442,11 +455,12 @@ export async function logout() {
   return api.post<{ success: boolean }>("/logout", {});
 }
 export async function getMe() {
-  const u = firebaseAuth.currentUser;
+  const auth = requireAuth();
+  const u = auth.currentUser;
   if (u) return { id: u.uid, email: u.email || "", name: u.displayName || null };
   // wait a tick if auth is still initializing
   return await new Promise<{ id: string; email: string; name: string | null }>((resolve, reject) => {
-    const unsub = onAuthStateChanged(firebaseAuth, (user) => {
+    const unsub = onAuthStateChanged(auth, (user) => {
       unsub();
       if (!user) return reject(new Error("Not logged in"));
       resolve({ id: user.uid, email: user.email || "", name: user.displayName || null });

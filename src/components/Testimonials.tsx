@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Quote, ChevronLeft, ChevronRight } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useSiteData } from "../SiteDataContext";
@@ -66,9 +67,11 @@ function TestimonialCard({
         </p>
         <div className="flex items-center gap-4 pl-2 shrink-0">
           {t.image_url ? (
-            <img
+            <Image
               src={t.image_url}
               alt={t.author}
+              width={48}
+              height={48}
               className="w-12 h-12 rounded-xl object-cover ring-2 ring-white/10 group-hover:ring-icube-gold/30 grayscale group-hover:grayscale-0 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
               referrerPolicy="no-referrer"
             />
@@ -106,6 +109,7 @@ function MobileTestimonialsCarousel({
           type="button"
           onClick={goPrev}
           className="inline-flex items-center justify-center px-3 py-1.5 rounded-full border border-white/20 text-gray-200 hover:bg-white/10"
+          aria-label="Previous testimonial"
         >
           <ChevronLeft size={14} className="mr-1" />
           Previous
@@ -117,6 +121,7 @@ function MobileTestimonialsCarousel({
           type="button"
           onClick={goNext}
           className="inline-flex items-center justify-center px-3 py-1.5 rounded-full border border-white/20 text-gray-200 hover:bg-white/10"
+          aria-label="Next testimonial"
         >
           Next
           <ChevronRight size={14} className="ml-1" />

@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { GoogleAuthProvider, createUserWithEmailAndPassword, signInWithPopup, updateProfile } from "firebase/auth";
-import { firebaseAuth } from "../firebase";
+import { requireAuth } from "../firebase";
 
 export default function Signup() {
   const [name, setName] = useState("");
@@ -21,7 +21,7 @@ export default function Signup() {
     setError("");
     setSubmitting(true);
     try {
-      const cred = await createUserWithEmailAndPassword(firebaseAuth, email.trim(), password);
+      const cred = await createUserWithEmailAndPassword(requireAuth(), email.trim(), password);
       if (name && cred.user) {
         await updateProfile(cred.user, { displayName: name });
       }
@@ -38,7 +38,7 @@ export default function Signup() {
     setGoogleSubmitting(true);
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(firebaseAuth, provider);
+      await signInWithPopup(requireAuth(), provider);
       router.replace("/");
     } catch (err: any) {
       if (err?.code === "auth/popup-closed-by-user") {

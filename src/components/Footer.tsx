@@ -67,6 +67,9 @@ export default function Footer() {
                   {submitted ? "Subscribed" : "Subscribe"}
                 </button>
               </form>
+              {submitted && (
+                <p className="text-gray-500 text-xs mt-1">Newsletter coming soon. Thanks for your interest.</p>
+              )}
             </div>
           </div>
 
@@ -98,12 +101,12 @@ export default function Footer() {
               )}
             </div>
             <div className="mt-8 pt-8 border-t border-white/10 flex flex-wrap gap-6 text-sm">
-              <a href="#" className="text-gray-500 hover:text-icube-gold transition-colors">
+              <Link href="/privacy" className="text-gray-500 hover:text-icube-gold transition-colors">
                 Privacy Policy
-              </a>
-              <a href="#" className="text-gray-500 hover:text-icube-gold transition-colors">
+              </Link>
+              <Link href="/terms" className="text-gray-500 hover:text-icube-gold transition-colors">
                 Terms of Service
-              </a>
+              </Link>
             </div>
           </div>
         </div>

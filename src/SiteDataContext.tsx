@@ -45,6 +45,7 @@ type SiteData = {
   studios: Studio[];
   videos: Video[];
   loading: boolean;
+  error: string | null;
   refresh: () => void;
 };
 
@@ -59,6 +60,7 @@ const defaultData: SiteData = {
   studios: [],
   videos: [],
   loading: true,
+  error: null,
   refresh: () => {},
 };
 
@@ -238,6 +240,7 @@ export function SiteDataProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<SiteData>({
     ...defaultData,
     loading: false,
+    error: null,
     settings: FALLBACK_SETTINGS,
     services: FALLBACK_SERVICES,
     portfolio: FALLBACK_PORTFOLIO,
@@ -249,7 +252,7 @@ export function SiteDataProvider({ children }: { children: ReactNode }) {
   });
 
   const refresh = useCallback(async () => {
-    setData((d) => ({ ...d, loading: true }));
+    setData((d) => ({ ...d, loading: true, error: null }));
     try {
       const [settings, services, portfolio, testimonials, packages, whyUs, studioEquipment, studios, videos] = await Promise.all([
         api.getSiteSettings(),
@@ -273,12 +276,15 @@ export function SiteDataProvider({ children }: { children: ReactNode }) {
         studios: withFallbackArray(studios, FALLBACK_STUDIOS),
         videos: withFallbackArray(videos, FALLBACK_VIDEOS),
         loading: false,
+        error: null,
         refresh,
       });
-    } catch {
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to load content";
       setData((d) => ({
         ...d,
         loading: false,
+        error: message,
         refresh,
         settings: { ...FALLBACK_SETTINGS, ...d.settings },
       }));

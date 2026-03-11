@@ -1,415 +1,268 @@
-# ICUBE Media Studio — Professional Audit & Improvement Plan
+# ICUBE Media Studio – Full Audit Report
 
-**Document version:** 1.0  
-**Scope:** Full codebase, performance, SEO, UX, security, infrastructure, data flow, product features  
-**Stack:** React 19, Vite 6, TypeScript, Tailwind 4, Firebase (Firestore + Auth), Vercel
-
----
-
-## Executive Summary
-
-The project is a **marketing site + admin dashboard** for a Dubai media studio, with content and auth backed by **Firebase**. The architecture is clear (public site vs dashboard, contexts for auth/site data/contact modal), but there are **critical security issues**, **no code-splitting or error boundaries**, **minimal SEO**, and **silent error handling**. This report prioritizes fixes and provides a phased roadmap to production-grade quality.
+**Audit date:** March 9, 2025  
+**Scope:** Website behaviour, codebase, Next.js/deployment, Firebase/data/auth  
+**Method:** Codebase inspection + build verification (no live browser testing)
 
 ---
 
-# 1. CODEBASE AUDIT
+## 1. Executive Summary
 
-## 1.1 Architecture
+**Overall assessment:** The project is a Next.js 16 + React 19 + Firebase + Tailwind 4 marketing and booking site with an admin dashboard. Structure is clear, the build passes, and core flows (home, contact, booking, dashboard) are implemented. Quality is **mixed**: good foundations and consistent UI language, but **validation is minimal**, **security and error-handling gaps** exist, **SEO/metadata are incomplete**, and several **UX and accessibility issues** would hurt a production launch.
 
-| Aspect | Current state | Assessment |
-|--------|----------------|------------|
-| **Structure** | Flat `src/` with `components/`, `pages/`, `lib/`, root-level `api.ts`, `*Context.tsx` | Acceptable for size; will need grouping as it grows |
-| **Data flow** | Firebase-only from client via `api.ts`; `SiteDataContext` loads all content once; no BFF | Clear but monolithic; single failure can block entire site load |
-| **Routing** | React Router 7; catch-all `*` for public site; dashboard under `/dashboard` with layout | SPA-only; no SSR/SSG |
-| **Auth** | Firebase Auth + Firestore `admins/{uid}` for admin check; `ProtectedRoute` + `AuthContext` | Correct pattern; session is client-side only |
+**Current level of quality:** **6/10** – Usable for a soft launch with known limitations; not yet “production-hardened” for high traffic or strict compliance.
 
-**Recommendation:** Introduce a **feature-oriented** layout for growth (e.g. `src/features/public/`, `src/features/dashboard/`, `src/core/api/`, `src/core/auth/`). Keep `api.ts` as single gateway but consider splitting by domain (e.g. `api/site.ts`, `api/booking.ts`).
+**Launch readiness score:** **5.5/10**
 
-## 1.2 Folder Structure
-
-```
-src/
-├── components/     # 14 UI components (Navbar, Hero, Services, …)
-├── pages/          # 19 pages (Login, Signup, Dashboard*, PackagesPage, PortfolioPage)
-├── lib/            # motion, videoEmbed, icons
-├── App.tsx, main.tsx, PublicSite.tsx
-├── api.ts          # ~340 lines, single Firebase adapter
-├── firebase.ts
-├── AuthContext.tsx, SiteDataContext.tsx, ContactModalContext.tsx
-└── index.css
-```
-
-**Gaps:** No `hooks/`, `utils/`, `types/`, or `constants/`; types are inlined in contexts and pages. No shared form/validation layer.
-
-## 1.3 Scalability & Maintainability
-
-- **Scalability:** One big `SiteDataContext` fetch blocks first paint; all dashboard routes are eager-loaded (no `React.lazy`). Firestore reads are per-collection and reasonable; no pagination on list endpoints (e.g. messages capped at 500).
-- **Maintainability:** Repeated patterns in dashboard pages (load list → setList, catch empty, CRUD modals). Good candidate for a generic `useDashboardCollection<T>` hook and a shared list+detail layout.
-- **Duplication:** Section header pattern (gold bar + label + title + accent) repeated in many components; form submit + loading + error state repeated; `.catch(() => {})` used in many places.
-
-## 1.4 Unused / Legacy Code
-
-- **Server (`server/`):** Express + SQLite + session auth exists but the React app **does not use it**; all data goes to Firebase. Either remove the server or document it as optional/legacy and avoid injecting its secrets (e.g. `GEMINI_API_KEY`) into the Vite client.
-- **DashboardVideos:** Page file exists; route and nav were removed. Safe to delete `DashboardVideos.tsx` if videos are no longer managed from dashboard.
-- **`@google/genai`, bcryptjs, better-sqlite3, express-*:** Only needed if the Express server is used; otherwise they bloat dependencies.
-
-## 1.5 Standards Compliance
-
-| Area | Status | Notes |
-|------|--------|--------|
-| React patterns | Good | Functional components, contexts, no prop drilling on auth/site data |
-| Separation of concerns | Partial | API and Firebase coupled in one file; UI and data loading mixed in pages |
-| Environment variables | **Risk** | `.env.example` contains real-looking Firebase values; `VITE_*` are public by design; `GEMINI_API_KEY` in Vite `define` can leak into client if ever referenced |
-| Error handling | Weak | Many `catch(() => {})`; no error boundary; no user-facing error UI |
-| Async handling | Adequate | No global loading/retry; each page handles its own loading |
-
-**Recommendation:** Centralize API error handling (e.g. `api.get()` wrapper that logs and returns `Result<T, Error>` or throws a typed error), and add a top-level Error Boundary with a fallback UI and optional error reporting.
+**Top critical issues:**
+1. **Login redirect ignores requested path** – After login, users are always sent to `/dashboard`; the `from` query is read on the Login page but ProtectedRouteNext always redirects with `from=/dashboard`, so e.g. `/dashboard/bookings` is lost.
+2. **No server-side or schema validation** – Contact, booking, and dashboard forms rely on HTML `required` and ad-hoc checks; API accepts `body as any`; risk of bad data and injection.
+3. **Upload API is unauthenticated** – `POST /api/upload` is public; anyone can upload to Cloudinary up to Cloudinary’s limits.
+4. **Credentials in Login UI** – Login page shows “Admin (local): admin@icube.ae / admin123” in plain text.
+5. **Root layout metadata overrides** – Root `layout.tsx` sets a generic title/description that can override more specific page metadata depending on Next.js behaviour.
+6. **SiteDataContext swallows errors** – On initial load failure, only `loading: false` and fallback settings are set; `portfolio`, `packages`, etc. can stay as empty arrays with no user feedback.
+7. **Firebase config throws at build time** – Missing `NEXT_PUBLIC_FIREBASE_*` causes immediate throw in `src/firebase.ts`; no graceful message for missing env in deployment.
+8. **Privacy/Terms links are placeholders** – Footer links to `#` for Privacy Policy and Terms of Service.
+9. **Sitemap is static and incomplete** – `public/sitemap.xml` lists only 3 URLs and hardcodes `icube.ae`; contact and studio booking routes are missing.
+10. **No rate limiting or CSRF** – Forms and API have no rate limiting or CSRF tokens; abuse and spam risk.
 
 ---
 
-# 2. PERFORMANCE AUDIT
+## 2. Critical Issues
 
-## 2.1 Bundle & Dependencies
-
-- **No code-splitting:** All routes and all dashboard pages are in the main chunk. **Recommendation:** Use `React.lazy()` + `Suspense` for dashboard routes and for heavy components (e.g. `Videos`, `Contact`).
-- **Dependencies:** Firebase is large; `motion` (framer-motion successor) is reasonable. Consider auditing with `npx vite-bundle-visualizer` or `vite-plugin-inspect` after adding lazy loading.
-- **Unused deps:** If the Express server is not used in production, move `express`, `better-sqlite3`, `bcryptjs`, `@google/genai`, etc. to an optional or separate `server/` package.json.
-
-## 2.2 Loading & Data
-
-- **SiteDataContext:** Fetches **all** site data (settings, services, portfolio, testimonials, packages, whyUs, studioEquipment, studios, videos) in one `Promise.all` on mount. One slow collection delays entire site. **Recommendation:** Split into critical (settings + hero-related) and non-critical (rest), or load sections on demand.
-- **Images:** No `loading="lazy"` or `fetchpriority` on `<img>` tags; external URLs (e.g. Unsplash) used without optimization. **Recommendation:** Add `loading="lazy"` and `decoding="async"`; consider Next.js Image-style component or Vite plugin for resizing/AVIF for uploaded images.
-- **Fonts:** Google Fonts loaded via `@import` in CSS (render-blocking). **Recommendation:** Use `<link rel="preconnect">` + font-display: swap and/or self-host critical fonts.
-
-## 2.3 Core Web Vitals (Assessment)
-
-| Metric | Likely issue | Fix |
-|--------|--------------|-----|
-| **LCP** | Single large JS bundle, no lazy load; hero image not prioritized | Lazy-load below-fold sections; `fetchpriority="high"` on hero image; preload LCP image |
-| **CLS** | Splash then content swap; possible layout shift when sections load | Reserve min-height for hero; skeleton or consistent placeholders |
-| **INP** | No obvious heavy main-thread work; ensure event handlers are cheap | Debounce scroll handlers; avoid layout thrash in animations |
-
-**Action:** Run Lighthouse (mobile + desktop) and add to CI or pre-deploy check. Target 90+ Performance, Accessibility, Best Practices.
+- **Redirect after login loses destination:** `ProtectedRouteNext` always redirects to `/login?from=/dashboard`. If a user opens `/dashboard/bookings` while logged out, they are sent to login with `from=/dashboard` and after login land on `/dashboard`, not `/dashboard/bookings`. **Fix:** Redirect to `/login?from=` + `encodeURIComponent(pathname)` (or equivalent with current path).
+- **Upload API unauthenticated:** `app/api/upload/route.ts` does not verify the request; any client can POST files. Only dashboard uses it today, but the route is public. **Fix:** Require a session token or API key (e.g. Firebase ID token in header) and verify before uploading.
+- **Admin credentials in UI:** `src/views/Login.tsx` line ~144: “Admin (local): admin@icube.ae / admin123” is visible to all. **Fix:** Remove from production build or restrict to dev only.
+- **Firebase env throw:** `src/firebase.ts` throws if any `NEXT_PUBLIC_FIREBASE_*` is missing, which can break build or runtime in CI/Vercel if env is not set. **Fix:** Document required vars and consider a clear error page or message instead of throw when not in build.
+- **No form/API validation:** Contact, booking, login, and dashboard POST/PUT bodies are not validated (Zod or similar). `api.ts` uses `body as any` and passes to Firestore. **Fix:** Add shared validation (e.g. Zod) for contact, booking, and dashboard payloads; validate in API layer or server actions.
+- **SiteDataContext error handling:** On `refresh()` failure, `api` errors are caught and state is updated with `loading: false` and fallback settings only; other keys (e.g. `portfolio`, `packages`) keep previous or default. Users see no “Failed to load” or retry. **Fix:** Set an `error: string | null` (or similar) and surface retry/error in a top-level banner or in sections that depend on that data.
+- **Placeholder legal links:** Footer “Privacy Policy” and “Terms of Service” point to `#`. **Fix:** Add real routes or external URLs before launch.
+- **robots.txt / sitemap domain:** `public/robots.txt` references `Sitemap: https://icube.ae/sitemap.xml`. If the site is deployed elsewhere, this is wrong. **Fix:** Use `APP_URL` or a config value to build the sitemap URL, or generate sitemap server-side with the correct origin.
 
 ---
 
-# 3. SEO AUDIT
+## 3. UI / UX Issues
 
-## 3.1 Current State
-
-- **index.html:** Only `<meta charset>`, `<meta viewport>`, and one `<title>`. No description, no Open Graph, no Twitter cards, no canonical, no structured data.
-- **SPA:** All content is client-rendered; crawlers see empty body until JS runs. No server-side or static meta per route.
-- **URLs:** Clean (`/`, `/packages`, `/portfolio`, `/login`, `/dashboard/...`). No sitemap or robots.txt in repo.
-
-## 3.2 Recommendations
-
-1. **Meta and OG (at least for index):** Add to `index.html` or a layout component (if you inject into `<head>`):
-   - `meta name="description" content="..."`
-   - `meta property="og:title"`, `og:description`, `og:image`, `og:url`, `og:type`
-   - Twitter card meta tags
-2. **Per-route meta:** Use a small lib (e.g. `react-helmet-async`) or a custom hook that sets `document.title` and meta tags on route change (e.g. `/packages` → "Packages | ICUBE").
-3. **Structured data:** Add JSON-LD for `Organization` and optionally `WebSite` with `potentialAction` (e.g. Contact).
-4. **Sitemap & robots:** Generate `sitemap.xml` (e.g. list `/`, `/packages`, `/portfolio`) and `robots.txt` (Allow /, disallow /dashboard, /login, /signup). Can be static files in `public/` or generated at build time.
-5. **Long-term:** For serious SEO, consider SSR/SSG (e.g. Next.js App Router or Remix) so crawlers get full HTML and meta per URL.
+| # | Title | Where | What's wrong | Why it matters | Severity | Recommended fix |
+|---|--------|--------|----------------|-----------------|----------|-----------------|
+| 1 | Back-to-top and WhatsApp overlap on small screens | `PublicSite.tsx` | Back-to-top is `bottom-36 right-4`, WhatsApp area `bottom-14 right-4`; on short viewports or when WhatsApp bubble is open, they can overlap or feel cramped | Poor mobile UX, possible tap confusion | Medium | Adjust vertical spacing or hide back-to-top when WhatsApp bubble is visible; or move back-to-top left on mobile |
+| 2 | WhatsApp bubble hardcoded “1” badge | `PublicSite.tsx` | `<span ... aria-hidden>1</span>` – fake unread count | Misleading; looks like one unread message | Low | Remove badge or make it dynamic if you add real state |
+| 3 | Contact form subject vs modal subject options differ | `Contact.tsx` vs `ContactModalContext.tsx` | Section contact has dropdown: Studio Booking, Video Production, General Inquiry. Modal has AREAS_OF_INTEREST (Studio Booking, Video Production, Podcast Production, etc.). Different options and labels | Inconsistent experience and data shape | Medium | Unify subject/area options and labels (single source of truth) |
+| 4 | Hero phrase min-height jump on desktop | `Hero.tsx` | `min-h-[3.5rem]` → `md:min-h-[7rem]` – large jump between breakpoints can cause layout shift as phrases rotate | CLS, visual jump | Low | Tune to smoother steps or a single min-height that fits longest phrase |
+| 5 | No loading/empty state for portfolio grid | `Portfolio.tsx` | When `items.length === 0` (e.g. no visible or selected work), section still renders with empty space; no “No projects to show” message | Confusing empty section | Medium | Add explicit empty state copy and optional CTA |
+| 6 | Testimonials “” around quote | `Testimonials.tsx` | Literal `"{t.quote}"` in JSX adds extra quotes around the quote text | Redundant punctuation | Low | Use `{t.quote}` only or style quotes via CSS |
+| 7 | Success state after contact/booking uses generic alert or inline text | `Contact.tsx`, `BookingCheckoutPage`, `StudioBookingCheckoutPage` | Contact: inline “Message sent…”. Booking: full success page. No toast or consistent success pattern | Inconsistent feedback; contact success easy to miss | Low | Consider a shared toast for “Message sent” and align success patterns |
+| 8 | Dashboard loading is minimal | `ProtectedRouteNext` | “Loading…” in center of dark screen; no branding or skeleton | Feels unfinished | Low | Add logo or skeleton for dashboard shell |
+| 9 | Newsletter in footer does nothing | `Footer.tsx` | `handleNewsletter` sets `submitted(true)` and clears email; no API call or storage | Users may expect to be subscribed | Medium | Either implement subscription (e.g. Firestore or third-party) or remove/replace with “Coming soon” |
+| 10 | Studio modal image gallery no lazy load for thumbnails | `Studio.tsx` | All gallery images in modal rendered at once | Heavier DOM and network if many images | Low | Lazy load or virtualize thumbnails when many images |
+| 11 | VideoPlayerModal iframe no title per video | `VideoPlayerModal.tsx` | Hero iframe has `title="Hero Background Video"`; portfolio modal uses `title={title}` – ensure every iframe has a unique, descriptive title | A11y and UX | Low | Pass project title (or similar) into modal and set iframe title |
+| 12 | Skip to main content always off-screen | `PublicSite.tsx` | Skip link uses `-translate-y-[200%]` and only appears on focus; ensure it’s focusable and visible on focus (it is) | Good; minor: ensure no layout hides it | Low | Verify in all viewports that focus ring is visible |
 
 ---
 
-# 4. UI/UX REVIEW
+## 4. Responsive / Mobile Issues
 
-## 4.1 Strengths
-
-- Clear visual hierarchy (gold accents, dark theme, section labels).
-- Consistent use of motion (viewport animations, hover).
-- Contact modal and clear CTAs (Book Studio, Get in touch).
-- WhatsApp bubble and back-to-top improve engagement.
-
-## 4.2 Gaps
-
-- **Accessibility:** No skip-link visible on focus in some flows; modal focus trap and aria for contact modal should be verified; form errors (e.g. “Please complete this required field”) should be associated with inputs (`aria-describedby` / `aria-invalid`).
-- **Mobile:** Nav becomes a full-screen menu; ensure touch targets ≥44px and no hover-only critical actions.
-- **Loading:** Splash is brand-consistent but blocks content; consider showing shell (navbar + hero placeholder) and loading rest in place.
-- **Empty/error states:** Dashboard lists often show nothing on load failure (silent catch); need empty state and error state UI.
-
-**Recommendation:** Run axe-core or Lighthouse Accessibility; fix critical/serious issues; add a reusable `FormField` with label, error, and aria attributes.
+| # | Issue | Where | Detail | Severity |
+|---|--------|--------|--------|----------|
+| 1 | Back-to-top vs WhatsApp vertical stack | `PublicSite.tsx` | Fixed positions can overlap or feel tight on short viewports (e.g. 568px height) | Medium |
+| 2 | Hero CTA buttons full-width on small screens | `Hero.tsx` | “Book Studio” and “View Portfolio” are `w-full sm:w-auto` – on very small screens both full width can stack and look heavy | Low |
+| 3 | Mobile carousels (Services, Portfolio, Testimonials, Studio) share same pattern but no swipe | `Services.tsx`, `Portfolio.tsx`, `Testimonials.tsx`, `Studio.tsx` | Only prev/next buttons; no touch swipe gesture | Medium |
+| 4 | Navbar logo and hamburger spacing on very small devices | `Navbar.tsx` | `px-4` and flex; ensure no overflow or overlap on ~320px width | Low |
+| 5 | Contact section two-column grid becomes single column; contact block has `lg:pt-16` | `Contact.tsx` | On desktop form is right, contact block left with extra top padding; on mobile order is form then block – verify reading order and spacing | Low |
+| 6 | Dashboard sidebar hidden on small screens | `DashboardLayoutNext.tsx` | `hidden sm:flex` – small screens need another way to open nav (e.g. hamburger + overlay) | High (dashboard unusable on small if no nav) |
+| 7 | Modal (Contact, Studio gallery, Video) max-height and scroll | `ContactModalContext`, `Studio.tsx`, `VideoPlayerModal` | `max-h-[90vh] overflow-y-auto` – on small viewports ensure modals don’t overflow and close button stays visible | Low |
+| 8 | Booking date/time and checkout forms long on mobile | Booking flow pages | Long forms; consider sticky CTA or progress indicator | Low |
+| 9 | Testimonials card equal height on desktop only | `Testimonials.tsx` | `hidden md:grid` with `items-stretch`; mobile carousel cards can vary in height | Low |
+| 10 | WhatsApp pill expansion `md:hover:w-[280px]` | `PublicSite.tsx` | On mobile there’s no hover; pill stays small – acceptable but copy “Ask in Whatsapp” only visible on desktop hover | Low |
 
 ---
 
-# 5. SECURITY AUDIT
+## 5. Frontend / Code Quality Issues
 
-## 5.1 Critical: Environment & Secrets
-
-- **`.env.example`** contains what appear to be **real Firebase credentials** (API key, project ID, etc.). **Risk:** If this file was ever committed with production values, or if developers copy it to `.env`, credentials can leak. **Fix:** Replace all values in `.env.example` with placeholders (e.g. `VITE_FIREBASE_API_KEY="your-api-key"`, `VITE_FIREBASE_PROJECT_ID="your-project-id"`). Rotate any exposed keys in Firebase Console.
-- **Vite `define`:** `process.env.GEMINI_API_KEY` is injected into the build. If any client-side code path reads it, it will be in the bundle. **Fix:** Do not inject server-only secrets via Vite; use them only in `server/` with `process.env` at runtime.
-
-## 5.2 Firebase & Firestore
-
-- **Firestore rules:** Appropriate: public read for content collections; only admins write; `bookings` and `contact_messages` allow create by anyone, read/update/delete by admin. **Recommendation:** Add rate limiting or abuse protection (e.g. Firestore App Check, or a Cloud Function to throttle contact/booking creates).
-- **Auth:** Firebase Auth is used correctly; admin check via `admins` collection is correct. Ensure `admins` is only writable via Console or a secure backend.
-
-## 5.3 Client-Side
-
-- **XSS:** React escapes by default; no `dangerouslySetInnerHTML` found in quick scan. Keep avoiding raw HTML from CMS/user input.
-- **Headers / CSP:** Not controllable from Vite alone. **Recommendation:** On Vercel, set security headers (e.g. `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, and a strict CSP) in `vercel.json` or via Edge Middleware.
-
----
-
-# 6. INFRASTRUCTURE REVIEW
-
-## 6.1 Vercel
-
-- **vercel.json:** Only rewrites `(.*)` → `/index.html` (SPA). No headers, no server-side logic.
-- **Recommendation:** Add security headers; consider ISR or edge caching for static assets; ensure env vars (Firebase, etc.) are set in Vercel project, not in repo.
-
-## 6.2 Domain / DNS / CDN
-
-- Not visible in repo; assume domain points to Vercel. Ensure HTTPS and redirect HTTP→HTTPS (Vercel default). CDN is built-in for static assets.
+| # | Issue | Where | Detail | Severity |
+|---|--------|--------|--------|----------|
+| 1 | Duplicate type definitions for portfolio/project | `SiteDataContext.tsx`, `api.ts`, `Portfolio.tsx` | `Project` / `PortfolioProject` with `id: number \| string` and optional flags defined in multiple places | Medium – keep single source (e.g. `api.ts` or shared types) |
+| 2 | `api.ts` uses `body as any` for all POST/PUT/PATCH | `src/api.ts` | No type safety on request bodies; typos or wrong shapes can write bad data to Firestore | High |
+| 3 | Inconsistent `id` types (number vs string) | Firestore returns string doc ids; some types use `number` (e.g. Service, Testimonial) | Portfolio was fixed to `number \| string`; other entities may still assume number and break when using Firestore doc ids | Medium |
+| 4 | Large components not split | `Studio.tsx` (~378 lines), `VideoPlayerModal.tsx` (~369) | Studio contains StudioCard and MobileStudiosCarousel inline; harder to test and maintain | Low |
+| 5 | No shared form/validation layer | Entire app | Every form does its own state and submit; no Zod/React Hook Form; repeated patterns | Medium |
+| 6 | Magic numbers and strings | e.g. `MAX_SLOT_HOUR = 22`, `WHATSAPP_URL`, `STORAGE_KEY` | Some are constants; others (e.g. section paddings `py-28 md:py-32`) repeated across sections | Low |
+| 7 | Dashboard nav items and routes duplicated in list | `DashboardLayoutNext.tsx` | Single `nav` array drives sidebar; adding a route requires adding here and creating `app/dashboard/.../page.tsx` – easy to forget (e.g. Videos) | Low |
+| 8 | `DashboardVideos.tsx` exists but no route or nav link | `src/views/DashboardVideos.tsx` | Videos section on site is backed by Firestore; no dashboard page to manage it; dead view file | Medium if videos should be editable |
+| 9 | useHash in PublicSite | `PublicSite.tsx` | Custom `useHash()` for scroll-to-section; works but could be a small shared hook if used elsewhere | Low |
+| 10 | Commented or obsolete code | Various | e.g. “Admin (local)” on Login – not commented but dev-only content in prod | Low |
+| 11 | Inconsistent error handling in forms | Contact, Booking, Login, Dashboard forms | Some use `alert()`, some set error state; no global toast for API errors | Medium |
+| 12 | SiteDataContext refresh() on mount only | `SiteDataContext.tsx` | Single `useEffect(() => refresh(), [refresh])`; no refetch on window focus or interval; stale data possible if admin changes content | Low |
 
 ---
 
-# 7. DATABASE & DATA FLOW
+## 6. Performance Issues
 
-## 7.1 Data Structure
-
-- **Firestore:** Flat collections (`site_settings`, `services`, `portfolio`, …). `site_settings` is a single doc; others are lists ordered by `sort_order` or `created_at`. No subcollections in use.
-- **Efficiency:** Reads are by collection; no composite indexes mentioned (Firestore will suggest them if needed). `listByCreatedAtDesc` uses `limit(500)`; acceptable for messages/bookings; add pagination if scale grows.
-
-## 7.2 API Layer
-
-- **api.ts:** Single module with path-based routing to Firestore. Duplication between public and dashboard paths (e.g. `/services` vs `/dashboard/services`) could be reduced with a small route table and `assertAuth()` for dashboard.
-- **Validation:** Request bodies are cast (e.g. `body as { name: string; ... }`) but not validated (e.g. with Zod). **Recommendation:** Validate all inputs (contact, booking) and sanitize before write.
-
-## 7.3 Bottlenecks
-
-- Initial load depends on all SiteDataContext fetches.
-- No caching: every dashboard visit refetches; public site refetches on every full load. Consider short-lived in-memory or SW cache for site content.
+| # | Issue | Where | Recommendation |
+|---|--------|--------|----------------|
+| 1 | No Next.js Image component | All images use `<img>` (Hero, Portfolio, Studio, Testimonials, etc.) | Use `next/image` for above-the-fold and large images; add `sizes` and priority where appropriate |
+| 2 | Hero background image/video | `Hero.tsx` | Background image is full-bleed; use `next/image` with `priority` and appropriate size; video could be lazy-loaded below fold if possible |
+| 3 | Single bundle of Firebase + all dashboard code | Client providers wrap entire app with Auth + SiteData + Booking + Contact modal | Dashboard and auth could be loaded only on dashboard routes (e.g. dynamic import of dashboard layout) |
+| 4 | SiteDataContext fetches all collections on mount | `SiteDataContext` | One big `Promise.all` for settings, services, portfolio, testimonials, packages, whyUs, studioEquipment, studios, videos; consider splitting by route or lazy loading below-fold data |
+| 5 | Fonts loaded from Google (blocking) | `globals.css` | `@import url('https://fonts.googleapis.com/...')` can block render; use `next/font` (e.g. next/font/google) for Inter and Outfit |
+| 6 | Motion/AnimatePresence on many sections | PublicSite, Navbar, modals | Acceptable for UX; ensure no layout thrashing; reduce motion on low-end devices if needed (prefers-reduced-motion) |
+| 7 | No explicit caching for Firestore reads | Client-side only | Firestore SDK has its own cache; for server-side or API routes, consider cache headers or ISR if you add server data |
 
 ---
 
-# 8. PRODUCT & FEATURE ANALYSIS
+## 7. Accessibility Issues
 
-## 8.1 Missing Professional Features
-
-| Feature | Priority | Notes |
-|--------|----------|--------|
-| **Analytics** | High | No GA4, Plausible, or similar; add and respect consent (e.g. cookie banner) |
-| **Error tracking** | High | No Sentry/LogRocket; add for unhandled errors and API failures |
-| **Monitoring / health** | Medium | No uptime or synthetic checks; optional Vercel Analytics |
-| **Backups** | Medium | Firestore backups not in repo; use Firebase scheduled exports or third-party |
-| **Rate limiting** | Medium | Contact/booking forms open to abuse; add App Check or server-side throttle |
-| **Search** | Low | No site search; optional Algolia/static search later |
-| **CMS** | N/A | Content is in Firestore; dashboard is the “CMS” |
-| **Logging** | Medium | No structured logs; add in API layer and optional client breadcrumbs |
-
----
-
-# 9. PERFORMANCE & MODERN WEB STANDARDS
-
-- **Lighthouse:** Not run in this audit; recommend 90+ for Performance, Accessibility, Best Practices, SEO.
-- **Accessibility:** Add skip link, fix focus trap in modals, associate form errors with inputs, ensure contrast and touch targets.
-- **Best practices:** Use HTTPS only; avoid mixing content; no deprecated APIs in use.
+| # | Issue | Where | Detail | Severity |
+|---|--------|--------|--------|----------|
+| 1 | Skip to main content | `PublicSite.tsx` | Present and focusable; ensure it’s the first focusable element and visible on focus | Low (verify) |
+| 2 | Nav links and buttons | `Navbar.tsx` | Desktop and mobile nav use `<Link>` and `<button>`; mobile menu button has `aria-label`; carousel “Previous”/“Next” buttons lack explicit labels like “Previous testimonial” | Medium – add `aria-label` to carousel controls |
+| 3 | Modal focus trap | `VideoPlayerModal`, `Studio` gallery, Contact modal | Escape closes modals; focus trap and return focus on close not verified | Medium – implement focus trap and return focus |
+| 4 | Portfolio cards with video | `Portfolio.tsx` | Card has `role="button"` and `tabIndex={0}` and key handler – good; ensure focus visible | Low |
+| 5 | Form labels | Contact, Booking, Login | Labels are present and associated; some inputs use placeholder only – ensure every control has a visible or aria-label | Low |
+| 6 | Color contrast | Gold on dark (`--color-icube-gold`, dark bg) | Should be checked against WCAG AA for text and focus rings | Medium – verify contrast ratios |
+| 7 | Reduced motion | Animations (motion, Hero scroll bar, phrase rotation) | No `prefers-reduced-motion` handling | Medium – respect `prefers-reduced-motion: reduce` |
+| 8 | WhatsApp and back-to-top | `PublicSite.tsx` | WhatsApp link has `aria-label`; back-to-top has `aria-label="Back to top"` – good | – |
+| 9 | Loading states | Splash, dashboard loading | No `aria-live` or role for “Loading…” | Low – add `aria-live="polite"` for loading text |
+| 10 | Dashboard notification badges | `DashboardLayoutNext` | `aria-label={`${count} new`}` – good | – |
 
 ---
 
-# 10. PROFESSIONAL REPORT (PRIORITIZED)
+## 8. SEO / Metadata / Content Issues
 
-## 1. Critical Issues (fix immediately)
-
-| # | Problem | Why it matters | Solution | Priority |
-|---|--------|----------------|----------|----------|
-| 1 | **Real-looking Firebase credentials in `.env.example`** | Leak of API keys/project ID; abuse or quota theft | Replace with placeholders in `.env.example`; rotate any exposed keys; add `.env` to `.gitignore` if not already | P0 |
-| 2 | **GEMINI_API_KEY in Vite `define`** | Risk of secret in client bundle | Remove from Vite `define`; use only in `server/` via `process.env` | P0 |
-| 3 | **No Error Boundary** | Unhandled React errors crash whole app with blank screen | Add `<ErrorBoundary>` at app root (and optionally per route) with fallback UI and optional report | P0 |
-
-## 2. High Priority Improvements
-
-| # | Problem | Solution | Priority |
-|---|--------|----------|----------|
-| 4 | Silent `.catch(() => {})` across dashboard | Centralize API error handling; show toast or inline error; log for debugging | P1 |
-| 5 | No code-splitting | Lazy-load dashboard routes and heavy sections; use `Suspense` and a loading fallback | P1 |
-| 6 | No SEO meta/OG | Add description, OG, Twitter tags; per-route title/meta (e.g. react-helmet-async) | P1 |
-| 7 | No analytics or error tracking | Add GA4 (or alternative) and Sentry (or similar); respect consent | P1 |
-| 8 | SiteDataContext loads everything on mount | Split critical vs non-critical data or load sections on demand to improve LCP | P1 |
-
-## 3. Medium Improvements
-
-| # | Problem | Solution | Priority |
-|---|--------|----------|----------|
-| 9 | No sitemap/robots.txt | Add static or generated `sitemap.xml` and `robots.txt` in `public/` | P2 |
-| 10 | Images without lazy/priority | Add `loading="lazy"` and `fetchpriority="high"` for hero/LCP | P2 |
-| 11 | Fonts block render | Preconnect to Google Fonts; use font-display: swap; consider self-host | P2 |
-| 12 | No input validation on API | Validate contact/booking payloads (e.g. Zod) before Firestore write | P2 |
-| 13 | Security headers missing | Add CSP, X-Frame-Options, etc. in Vercel or middleware | P2 |
-| 14 | Dashboard CRUD duplication | Extract `useDashboardCollection` and shared list+detail layout | P2 |
-
-## 4. Minor Optimizations
-
-| # | Problem | Solution | Priority |
-|---|--------|----------|----------|
-| 15 | Section header duplication | Shared `SectionHeader` component | P3 |
-| 16 | No TypeScript path alias usage | Use `@/components/...` consistently (alias exists but may be unused) | P3 |
-| 17 | package.json name "react-example" | Rename to "icube-media-studio" | P3 |
-
-## 5. Missing Professional Features
-
-- Analytics (with consent).
-- Error tracking (Sentry or similar).
-- Structured logging and optional backup strategy for Firestore.
-- Rate limiting / App Check for public forms.
-- Optional: sitemap generation, A/B or feature flags later.
-
-## 6. Security Improvements
-
-- Placeholder-only `.env.example`; rotate exposed keys.
-- No server secrets in Vite client.
-- Security headers (CSP, X-Frame-Options, etc.).
-- Firestore App Check or server-side rate limit for bookings/contact.
-
-## 7. Performance Improvements
-
-- Lazy load dashboard and below-fold sections.
-- Prioritize LCP image and fonts.
-- Consider splitting SiteDataContext or loading non-critical data later.
-- Add `loading="lazy"` and `decoding="async"` to images.
-
-## 8. UX Improvements
-
-- Accessible forms (labels, errors, aria).
-- Error and empty states in dashboard.
-- Optional: skeleton or shell while loading instead of full splash.
-
-## 9. SEO Improvements
-
-- Meta description, OG, Twitter cards.
-- Per-route titles and meta.
-- JSON-LD Organization/WebSite.
-- Sitemap and robots.txt.
-
-## 10. Infrastructure Improvements
-
-- Vercel headers and env configuration.
-- Optional: Edge caching, ISR if moving to SSR later.
+| # | Issue | Where | Detail | Severity |
+|---|--------|--------|--------|----------|
+| 1 | Root layout metadata | `app/layout.tsx` | `title: "ICUBE Media Studio"`, `description: "ICUBE Media Studio – Production & Media Solutions"` – generic; child pages export their own metadata; in Next.js App Router, child usually overrides, but ensure no conflict | Low |
+| 2 | Sitemap static and incomplete | `public/sitemap.xml` | Only `/`, `/packages`, `/portfolio`; missing `/contact`, `/studio/booking/...`, etc.; base URL hardcoded to `https://icube.ae/` | High |
+| 3 | robots.txt domain | `public/robots.txt` | `Sitemap: https://icube.ae/sitemap.xml` – fails if deployed on another domain | Medium |
+| 4 | Login and Signup | `app/login/page.tsx`, `app/signup/page.tsx` | `robots: "noindex, nofollow"` – correct | – |
+| 5 | Open Graph only on home and contact | `app/page.tsx`, `app/contact/page.tsx` | Other routes (portfolio, packages, booking) have no `openGraph` in metadata | Medium |
+| 6 | Typo “Whatsapp” | `PublicSite.tsx` | “Ask in Whatsapp” – should be “WhatsApp” | Low |
+| 7 | Copy consistency | Contact section vs modal | Different subject/area options and wording; unify for brand voice | Low |
+| 8 | No canonical URLs | No page sets `alternates.canonical` | Consider setting canonical for each page to avoid duplicate content with query params | Low |
 
 ---
 
-# 11. FINAL UPGRADE PLAN (PHASED ROADMAP)
+## 9. Security / Validation / Auth Issues
 
-## Phase 1 — Critical fixes (Week 1)
-
-1. **Secrets:** Replace all real-looking values in `.env.example` with placeholders. Rotate Firebase keys if they were ever committed. Remove `GEMINI_API_KEY` from Vite `define`; use only in server.
-2. **Error Boundary:** Implement a root `ErrorBoundary` with fallback UI and optional `window.onerror` / report to Sentry.
-3. **.gitignore:** Ensure `.env`, `.env.local`, and any file with secrets are ignored.
-
-## Phase 2 — Performance & security (Weeks 2–3)
-
-4. **Code-splitting:** Lazy-load all dashboard routes and optionally `Videos`, `Contact`, `Booking`. Add `Suspense` and loading fallbacks.
-5. **API errors:** Introduce a small API wrapper or hook that logs errors and shows a toast; replace silent `.catch(() => {})` with this.
-6. **Security headers:** Add in `vercel.json` or middleware (CSP, X-Frame-Options, Referrer-Policy, etc.).
-7. **Input validation:** Add Zod (or similar) for contact and booking payloads; validate before Firestore write.
-8. **Images:** Add `loading="lazy"` and `fetchpriority="high"` for hero; consider a simple `AppImage` component.
-
-## Phase 3 — UX & design (Weeks 3–4)
-
-9. **Accessibility:** Run Lighthouse and axe; fix skip link, modal focus, form labels and errors.
-10. **Dashboard states:** Add loading skeletons and error/empty states for all list pages.
-11. **Fonts:** Preconnect + font-display swap; optionally self-host critical fonts.
-
-## Phase 4 — Advanced features (Month 2)
-
-12. **SEO:** Meta description, OG, Twitter; per-route meta (react-helmet-async); JSON-LD; sitemap and robots.txt.
-13. **Analytics:** Integrate GA4 or Plausible with consent banner.
-14. **Error tracking:** Integrate Sentry (or similar) for errors and optional session replay.
-15. **Site data loading:** Split initial load (e.g. settings + hero first, rest after) or load by section.
-
-## Phase 5 — Scalability and optimization (Ongoing)
-
-16. **Refactor:** Optional feature folders; `useDashboardCollection`; shared `SectionHeader`; types in `types/`.
-17. **Firestore:** Add pagination for messages/bookings if needed; enable App Check or rate limiting.
-18. **Lighthouse CI:** Add a step to run Lighthouse and fail or warn on regressions (e.g. Performance &lt; 90).
-19. **Monitoring:** Optional Vercel Analytics and uptime checks.
+| # | Issue | Where | Detail | Severity |
+|---|--------|--------|--------|----------|
+| 1 | Upload API unauthenticated | `app/api/upload/route.ts` | No check for Firebase auth or API key; anyone can POST | Critical |
+| 2 | Admin credentials in Login page | `src/views/Login.tsx` | “Admin (local): admin@icube.ae / admin123” visible to all visitors | High |
+| 3 | No server-side validation of contact/booking | `api.ts` + Firestore | Contact and booking payloads written to Firestore with minimal checks; no length/sanitization or schema validation | High |
+| 4 | Dashboard API paths use client-side assertAuth only | `api.ts` | `assertAuth()` checks `firebaseAuth.currentUser`; Firestore rules must enforce read/write by uid; if rules are permissive, any logged-in user could access dashboard data | High – verify Firestore rules |
+| 5 | Login redirect from query | Login uses `from` from URL; ProtectedRouteNext ignores current path and always sends `from=/dashboard` | Users cannot return to the page they tried to open | Medium |
+| 6 | No rate limiting | Contact, booking, login, upload | Repeated submissions and brute force possible | Medium |
+| 7 | No CSRF tokens | All forms | If cookies are used for auth in future, add CSRF; Firebase Auth uses tokens – document intended auth model | Low |
+| 8 | Firebase config in client | `src/firebase.ts` | Only `NEXT_PUBLIC_*` – correct; ensure no server secrets in client | – |
+| 9 | Contact form and booking form email/phone | No format or length validation beyond `required` and `type="email"` | Invalid or huge input can be stored | Medium |
 
 ---
 
-## Example: Root Error Boundary
+## 10. Maintainability Risks
 
-```tsx
-// src/ErrorBoundary.tsx
-import { Component, type ErrorInfo, type ReactNode } from "react";
-
-interface Props {
-  children: ReactNode;
-  fallback?: ReactNode;
-}
-
-interface State {
-  hasError: boolean;
-  error?: Error;
-}
-
-export class ErrorBoundary extends Component<Props, State> {
-  state: State = { hasError: false };
-
-  static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error("ErrorBoundary", error, errorInfo);
-    // TODO: report to Sentry
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return this.props.fallback ?? (
-        <div className="min-h-screen flex items-center justify-center bg-icube-dark text-white p-6">
-          <div className="text-center max-w-md">
-            <h1 className="text-xl font-display font-bold mb-2">Something went wrong</h1>
-            <p className="text-gray-400 text-sm mb-4">We've been notified. Please try again or refresh the page.</p>
-            <button
-              type="button"
-              onClick={() => this.setState({ hasError: false })}
-              className="px-4 py-2 bg-icube-gold text-icube-dark font-semibold rounded-lg"
-            >
-                Try again
-            </button>
-          </div>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
-```
-
-Use in `main.tsx`:
-
-```tsx
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <ErrorBoundary>
-      <App />
-    </ErrorBoundary>
-  </StrictMode>
-);
-```
+| # | Risk | Where | Suggestion |
+|---|--------|--------|------------|
+| 1 | Path-based API in `api.ts` | `api.get(path)`, `api.post(path, body)` with long if-chains | Consider a small router or map of path → handler to avoid typos and make adding routes easier |
+| 2 | Duplicate col name mapping (dashboard kind → Firestore collection) | `api.ts` put/delete/patch | Same `kind === "packages" ? "booking_packages" : ...` repeated; extract to a function |
+| 3 | Fallback data in SiteDataContext | Large FALLBACK_* constants | Keep fallbacks for resilience; consider moving to a single `fallbacks.ts` and type with same shape as API |
+| 4 | BookingContext and sessionStorage | `BookingContext.tsx` | State and key `icube_booking_draft` are fixed; if you add another flow (e.g. “event” booking), consider namespaced keys or separate context |
+| 5 | Dashboard nav and route list | Adding a new dashboard section requires: new view, new `app/dashboard/x/page.tsx`, and nav entry | Document the checklist or use a single config that generates routes and nav |
+| 6 | No E2E or integration tests | – | Critical paths (booking, contact, login → dashboard) are untested; add Playwright or Cypress for main flows |
+| 7 | Env vars | `.env.example` documents vars; `firebase.ts` throws if missing | Document in README and deployment guide; consider a runtime check page for “Configure Firebase” instead of throw in all clients |
 
 ---
 
-## Example: .env.example with placeholders only
+## 11. Quick Wins
 
-```env
-# Firebase (client-side; values are visible in the built app)
-VITE_FIREBASE_API_KEY="your-firebase-api-key"
-VITE_FIREBASE_AUTH_DOMAIN="your-project.firebaseapp.com"
-VITE_FIREBASE_PROJECT_ID="your-project-id"
-VITE_FIREBASE_STORAGE_BUCKET="your-project.appspot.com"
-VITE_FIREBASE_MESSAGING_SENDER_ID="123456789"
-VITE_FIREBASE_APP_ID="1:123456789:web:abc123"
-
-# Server-only (do not use in Vite define)
-GEMINI_API_KEY="your-gemini-key"
-APP_URL="https://your-domain.com"
-```
+1. **Remove admin credentials from Login** – Delete or guard “Admin (local): admin@icube.ae / admin123” (e.g. `process.env.NODE_ENV === 'development'`).
+2. **Fix login redirect** – In `ProtectedRouteNext`, use current pathname (e.g. `usePathname()`) for `from` when redirecting to login.
+3. **Fix “Whatsapp” → “WhatsApp”** in `PublicSite.tsx`.
+4. **Add `contact` and other public routes to sitemap** – Either expand static `sitemap.xml` or add `app/sitemap.ts` to generate with correct base URL from env.
+5. **Privacy / Terms** – Replace `#` with real URLs or `/privacy` and `/terms` placeholders.
+6. **Add `robots: "noindex"` for dashboard children** – If you add a layout-level metadata for `/dashboard/*`, set noindex.
+7. **Unify contact subject options** – One array for “Subject” or “Area of interest” used by both Contact section and Contact modal.
+8. **Dashboard sidebar on mobile** – Add a hamburger + overlay/sheet for nav on `sm` and below so dashboard is usable on phones.
+9. **Portfolio empty state** – When `items.length === 0`, show “No projects to show yet” and optional link to contact.
+10. **Add `aria-label` to carousel prev/next** – e.g. “Previous slide” / “Next slide” or “Previous testimonial” / “Next testimonial”.
 
 ---
 
-*End of audit report. Implement phases in order; re-run Lighthouse and security checks after each phase.*
+## 12. Recommended Priority Plan
+
+### Fix now (before launch)
+- Remove or restrict admin credentials on Login page.
+- Fix ProtectedRouteNext to pass current path into `from` so post-login redirect goes to the requested page.
+- Add authentication (or at least a shared secret/API key) to `POST /api/upload`.
+- Add server-side or shared validation for contact and booking payloads (and optionally dashboard).
+- Replace footer Privacy/Terms `#` with real or placeholder pages.
+- Ensure Firestore security rules restrict dashboard collections to admin uids only.
+- Add dashboard mobile nav (sidebar alternative for small screens).
+
+### Fix next (shortly after launch)
+- Implement or remove Newsletter (footer) – either wire to a list or show “Coming soon”.
+- Use Next.js `Image` for hero and key images; switch fonts to `next/font`.
+- Add sitemap generation (dynamic) with `APP_URL` and include contact + main booking routes.
+- Add `prefers-reduced-motion` for animations.
+- Unify contact subject/area options and error/success patterns (e.g. toast).
+- Add explicit error/retry for SiteDataContext when initial load fails.
+
+### Improve later
+- Add E2E tests for booking, contact, and login → dashboard.
+- Split large components (Studio, VideoPlayerModal); introduce shared form/validation layer.
+- Consider lazy loading or splitting dashboard bundle.
+- Add rate limiting (e.g. Vercel middleware or serverless) for contact/booking/upload.
+- Add canonical URLs and full Open Graph for all public pages.
+- Either add `/dashboard/videos` (using `DashboardVideos.tsx`) or remove the unused view.
+
+---
+
+## Top 10 Issues Overall
+
+1. Login redirect loses requested path (ProtectedRouteNext always `from=/dashboard`).
+2. Upload API is public (no auth).
+3. Admin credentials visible on Login page.
+4. No schema/server validation for forms and API bodies.
+5. SiteDataContext does not surface load errors to the user.
+6. Sitemap static, incomplete, and hardcoded domain.
+7. Footer Privacy/Terms point to `#`.
+8. Dashboard has no mobile nav (sidebar hidden on small screens).
+9. Firestore rules must be verified to enforce admin-only access.
+10. No Next.js Image or font optimization; performance and SEO left on the table.
+
+---
+
+## Top 10 Mobile Issues
+
+1. Dashboard sidebar hidden on small screens with no alternative (hamburger + overlay).
+2. Back-to-top and WhatsApp fixed positions can overlap on short viewports.
+3. No swipe on carousels (Services, Portfolio, Testimonials, Studio).
+4. Long booking/contact forms without sticky CTA or progress.
+5. Modal max-height and scroll on small viewports to be verified.
+6. Hero CTAs full-width on small screens – layout fine but could be tuned.
+7. Navbar logo + hamburger spacing on very narrow (e.g. 320px).
+8. Contact section order and spacing (form first, then block) on mobile.
+9. Testimonials mobile carousel card height not equal (desktop uses stretch).
+10. WhatsApp pill doesn’t expand on mobile (hover only on desktop).
+
+---
+
+## Top 10 Code Issues
+
+1. `api.ts` uses `body as any` and no validation for POST/PUT/PATCH.
+2. Duplicate or scattered types for Project/Portfolio and entity ids (number vs string).
+3. No shared validation/form layer (Zod + optional React Hook Form).
+4. Path-based API implemented as long if-chains; easy to miss a path or typo.
+5. Dashboard nav and route list are manual; no single config (and Videos missing).
+6. `DashboardVideos.tsx` exists with no route or nav link.
+7. SiteDataContext refresh only on mount; no refetch on focus or error feedback.
+8. Inconsistent error handling (alert vs state vs no feedback).
+9. Large single-purpose components (Studio, VideoPlayerModal) not split.
+10. Repeated col name mapping in api (packages → booking_packages, etc.); extract helper.
+
+---
+
+## Launch Readiness Verdict
+
+**Not ready** for a high-expectation production launch without addressing the “Fix now” items. With those fixed (auth for upload, no credentials in UI, login redirect, validation, legal links, Firestore rules, dashboard mobile nav), the project is **almost ready** for a soft launch, with the understanding that SEO, performance, and some UX/accessibility improvements should follow soon.
+
+**Summary:** **Almost ready** if you complete the “Fix now” list; **not ready** if you need a fully polished, secure, and SEO-optimized launch from day one.

@@ -155,6 +155,7 @@ export default function Studio() {
             type="button"
             onClick={goPrev}
             className="inline-flex items-center justify-center px-3 py-1.5 rounded-full border border-white/20 text-gray-200 hover:bg-white/10"
+            aria-label="Previous studio"
           >
             <ChevronLeft size={14} className="mr-1" />
             Previous
@@ -166,6 +167,7 @@ export default function Studio() {
             type="button"
             onClick={goNext}
             className="inline-flex items-center justify-center px-3 py-1.5 rounded-full border border-white/20 text-gray-200 hover:bg-white/10"
+            aria-label="Next studio"
           >
             Next
             <ChevronRight size={14} className="ml-1" />

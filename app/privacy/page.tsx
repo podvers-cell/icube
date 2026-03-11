@@ -1,0 +1,36 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Privacy Policy | ICUBE Media Studio",
+  description: "Privacy policy for ICUBE Media Studio and ICUBE Vision TV Production.",
+};
+
+export default function PrivacyPage() {
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray to-[#111521] text-white">
+      <div className="max-w-3xl mx-auto px-6 md:px-12 py-16 md:py-24">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-gray-400 hover:text-icube-gold text-sm font-medium mb-10 transition-colors"
+        >
+          ← Back to home
+        </Link>
+        <h1 className="text-3xl md:text-4xl font-display font-bold tracking-tight mb-6">
+          Privacy Policy
+        </h1>
+        <p className="text-gray-400 font-light leading-relaxed mb-8">
+          This page is a placeholder. Please add your privacy policy content here before launch.
+          Include how you collect, use, and protect visitor and client data, and how you handle
+          cookies and third-party services.
+        </p>
+        <Link
+          href="/"
+          className="inline-flex items-center justify-center py-3 px-6 rounded-xl bg-icube-gold text-icube-dark font-semibold hover:bg-icube-gold-light transition-colors"
+        >
+          Back to home
+        </Link>
+      </div>
+    </div>
+  );
+}

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { Play, ArrowRight } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
@@ -138,13 +139,14 @@ export default function Hero() {
             </div>
           )
         ) : (
-          <img
+          <Image
             src={bgImage}
             alt="Hero Background"
-            className="absolute inset-0 w-full h-full min-w-full min-h-full object-cover object-center opacity-60 scale-105"
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover object-center opacity-60 scale-105"
             referrerPolicy="no-referrer"
-            fetchPriority="high"
-            decoding="async"
           />
         )}
       </div>

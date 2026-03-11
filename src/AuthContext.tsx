@@ -4,7 +4,7 @@ import { createContext, useContext, useState, useEffect, useCallback, type React
 import { doc, getDoc } from "firebase/firestore";
 import * as api from "./api";
 import { onAuthStateChanged } from "firebase/auth";
-import { firebaseAuth, firestore } from "./firebase";
+import { isFirebaseConfigured, requireAuth, requireFirestore } from "./firebase";
 
 export type User = { id: string; email: string; name: string | null; photoURL: string | null };
 
@@ -24,7 +24,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(firebaseAuth, async (u) => {
+    if (!isFirebaseConfigured) {
+      setLoading(false);
+      return;
+    }
+    const auth = requireAuth();
+    const db = requireFirestore();
+    const unsub = onAuthStateChanged(auth, async (u) => {
       if (!u) {
         setUser(null);
         setIsAdmin(false);
@@ -34,7 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser({ id: u.uid, email: u.email || "", name: u.displayName || null, photoURL: u.photoURL || null });
       try {
         const emailIsAdmin = (u.email || "").trim().toLowerCase() === ADMIN_EMAIL.toLowerCase();
-        const adminSnap = await getDoc(doc(firestore, "admins", u.uid));
+        const adminSnap = await getDoc(doc(db, "admins", u.uid));
         setIsAdmin(emailIsAdmin || adminSnap.exists());
       } catch {
         const emailIsAdmin = (u.email || "").trim().toLowerCase() === ADMIN_EMAIL.toLowerCase();
