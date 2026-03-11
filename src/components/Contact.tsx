@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, type FormEvent } from "react";
 import { motion } from "motion/react";
 import { Mail, Phone, MapPin, Instagram, Youtube, Twitter } from "lucide-react";

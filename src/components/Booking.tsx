@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, type FormEvent } from "react";
 import { motion } from "motion/react";
 import { Calendar, Clock, CheckCircle2 } from "lucide-react";

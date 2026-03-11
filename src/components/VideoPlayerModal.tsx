@@ -1,13 +1,28 @@
+"use client";
+
 import { useEffect, useRef, useState, useCallback } from "react";
 import { motion } from "motion/react";
 import { X, Play, Pause, Volume2, VolumeX, Maximize } from "lucide-react";
 import type { VideoEmbedResult } from "../lib/videoEmbed";
 
+interface VimeoPlayer {
+  play: () => Promise<void>;
+  pause: () => Promise<void>;
+  getPaused: () => Promise<boolean>;
+  getCurrentTime: () => Promise<number>;
+  getDuration: () => Promise<number>;
+  setCurrentTime: (t: number) => Promise<number>;
+  getVolume: () => Promise<number>;
+  setVolume: (v: number) => Promise<number>;
+  getMuted: () => Promise<boolean>;
+  setMuted: (m: boolean) => Promise<void>;
+}
+
 declare global {
   interface Window {
     YT: typeof YT;
     onYouTubeIframeAPIReady: () => void;
-    Vimeo: typeof Vimeo;
+    Vimeo?: { Player: new (el: HTMLIFrameElement) => VimeoPlayer };
   }
 }
 
@@ -35,19 +50,6 @@ interface YTPlayer {
   isMuted: () => boolean;
   mute: () => void;
   unMute: () => void;
-}
-
-interface VimeoPlayer {
-  play: () => Promise<void>;
-  pause: () => Promise<void>;
-  getPaused: () => Promise<boolean>;
-  getCurrentTime: () => Promise<number>;
-  getDuration: () => Promise<number>;
-  setCurrentTime: (t: number) => Promise<number>;
-  getVolume: () => Promise<number>;
-  setVolume: (v: number) => Promise<number>;
-  getMuted: () => Promise<boolean>;
-  setMuted: (m: boolean) => Promise<void>;
 }
 
 function formatTime(seconds: number): string {

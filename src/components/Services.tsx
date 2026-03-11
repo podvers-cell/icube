@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { motion } from "motion/react";
 import { useSiteData } from "../SiteDataContext";
 import { getIcon } from "../lib/icons";
@@ -69,9 +70,9 @@ export default function Services() {
                     {service.title}
                   </h3>
                   <p className="text-gray-400 font-light leading-relaxed text-sm mb-6">{service.description}</p>
-                  <a href="/packages" className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-white/90 group-hover:text-icube-gold transition-colors border-b border-transparent group-hover:border-icube-gold pb-0.5">
+                  <Link href="/packages" className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-white/90 group-hover:text-icube-gold transition-colors border-b border-transparent group-hover:border-icube-gold pb-0.5">
                     Learn More <span className="group-hover:translate-x-1 transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">→</span>
-                  </a>
+                  </Link>
                 </div>
               </motion.div>
               </div>

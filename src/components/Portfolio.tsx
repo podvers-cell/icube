@@ -1,4 +1,7 @@
+"use client";
+
 import { useState } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { Play } from "lucide-react";
 import { useSiteData } from "../SiteDataContext";
@@ -54,12 +57,12 @@ export default function Portfolio({ limit, sectionLabel = "Selected work", title
           </h2>
           <div className="section-header-accent" aria-hidden />
           {showFullPortfolioLink ? (
-            <a
+            <Link
               href="/portfolio"
               className="mt-4 inline-flex items-center gap-2 text-xs md:text-sm font-semibold uppercase tracking-wider text-white/80 hover:text-icube-gold transition-colors border-b border-white/20 pb-1 hover:border-icube-gold"
             >
               Full portfolio
-            </a>
+            </Link>
           ) : (
             <button
               type="button"
@@ -91,6 +94,8 @@ export default function Portfolio({ limit, sectionLabel = "Selected work", title
                 <img
                   src={project.image_url}
                   alt={project.title}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
                   referrerPolicy="no-referrer"
                 />

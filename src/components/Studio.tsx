@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { X, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import { useSiteData } from "../SiteDataContext";
@@ -86,6 +87,8 @@ export default function Studio() {
                   alt={s.name}
                   className="w-full h-full object-cover hover:scale-105 transition-transform duration-500 ease-out"
                   referrerPolicy="no-referrer"
+                  loading="lazy"
+                  decoding="async"
                 />
               </button>
               <div className="flex flex-col flex-1 p-6">
@@ -126,12 +129,12 @@ export default function Studio() {
                   </AnimatePresence>
                 </div>
 
-                <a
+                <Link
                   href="/packages"
                   className="mt-4 inline-flex items-center justify-center w-full py-3 px-4 bg-icube-dark border border-icube-gold/40 text-white font-semibold uppercase tracking-wider text-sm rounded-lg hover:bg-icube-gold hover:text-icube-dark transition-colors duration-200"
                 >
                   Book now
-                </a>
+                </Link>
               </div>
             </motion.article>
           ))}
@@ -234,13 +237,13 @@ export default function Studio() {
                     </div>
                   </div>
 
-                  <a
+                  <Link
                     href="/packages"
                     onClick={() => setOpenId(null)}
                     className="inline-flex items-center justify-center px-6 py-3 bg-icube-gold text-icube-dark font-semibold rounded-sm hover:bg-icube-gold-light transition-colors w-full sm:w-auto"
                   >
                     Book this studio
-                  </a>
+                  </Link>
                   <p className="text-gray-500 text-xs mt-3">Tip: Use ← → to browse images, Esc to close.</p>
                 </div>
               </div>

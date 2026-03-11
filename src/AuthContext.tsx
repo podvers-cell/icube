@@ -1,3 +1,5 @@
+"use client";
+
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import * as api from "./api";

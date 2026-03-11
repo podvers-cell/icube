@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { motion } from "motion/react";
 import { Play, ArrowRight } from "lucide-react";
 import { useSiteData } from "../SiteDataContext";
@@ -115,6 +116,8 @@ export default function Hero() {
             alt="Hero Background"
             className="w-full h-full object-cover opacity-60 scale-105 animate-slow-zoom"
             referrerPolicy="no-referrer"
+            fetchPriority="high"
+            decoding="async"
           />
         )}
       </div>
@@ -149,14 +152,14 @@ export default function Hero() {
           transition={{ duration: 0.5, delay: 0.35, ease: [0.4, 0, 0.2, 1] }}
           className="flex flex-col sm:flex-row items-center gap-6"
         >
-          <a
+          <Link
             href="/packages"
             className="group relative px-8 py-4 bg-icube-gold text-icube-dark font-semibold uppercase tracking-wider rounded-lg overflow-hidden flex items-center gap-2 hover:bg-icube-gold-light transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shadow-[0_4px_20px_rgba(212,175,55,0.35)]"
           >
             <span className="relative z-10">Book Studio</span>
             <ArrowRight size={18} className="relative z-10 group-hover:translate-x-1 transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]" />
-          </a>
-          <a
+          </Link>
+          <Link
             href="/portfolio"
             className="group flex items-center gap-4 text-white hover:text-icube-gold transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
           >
@@ -164,7 +167,7 @@ export default function Hero() {
               <Play size={20} className="ml-1" />
             </div>
             <span className="font-semibold uppercase tracking-wider text-sm">View Portfolio</span>
-          </a>
+          </Link>
         </motion.div>
       </div>
 
