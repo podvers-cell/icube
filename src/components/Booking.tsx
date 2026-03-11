@@ -152,7 +152,7 @@ export default function Booking() {
             <form onSubmit={handleCustomSubmit} className="space-y-4">
               {submitted && (
                 <p className="text-icube-gold text-sm">
-                  We received your booking. Thank you for choosing us — we'll contact you shortly.
+                  Booking made successfully. Thank you for choosing us — we'll contact you shortly.
                 </p>
               )}
               <div className="grid grid-cols-2 gap-4">

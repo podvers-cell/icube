@@ -83,7 +83,7 @@ export default function StudioBookingCheckoutPage() {
             <div className="w-16 h-16 rounded-full bg-icube-gold/20 border-2 border-icube-gold flex items-center justify-center mx-auto mb-6">
               <span className="text-3xl text-icube-gold">✓</span>
             </div>
-            <h1 className="text-3xl font-display font-bold text-white mb-3">We received your booking</h1>
+            <h1 className="text-3xl font-display font-bold text-white mb-3">Booking made successfully</h1>
             <p className="text-gray-400 font-light mb-4">
               Thank you for choosing us. We’ve received your request for {selectedStudio.name} on {selectedDate} at {formatTimeSlot(selectedTimeSlot)} for {durationHours} {durationHours === 1 ? "hour" : "hours"}.
             </p>
