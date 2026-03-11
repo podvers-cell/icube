@@ -97,7 +97,7 @@ export default function BookingDatePicker({ value, onChange, min, max }: Props) 
         isCurrentMonth: false,
         isToday: isSameDay(d, today),
         isSelected: valueDate ? isSameDay(d, valueDate) : false,
-        disabled,
+        disabled: !!disabled,
       });
     }
 
@@ -112,7 +112,7 @@ export default function BookingDatePicker({ value, onChange, min, max }: Props) 
         isCurrentMonth: true,
         isToday: isSameDay(date, today),
         isSelected: valueDate ? isSameDay(date, valueDate) : false,
-        disabled,
+        disabled: !!disabled,
       });
     }
 
@@ -128,7 +128,7 @@ export default function BookingDatePicker({ value, onChange, min, max }: Props) 
         isCurrentMonth: false,
         isToday: isSameDay(date, today),
         isSelected: valueDate ? isSameDay(date, valueDate) : false,
-        disabled,
+        disabled: !!disabled,
       });
     }
     return days;
