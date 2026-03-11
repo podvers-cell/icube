@@ -10,6 +10,7 @@ type Studio = {
   short_description: string;
   details: string;
   price_aed_per_hour: number;
+  price_aed_per_hour_before?: number;
   capacity: number;
   size_sqm: number;
   cover_image_url: string;
@@ -21,6 +22,7 @@ const emptyStudio: Omit<Studio, "id" | "images"> & { imagesText: string } = {
   name: "",
   short_description: "",
   details: "",
+  price_aed_per_hour_before: 0,
   price_aed_per_hour: 350,
   capacity: 4,
   size_sqm: 25,
@@ -71,6 +73,7 @@ export default function DashboardStudios() {
       name: editing.name,
       short_description: editing.short_description,
       details: editing.details,
+      price_aed_per_hour_before: Number(editing.price_aed_per_hour_before || 0),
       price_aed_per_hour: Number(editing.price_aed_per_hour),
       capacity: Number(editing.capacity),
       size_sqm: Number(editing.size_sqm),
@@ -117,7 +120,14 @@ export default function DashboardStudios() {
               <div className="p-4">
                 <p className="font-semibold text-white">{s.name}</p>
                 <p className="text-gray-500 text-sm line-clamp-2">{s.short_description}</p>
-                <p className="text-icube-gold text-sm mt-2">{s.price_aed_per_hour} AED/hr</p>
+                <div className="mt-2 flex items-baseline gap-2">
+                  {s.price_aed_per_hour_before ? (
+                    <span className="text-gray-500 text-xs line-through">
+                      {s.price_aed_per_hour_before} AED/hr
+                    </span>
+                  ) : null}
+                  <span className="text-icube-gold text-sm font-semibold">{s.price_aed_per_hour} AED/hr</span>
+                </div>
                 <div className="flex gap-2 mt-3 justify-end">
                   <button
                     type="button"
@@ -166,7 +176,18 @@ export default function DashboardStudios() {
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Price (AED/hr)</label>
+                <label className="block text-sm text-gray-400 mb-1">Before price (AED/hr)</label>
+                <input
+                  type="number"
+                  value={editing.price_aed_per_hour_before ?? 0}
+                  onChange={(e) =>
+                    setEditing((x) => (x ? { ...x, price_aed_per_hour_before: Number(e.target.value) } : null))
+                  }
+                  className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">After price (AED/hr)</label>
                 <input
                   type="number"
                   value={editing.price_aed_per_hour}

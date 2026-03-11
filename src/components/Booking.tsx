@@ -1,11 +1,9 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { motion } from "motion/react";
 import { Calendar, Clock, CheckCircle2 } from "lucide-react";
 import { useSiteData } from "../SiteDataContext";
 import { submitBooking } from "../api";
-import { viewportTransition, hoverTransition } from "../lib/motion";
 import WavySectionDivider from "./WavySectionDivider";
 
 function parseFeatures(s: string): string[] {
@@ -57,41 +55,25 @@ export default function Booking() {
 
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
         <div className="text-center mb-16">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={viewportTransition} className="flex items-center justify-center gap-3 mb-3">
+          <div className="flex items-center justify-center gap-3 mb-3">
             <div className="w-8 h-[2px] bg-icube-gold" />
             <span className="text-icube-gold font-semibold tracking-[0.18em] uppercase text-xs md:text-sm">
               Reserve your spot
             </span>
             <div className="w-8 h-[2px] bg-icube-gold" />
-          </motion.div>
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ ...viewportTransition, delay: 0.05 }}
-            className="text-3xl md:text-4xl lg:text-5xl font-display font-bold tracking-tight"
-          >
+          </div>
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-display font-bold tracking-tight">
             Book a studio session
-          </motion.h2>
+          </h2>
           <div className="section-header-accent" aria-hidden />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {pkgs.map((pkg, i) => {
+          {pkgs.map((pkg) => {
             const features = parseFeatures(pkg.features);
             return (
               <div key={pkg.id} className="card-flip-wrap">
-                <motion.div
-                  initial={{ opacity: 0, y: 24 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.15 }}
-                  transition={{ ...viewportTransition, delay: i * 0.06 }}
-                  whileHover={{
-                    y: -6,
-                    rotateY: 6,
-                    rotateX: -3,
-                    transition: hoverTransition,
-                  }}
+                <div
                   className={`card-flip relative overflow-hidden rounded-2xl border ${
                     pkg.is_popular ? "border-icube-gold/70 bg-icube-gold/5" : "border-white/10 bg-white/[0.06]"
                   } backdrop-blur-sm p-8 hover:border-icube-gold/50 shadow-[0_12px_40px_rgba(0,0,0,0.3)] hover:shadow-[0_24px_56px_rgba(0,0,0,0.4)] transition-[border-color,box-shadow] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]`}
@@ -126,18 +108,14 @@ export default function Booking() {
                 >
                   Select Package
                 </button>
-              </motion.div>
+              </div>
               </div>
             );
           })}
         </div>
 
-        <motion.div
+        <div
           id="custom-booking-form"
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.2 }}
-          transition={{ ...viewportTransition, delay: 0.1 }}
           className="mt-20 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-sm p-8 md:p-12 shadow-[0_12px_40px_rgba(0,0,0,0.3)]"
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
@@ -196,7 +174,7 @@ export default function Booking() {
               </button>
             </form>
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );

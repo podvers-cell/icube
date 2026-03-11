@@ -92,7 +92,7 @@ export default function PublicSite() {
             <img
               src="/icube-logo.svg"
               alt="ICUBE Media Studio"
-              className="h-20 w-auto animate-pulse"
+              className="h-20 w-auto"
             />
           </div>
           <div className="relative mt-4 w-48 h-1.5 rounded-full bg-white/10 overflow-hidden">
@@ -145,7 +145,7 @@ export default function PublicSite() {
       {/* WhatsApp floating widget – compact bubble + pill */}
       <div className="fixed bottom-4 right-4 z-40 flex flex-col items-end gap-0">
         {showWhatsAppBubble && (
-          <div className="whatsapp-bubble-bounce relative mb-4 opacity-100 transition-all duration-300">
+          <div className="relative mb-4 opacity-100 transition-all duration-300">
             <div className="w-56 rounded-xl bg-white text-gray-900 shadow-[0_8px_24px_rgba(0,0,0,0.25)] p-3 relative">
               <button
                 type="button"
@@ -181,7 +181,7 @@ export default function PublicSite() {
           href={WHATSAPP_URL}
           target="_blank"
           rel="noreferrer"
-          className="whatsapp-glow-pulse relative inline-flex items-center gap-2 rounded-full bg-[#25D366] px-3 py-2 text-white font-medium shadow-[0_2px_10px_rgba(0,0,0,0.25)] hover:bg-[#1ebe5d] transition-colors border border-[#1da851]/40"
+          className="relative inline-flex items-center gap-2 rounded-full bg-[#25D366] px-3 py-2 text-white font-medium shadow-[0_2px_10px_rgba(0,0,0,0.25)] hover:bg-[#1ebe5d] transition-colors border border-[#1da851]/40"
           aria-label="Any questions? Ask in WhatsApp"
         >
           <svg

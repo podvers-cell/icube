@@ -2,7 +2,6 @@
 
 import { createContext, useContext, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "motion/react";
 import { X } from "lucide-react";
 import { useSiteData } from "./SiteDataContext";
 import { submitContact } from "./api";
@@ -238,28 +237,16 @@ export function ContactModalProvider({ children }: { children: ReactNode }) {
   return (
     <ContactModalContext.Provider value={value}>
       {children}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+      {isOpen && (
+          <div
             className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
             onClick={() => setIsOpen(false)}
           >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.96 }}
-              transition={{ duration: 0.2 }}
-              onClick={(e) => e.stopPropagation()}
-            >
+            <div onClick={(e) => e.stopPropagation()}>
               <ContactModalInner />
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         )}
-      </AnimatePresence>
     </ContactModalContext.Provider>
   );
 }

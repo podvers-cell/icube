@@ -2,13 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "motion/react";
 import { Play } from "lucide-react";
 import { useSiteData } from "../SiteDataContext";
 import { useContactModal } from "../ContactModalContext";
 import { getVideoEmbed } from "../lib/videoEmbed";
 import { VideoPlayerModal } from "./VideoPlayerModal";
-import { viewportTransition, hoverTransition } from "../lib/motion";
 import WavySectionDivider from "./WavySectionDivider";
 
 type Project = { id: number; title: string; category: string; image_url: string; sort_order: number; video_url?: string };
@@ -38,13 +36,7 @@ export default function Portfolio({ limit, sectionLabel = "Selected work", title
       <WavySectionDivider />
       <div className="absolute top-1/2 -right-32 w-80 h-80 bg-icube-gold/5 rounded-full blur-[100px] pointer-events-none" />
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.2 }}
-          transition={viewportTransition}
-          className="mb-16 flex flex-col items-center text-center gap-4"
-        >
+        <div className="mb-16 flex flex-col items-center text-center gap-4">
           <div className="flex items-center justify-center gap-3 mb-1">
             <div className="w-8 h-[2px] bg-icube-gold" />
             <span className="text-icube-gold font-semibold tracking-[0.18em] uppercase text-xs md:text-sm">
@@ -72,19 +64,14 @@ export default function Portfolio({ limit, sectionLabel = "Selected work", title
               Get in touch about a project
             </button>
           )}
-        </motion.div>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {items.map((project, index) => {
+          {items.map((project) => {
             const hasVideo = project.video_url && getVideoEmbed(project.video_url);
             return (
-              <motion.div
+              <div
                 key={project.id}
-                initial={{ opacity: 0, y: 28 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.15 }}
-                transition={{ ...viewportTransition, delay: index * 0.06 }}
-                whileHover={{ scale: 1.02, transition: hoverTransition }}
                 role={hasVideo ? "button" : undefined}
                 tabIndex={hasVideo ? 0 : undefined}
                 onClick={() => hasVideo && setPlayingProject(project)}
@@ -111,14 +98,13 @@ export default function Portfolio({ limit, sectionLabel = "Selected work", title
                   </span>
                   <h3 className="text-2xl md:text-3xl font-display font-bold text-white tracking-tight drop-shadow-sm">{project.title}</h3>
                 </div>
-              </motion.div>
+              </div>
             );
           })}
         </div>
       </div>
 
-      <AnimatePresence>
-        {playingProject && (() => {
+      {playingProject && (() => {
           const embed = playingProject.video_url ? getVideoEmbed(playingProject.video_url) : null;
           if (!embed) return null;
           return (
@@ -130,7 +116,6 @@ export default function Portfolio({ limit, sectionLabel = "Selected work", title
             />
           );
         })()}
-      </AnimatePresence>
     </section>
   );
 }

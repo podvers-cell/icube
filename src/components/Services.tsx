@@ -1,8 +1,6 @@
 import Link from "next/link";
-import { motion } from "motion/react";
 import { useSiteData } from "../SiteDataContext";
 import { getIcon } from "../lib/icons";
-import { viewportTransition, hoverTransition } from "../lib/motion";
 import WavySectionDivider from "./WavySectionDivider";
 
 const colors = ["from-red-500/20 to-transparent", "from-orange-500/20 to-transparent", "from-blue-500/20 to-transparent", "from-purple-500/20 to-transparent", "from-emerald-500/20 to-transparent"];
@@ -19,13 +17,7 @@ export default function Services() {
       <div className="absolute -top-40 -right-40 w-96 h-96 bg-icube-gold/5 rounded-full blur-[100px] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.2 }}
-          transition={viewportTransition}
-          className="mb-16 flex flex-col items-center text-center gap-4"
-        >
+        <div className="mb-16 flex flex-col items-center text-center gap-4">
           <div className="flex items-center justify-center gap-3 mb-1">
             <div className="w-8 h-[2px] bg-icube-gold" />
             <span className="text-icube-gold font-semibold tracking-[0.18em] uppercase text-xs md:text-sm">
@@ -40,26 +32,14 @@ export default function Services() {
           <p className="text-gray-400 max-w-2xl font-light mt-4">
             End-to-end media solutions in Dubai for brands and creators across the UAE and beyond.
           </p>
-        </motion.div>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7">
           {services.map((service, index) => {
             const Icon = getIcon(service.icon);
             return (
               <div key={service.id} className="card-flip-wrap">
-                <motion.div
-                  initial={{ opacity: 0, y: 24 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.15 }}
-                  transition={{ ...viewportTransition, delay: index * 0.06 }}
-                  whileHover={{
-                    y: -6,
-                    rotateY: 6,
-                    rotateX: -3,
-                    transition: hoverTransition,
-                  }}
-                  className="card-flip group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-sm p-8 transition-[border-color,box-shadow] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:border-icube-gold/50 hover:shadow-[0_24px_56px_rgba(0,0,0,0.4),0_0_0_1px_rgba(212,175,55,0.1)]"
-                >
+                <div className="card-flip group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-sm p-8 transition-[border-color,box-shadow] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:border-icube-gold/50 hover:shadow-[0_24px_56px_rgba(0,0,0,0.4),0_0_0_1px_rgba(212,175,55,0.1)]">
                 <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-icube-gold/0 to-transparent group-hover:via-icube-gold/80 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]" />
                 <div className={`absolute inset-0 bg-gradient-to-br ${colors[index % colors.length]} opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]`} />
                 <div className="relative z-10">
@@ -74,7 +54,7 @@ export default function Services() {
                     Learn More <span className="group-hover:translate-x-1 transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">→</span>
                   </Link>
                 </div>
-              </motion.div>
+              </div>
               </div>
             );
           })}

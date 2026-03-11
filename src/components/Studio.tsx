@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "motion/react";
 import { X, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import { useSiteData } from "../SiteDataContext";
-import { viewportTransition, hoverTransition } from "../lib/motion";
 import WavySectionDivider from "./WavySectionDivider";
 
 export default function Studio() {
@@ -44,13 +42,7 @@ export default function Studio() {
       <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-icube-gold/5 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.2 }}
-          transition={viewportTransition}
-          className="mb-16 flex flex-col items-center text-center gap-4"
-        >
+        <div className="mb-16 flex flex-col items-center text-center gap-4">
           <div className="flex items-center justify-center gap-3 mb-1">
             <div className="w-8 h-[2px] bg-icube-gold" />
             <span className="text-icube-gold font-semibold tracking-[0.18em] uppercase text-xs md:text-sm">
@@ -65,16 +57,12 @@ export default function Studio() {
           <p className="text-gray-400 max-w-2xl font-light mt-4">
             Professional spaces for podcasts, video, and branded content. Choose your studio and book your slot.
           </p>
-        </motion.div>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {studios.map((s, idx) => (
-            <motion.article
+          {studios.map((s) => (
+            <article
               key={s.id}
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.15 }}
-              transition={{ ...viewportTransition, delay: idx * 0.06 }}
               className="flex flex-col rounded-2xl bg-white/[0.06] overflow-hidden shadow-[0_12px_40px_rgba(0,0,0,0.25)] transition-all duration-300"
             >
               <button
@@ -93,7 +81,14 @@ export default function Studio() {
               </button>
               <div className="flex flex-col flex-1 p-6">
                 <h3 className="text-xl font-display font-bold text-white mb-1">{s.name}</h3>
-                <p className="text-icube-gold/90 text-sm font-medium mb-3">{s.price_aed_per_hour} AED/hour</p>
+                <div className="mb-3 flex items-baseline gap-2">
+                  {"price_aed_per_hour_before" in s && s.price_aed_per_hour_before ? (
+                    <span className="text-gray-500 text-xs line-through">
+                      {s.price_aed_per_hour_before} AED/hour
+                    </span>
+                  ) : null}
+                  <span className="text-icube-gold/90 text-sm font-semibold">{s.price_aed_per_hour} AED/hour</span>
+                </div>
                 <p className="text-gray-400 text-sm leading-relaxed mb-4 flex-1">{s.short_description}</p>
 
                 <div className="border-t border-white/10 pt-4">
@@ -109,24 +104,15 @@ export default function Studio() {
                       className={`shrink-0 transition-transform duration-200 ${expandedId === s.id ? "rotate-180" : ""}`}
                     />
                   </button>
-                  <AnimatePresence initial={false}>
-                    {expandedId === s.id && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-                        style={{ originY: 0 }}
-                        className="overflow-hidden"
-                      >
-                        <ul className="pt-0 pb-3 space-y-2 text-sm text-gray-400">
-                          <li><span className="text-white/80">Capacity:</span> {s.capacity} people</li>
-                          <li><span className="text-white/80">Size:</span> {s.size_sqm} m²</li>
-                          <li className="text-gray-400 leading-relaxed">{s.details}</li>
-                        </ul>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  {expandedId === s.id && (
+                    <div className="overflow-hidden">
+                      <ul className="pt-0 pb-3 space-y-2 text-sm text-gray-400">
+                        <li><span className="text-white/80">Capacity:</span> {s.capacity} people</li>
+                        <li><span className="text-white/80">Size:</span> {s.size_sqm} m²</li>
+                        <li className="text-gray-400 leading-relaxed">{s.details}</li>
+                      </ul>
+                    </div>
+                  )}
                 </div>
 
                 <Link
@@ -136,27 +122,18 @@ export default function Studio() {
                   Book now
                 </Link>
               </div>
-            </motion.article>
+            </article>
           ))}
         </div>
       </div>
 
-      <AnimatePresence>
-        {selected && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+      {selected && (
+          <div
             className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
             onClick={() => setOpenId(null)}
           >
-            <motion.div
-              initial={{ opacity: 0, y: 10, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 10, scale: 0.98 }}
-              transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-              className="w-full max-w-5xl bg-icube-gray border border-white/10 rounded-sm overflow-hidden"
+            <div
+              className="w-full max-w-6xl bg-icube-gray border border-white/10 rounded-sm overflow-hidden max-h-[90vh] flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between p-4 border-b border-white/10">
@@ -173,12 +150,12 @@ export default function Studio() {
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2">
-                <div className="relative bg-black">
+              <div className="grid grid-cols-1 lg:grid-cols-[7fr_3fr] flex-1 min-h-0 overflow-auto">
+                <div className="relative bg-black min-h-[320px]">
                   <img
                     src={images[activeImage]?.image_url}
                     alt={selected.name}
-                    className="w-full h-[360px] md:h-[520px] object-cover"
+                    className="w-full h-[380px] md:h-[560px] object-contain"
                     referrerPolicy="no-referrer"
                   />
                   {images.length > 1 && (
@@ -219,38 +196,54 @@ export default function Studio() {
                   )}
                 </div>
 
-                <div className="p-6 md:p-8">
-                  <p className="text-gray-300 font-light leading-relaxed mb-6">{selected.details}</p>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-                    <div className="bg-black/30 border border-white/10 rounded-sm p-4">
-                      <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">Price</p>
-                      <p className="text-white font-semibold">{selected.price_aed_per_hour} AED / hour</p>
-                    </div>
-                    <div className="bg-black/30 border border-white/10 rounded-sm p-4">
-                      <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">Capacity</p>
-                      <p className="text-white font-semibold">{selected.capacity} people</p>
-                    </div>
-                    <div className="bg-black/30 border border-white/10 rounded-sm p-4">
-                      <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">Size</p>
-                      <p className="text-white font-semibold">{selected.size_sqm} m²</p>
+                <div className="p-5 md:p-6 lg:p-6 max-w-[420px] lg:max-w-none flex flex-col gap-5">
+                  <div className="space-y-2">
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500">About this studio</p>
+                    <div className="bg-black/20 border border-white/10 rounded-sm p-4">
+                      <p className="text-gray-200/90 font-light text-[13px] leading-6 whitespace-pre-wrap max-h-[220px] overflow-auto pr-2">
+                        {selected.details}
+                      </p>
                     </div>
                   </div>
 
-                  <Link
-                    href="/packages"
-                    onClick={() => setOpenId(null)}
-                    className="inline-flex items-center justify-center px-6 py-3 bg-icube-gold text-icube-dark font-semibold rounded-sm hover:bg-icube-gold-light transition-colors w-full sm:w-auto"
-                  >
-                    Book this studio
-                  </Link>
-                  <p className="text-gray-500 text-xs mt-3">Tip: Use ← → to browse images, Esc to close.</p>
+                  <div className="border-t border-white/10 pt-5">
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500 mb-3">Details</p>
+                    <div className="grid grid-cols-2 gap-3 items-stretch">
+                      <div className="bg-black/30 border border-white/10 rounded-sm p-4">
+                        <p className="text-gray-500 text-[10px] uppercase tracking-wider mb-1">Price</p>
+                        <div className="flex items-baseline gap-2 whitespace-nowrap">
+                          {selected.price_aed_per_hour_before ? (
+                            <span className="text-gray-500 text-xs line-through">
+                              {selected.price_aed_per_hour_before} AED/hr
+                            </span>
+                          ) : null}
+                          <span className="text-white font-semibold text-sm">{selected.price_aed_per_hour} AED/hr</span>
+                        </div>
+                      </div>
+                      <div className="bg-black/30 border border-white/10 rounded-sm p-4">
+                        <p className="text-gray-500 text-[10px] uppercase tracking-wider mb-1">Capacity</p>
+                        <p className="text-white font-semibold text-sm whitespace-nowrap">{selected.capacity} people</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-auto pt-2">
+                    <Link
+                      href="/packages"
+                      onClick={() => setOpenId(null)}
+                      className="inline-flex items-center justify-center w-full px-6 py-3 bg-icube-gold text-icube-dark font-semibold rounded-sm hover:bg-icube-gold-light transition-colors"
+                    >
+                      Book this studio
+                    </Link>
+                    <p className="text-gray-500 text-[11px] mt-3">
+                      Tip: Use ← → to browse images, Esc to close.
+                    </p>
+                  </div>
                 </div>
               </div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         )}
-      </AnimatePresence>
     </section>
   );
 }

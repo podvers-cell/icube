@@ -1,10 +1,8 @@
 import { useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
 import { Play } from "lucide-react";
 import { useSiteData } from "../SiteDataContext";
 import { getVideoEmbed } from "../lib/videoEmbed";
 import { VideoPlayerModal } from "./VideoPlayerModal";
-import { viewportTransition, hoverTransition } from "../lib/motion";
 import WavySectionDivider from "./WavySectionDivider";
 
 type Video = { id: string; title: string; url: string; sort_order: number };
@@ -23,13 +21,7 @@ export default function Videos() {
       <WavySectionDivider />
       <div className="absolute top-1/3 -left-24 w-72 h-72 bg-icube-gold/5 rounded-full blur-[100px] pointer-events-none" />
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.2 }}
-          transition={viewportTransition}
-          className="mb-16 flex flex-col items-center text-center gap-4"
-        >
+        <div className="mb-16 flex flex-col items-center text-center gap-4">
           <div className="flex items-center justify-center gap-3 mb-1">
             <div className="w-8 h-[2px] bg-icube-gold" />
             <span className="text-icube-gold font-semibold tracking-[0.18em] uppercase text-xs md:text-sm">
@@ -41,25 +33,15 @@ export default function Videos() {
             الفيديوهات
           </h2>
           <div className="section-header-accent" aria-hidden />
-        </motion.div>
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {videos.map((video, index) => {
+          {videos.map((video) => {
             const embed = getVideoEmbed(video.url);
             return (
               <div key={video.id} className="card-flip-wrap">
-                <motion.button
+                <button
                   type="button"
-                  initial={{ opacity: 0, y: 24 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.15 }}
-                  transition={{ ...viewportTransition, delay: index * 0.06 }}
-                  whileHover={{
-                    y: -6,
-                    rotateY: 6,
-                    rotateX: -3,
-                    transition: hoverTransition,
-                  }}
                   onClick={() => embed && setPlaying(video)}
                   className="card-flip w-full group text-left rounded-2xl overflow-hidden border border-white/10 bg-white/[0.06] backdrop-blur-sm hover:border-icube-gold/40 shadow-[0_12px_40px_rgba(0,0,0,0.25)] hover:shadow-[0_20px_48px_rgba(0,0,0,0.35)] transition-[border-color,box-shadow] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-icube-gold"
                 >
@@ -80,15 +62,14 @@ export default function Videos() {
                     {video.title}
                   </h3>
                 </div>
-              </motion.button>
+              </button>
               </div>
             );
           })}
         </div>
       </div>
 
-      <AnimatePresence>
-        {playing && (() => {
+      {playing && (() => {
           const embed = getVideoEmbed(playing.url);
           if (!embed) return null;
           return (
@@ -100,7 +81,6 @@ export default function Videos() {
             />
           );
         })()}
-      </AnimatePresence>
     </section>
   );
 }

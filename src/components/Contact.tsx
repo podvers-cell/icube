@@ -1,11 +1,9 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { motion } from "motion/react";
 import { Mail, Phone, MapPin, Instagram, Youtube, Twitter } from "lucide-react";
 import { useSiteData } from "../SiteDataContext";
 import { submitContact } from "../api";
-import { viewportTransition } from "../lib/motion";
 import WavySectionDivider from "./WavySectionDivider";
 
 export default function Contact() {
@@ -46,12 +44,7 @@ export default function Contact() {
       <div className="absolute -bottom-40 right-0 w-80 h-80 bg-icube-gold/5 rounded-full blur-[100px] pointer-events-none" />
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-          <motion.div
-            initial={{ opacity: 0, x: -24 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={viewportTransition}
-          >
+          <div>
             <div className="flex items-center gap-3 mb-3">
               <div className="w-8 h-[2px] bg-icube-gold" />
               <span className="text-icube-gold font-semibold tracking-[0.18em] uppercase text-xs md:text-sm">
@@ -117,15 +110,9 @@ export default function Contact() {
                 </a>
               </div>
             </div>
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, x: 24 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={viewportTransition}
-            className="bg-white/5 border border-white/10 p-8 md:p-12 rounded-2xl h-full flex flex-col justify-center shadow-[0_12px_40px_rgba(0,0,0,0.25)]"
-          >
+          <div className="bg-white/5 border border-white/10 p-8 md:p-12 rounded-2xl h-full flex flex-col justify-center shadow-[0_12px_40px_rgba(0,0,0,0.25)]">
             <h3 className="text-3xl font-display font-bold mb-8">Send a Message</h3>
             <form onSubmit={handleSubmit} className="space-y-6">
               {submitted && <p className="text-icube-gold text-sm">Message sent. We'll get back to you soon.</p>}
@@ -179,7 +166,7 @@ export default function Contact() {
                 {sending ? "Sending…" : "Send Message"}
               </button>
             </form>
-          </motion.div>
+          </div>
         </div>
       </div>
     </section>
