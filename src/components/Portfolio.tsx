@@ -10,7 +10,16 @@ import { getVideoEmbed } from "../lib/videoEmbed";
 import { VideoPlayerModal } from "./VideoPlayerModal";
 import AnimatedStaggerItem from "./AnimatedStaggerItem";
 
-type Project = { id: number; title: string; category: string; image_url: string; sort_order: number; video_url?: string };
+type Project = {
+  id: number | string;
+  title: string;
+  category: string;
+  image_url: string;
+  sort_order: number;
+  video_url?: string;
+  visible?: boolean;
+  show_in_selected_work?: boolean;
+};
 
 type PortfolioProps = {
   /** Show only this many items (e.g. on home). Omit for full portfolio page. */
@@ -21,13 +30,24 @@ type PortfolioProps = {
   title?: string;
   /** Show "Full portfolio" link to /portfolio. Default true when limit is set. */
   showFullPortfolioLink?: boolean;
+  /** When true (home), show only items with show_in_selected_work. When false (full page), show all visible. */
+  useSelectedWorkOnly?: boolean;
 };
 
-export default function Portfolio({ limit, sectionLabel = "Selected work", title: titleProp = "Portfolio highlights", showFullPortfolioLink = !!limit }: PortfolioProps) {
+export default function Portfolio({ limit, sectionLabel = "Selected work", title: titleProp = "Portfolio highlights", showFullPortfolioLink = !!limit, useSelectedWorkOnly = false }: PortfolioProps) {
   const { portfolio } = useSiteData();
   const { openContact } = useContactModal();
   const [playingProject, setPlayingProject] = useState<Project | null>(null);
-  const items = limit != null ? portfolio.slice(0, limit) : portfolio;
+  const items = (() => {
+    let list = portfolio.filter((p) => p.visible !== false);
+    if (useSelectedWorkOnly) {
+      list = list.filter((p) => !!p.show_in_selected_work);
+      // If no items marked for Selected Work, show first N visible (fallback so section isn’t empty)
+      if (list.length === 0) list = portfolio.filter((p) => p.visible !== false);
+    }
+    list = [...list].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+    return limit != null ? list.slice(0, limit) : list;
+  })();
 
   return (
     <section

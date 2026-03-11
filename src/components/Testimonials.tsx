@@ -35,10 +35,10 @@ export default function Testimonials() {
           <MobileTestimonialsCarousel testimonials={testimonials} />
         </div>
 
-        {/* Desktop / tablet: original grid */}
-        <div className="hidden md:grid md:grid-cols-3 gap-8">
+        {/* Desktop / tablet: grid with equal-height cards */}
+        <div className="hidden md:grid md:grid-cols-3 gap-8 items-stretch">
           {testimonials.map((t, index) => (
-            <AnimatedStaggerItem key={t.id} index={index}>
+            <AnimatedStaggerItem key={t.id} index={index} className="h-full">
               <TestimonialCard testimonial={t} />
             </AnimatedStaggerItem>
           ))}
@@ -54,17 +54,17 @@ function TestimonialCard({
   testimonial: (ReturnType<typeof useSiteData>["testimonials"])[number];
 }) {
   return (
-    <div className="card-flip-wrap">
-      <div className="card-flip group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-sm p-8 transition-[border-color,box-shadow] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:border-icube-gold/40 hover:shadow-[0_24px_56px_rgba(0,0,0,0.35),0_0_0_1px_rgba(212,175,55,0.08)]">
+    <div className="card-flip-wrap h-full">
+      <div className="card-flip group relative flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-sm p-8 transition-[border-color,box-shadow] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:border-icube-gold/40 hover:shadow-[0_24px_56px_rgba(0,0,0,0.35),0_0_0_1px_rgba(212,175,55,0.08)]">
         <div className="absolute left-0 top-0 bottom-0 w-1 bg-icube-gold/0 group-hover:bg-icube-gold/50 transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] rounded-r" />
         <Quote
           size={44}
           className="text-white/[0.06] absolute top-6 right-6 group-hover:text-icube-gold/15 transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
         />
-        <p className="text-gray-300 font-light leading-relaxed mb-8 relative z-10 pl-2 text-[15px]">
+        <p className="text-gray-300 font-light leading-relaxed mb-8 relative z-10 pl-2 text-[15px] flex-1 min-h-[7rem]">
           "{t.quote}"
         </p>
-        <div className="flex items-center gap-4 pl-2">
+        <div className="flex items-center gap-4 pl-2 shrink-0">
           {t.image_url ? (
             <img
               src={t.image_url}

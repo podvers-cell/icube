@@ -71,7 +71,7 @@ export default function PublicSite() {
     }
   }, [loading]);
 
-  // عند القدوم من صفحة أخرى (مثل portfolio) والضغط على استديو: التمرير المباشر للقسم بعد تحميل الهوم
+  // When coming from another page (e.g. portfolio) and clicking studio: scroll to section after home loads
   useEffect(() => {
     const fromStorage = typeof window !== "undefined" ? sessionStorage.getItem("scrollToSection") : null;
     if (!fromStorage) return;
@@ -152,7 +152,7 @@ export default function PublicSite() {
         </AnimatedSection>
         <SectionDivider />
         <AnimatedSection>
-          <Portfolio limit={6} showFullPortfolioLink />
+          <Portfolio limit={6} showFullPortfolioLink useSelectedWorkOnly />
         </AnimatedSection>
         <SectionDivider />
         <AnimatedSection>

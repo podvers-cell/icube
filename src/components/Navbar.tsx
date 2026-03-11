@@ -14,7 +14,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const { user, logout, isAdmin = false } = useAuth();
 
-  /** عند الضغط على رابط: إن كنا على الهوم نمرّر للقسم مباشرة؛ وإن كنا على صفحة أخرى نروح للهوم مع الهاش (بدون إعادة تحميل) ثم الصفحة الرئيسية تتمرّر للقسم */
+  /** On nav link click: if on home, scroll to section; if on another page, go to home with hash then home scrolls to section */
   function handleNavLinkClick(e: React.MouseEvent<HTMLAnchorElement>, href: string) {
     setIsMobileMenuOpen(false);
     const hash = href.includes("#") ? href.split("#")[1] : null;

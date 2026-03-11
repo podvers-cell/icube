@@ -5,7 +5,16 @@ import * as api from "./api";
 
 type Settings = Record<string, string>;
 type Service = { id: number; title: string; description: string; icon: string; sort_order: number };
-type Project = { id: number; title: string; category: string; image_url: string; sort_order: number; video_url?: string };
+type Project = {
+  id: number | string;
+  title: string;
+  category: string;
+  image_url: string;
+  sort_order: number;
+  video_url?: string;
+  visible?: boolean;
+  show_in_selected_work?: boolean;
+};
 type Testimonial = { id: number; quote: string; author: string; role: string; image_url: string; sort_order: number };
 type Package = { id: number; name: string; price_aed: number; duration: string; features: string; is_popular: number; sort_order: number };
 type Why = { id: number; icon: string; title: string; description: string; sort_order: number };

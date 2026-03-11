@@ -21,11 +21,11 @@ export default function DashboardVideos() {
     e.preventDefault();
     if (!editing) return;
     if (!editing.title.trim()) {
-      alert("أدخل عنوان الفيديو");
+      alert("Enter video title");
       return;
     }
     if (!isValidVideoUrl(editing.url.trim())) {
-      alert("رابط غير مدعوم. استخدم رابط YouTube أو Vimeo فقط.");
+      alert("Unsupported link. Use YouTube or Vimeo URL only.");
       return;
     }
     try {
@@ -46,7 +46,7 @@ export default function DashboardVideos() {
       setCreating(false);
       load();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "فشل الحفظ");
+      alert(err instanceof Error ? err.message : "Save failed");
     }
   }
 
@@ -61,12 +61,12 @@ export default function DashboardVideos() {
   }
 
   async function remove(id: string) {
-    if (!confirm("حذف هذا الفيديو؟")) return;
+    if (!confirm("Delete this video?")) return;
     try {
       await api.delete(`/dashboard/videos/${id}`);
       load();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "فشل الحذف");
+      alert(err instanceof Error ? err.message : "Delete failed");
     }
   }
 
@@ -74,25 +74,25 @@ export default function DashboardVideos() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-display font-bold text-white">الفيديوهات</h1>
-          <p className="text-gray-500 text-sm mt-1">أضف فيديوهات عبر روابط YouTube أو Vimeo تظهر في قسم الفيديوهات بالموقع.</p>
+          <h1 className="text-3xl font-display font-bold text-white">Videos</h1>
+          <p className="text-gray-500 text-sm mt-1">Add videos via YouTube or Vimeo links. They appear in the Videos section on the site.</p>
         </div>
         <button
           onClick={openCreate}
           className="px-4 py-2 bg-icube-gold text-icube-dark font-semibold rounded-sm hover:bg-icube-gold-light"
         >
-          إضافة فيديو
+          Add video
         </button>
       </div>
 
       {list.length === 0 ? (
         <div className="bg-icube-gray border border-dashed border-white/15 rounded-sm p-8 text-center text-gray-400">
-          <p className="mb-3">لا توجد فيديوهات بعد.</p>
+          <p className="mb-3">No videos yet.</p>
           <button
             onClick={openCreate}
             className="px-4 py-2 bg-icube-gold text-icube-dark font-semibold rounded-sm hover:bg-icube-gold-light"
           >
-            إضافة أول فيديو
+            Add first video
           </button>
         </div>
       ) : (
@@ -114,7 +114,7 @@ export default function DashboardVideos() {
                     setEditing({ ...v });
                   }}
                   className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/5 border border-white/15 text-gray-300 hover:border-icube-gold hover:text-icube-gold transition-colors"
-                  aria-label="تعديل"
+                  aria-label="Edit"
                 >
                   <Pencil size={15} />
                 </button>
@@ -122,7 +122,7 @@ export default function DashboardVideos() {
                   type="button"
                   onClick={() => remove(v.id)}
                   className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-red-500/5 border border-red-500/30 text-red-400 hover:bg-red-500/15 transition-colors"
-                  aria-label="حذف"
+                  aria-label="Delete"
                 >
                   <Trash2 size={15} />
                 </button>
@@ -136,27 +136,27 @@ export default function DashboardVideos() {
         <form onSubmit={save} className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-icube-gray border border-white/10 rounded-sm p-6 max-w-lg w-full space-y-4">
             <h2 className="text-xl font-display font-bold text-white">
-              {creating ? "إضافة فيديو" : "تعديل الفيديو"}
+              {creating ? "Add video" : "Edit video"}
             </h2>
             <input
               value={editing.title}
               onChange={(e) => setEditing((x) => (x ? { ...x, title: e.target.value } : null))}
               className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white"
-              placeholder="عنوان الفيديو"
+              placeholder="Video title"
             />
             <input
               value={editing.url}
               onChange={(e) => setEditing((x) => (x ? { ...x, url: e.target.value } : null))}
               className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white"
-              placeholder="رابط YouTube أو Vimeo"
+              placeholder="YouTube or Vimeo URL"
             />
-            <p className="text-xs text-gray-500">مثال: https://www.youtube.com/watch?v=... أو https://vimeo.com/...</p>
+            <p className="text-xs text-gray-500">Example: https://www.youtube.com/watch?v=... or https://vimeo.com/...</p>
             <div className="flex gap-2">
               <button type="submit" className="px-4 py-2 bg-icube-gold text-icube-dark font-semibold rounded-sm">
-                حفظ
+                Save
               </button>
               <button type="button" onClick={() => setEditing(null)} className="px-4 py-2 bg-white/10 text-white rounded-sm">
-                إلغاء
+                Cancel
               </button>
             </div>
           </div>

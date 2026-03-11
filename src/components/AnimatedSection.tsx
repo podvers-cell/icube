@@ -10,14 +10,14 @@ const defaultTransition = {
 type AnimatedSectionProps = {
   children: React.ReactNode;
   className?: string;
-  /** تأخير بسيط قبل بدء الأنيميشن (بالثواني) */
+  /** Delay before animation starts (seconds) */
   delay?: number;
-  /** مقدار الحركة العمودية عند الظهور (بكسل) */
+  /** Vertical movement on appear (pixels) */
   y?: number;
 };
 
 /**
- * غلاف يطبّق أنيميشن ظهور بسيط وراقٍ عند دخول القسم في الشاشة (fade + slide up + subtle scale).
+ * Wrapper that applies fade + slide up + subtle scale when the section enters view.
  */
 export default function AnimatedSection({
   children,

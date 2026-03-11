@@ -3,7 +3,7 @@
 import { motion } from "motion/react";
 
 /**
- * خط فاصل رفيع ذهبي بين الأقسام – يظهر بتأثير رسم عند دخوله الشاشة.
+ * Thin gold divider between sections – draws in when it enters view.
  */
 export default function SectionDivider() {
   return (

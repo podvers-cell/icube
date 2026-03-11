@@ -5,7 +5,18 @@ import { Pencil, Trash2 } from "lucide-react";
 import { api } from "../api";
 import CloudinaryUploadField from "../components/CloudinaryUploadField";
 
-type Project = { id: number; title: string; category: string; image_url: string; sort_order: number; video_url?: string };
+type Project = {
+  id: number | string;
+  title: string;
+  category: string;
+  image_url: string;
+  sort_order: number;
+  video_url?: string;
+  /** Show work on site. Default true */
+  visible?: boolean;
+  /** Show in Selected Work section on homepage. Default false */
+  show_in_selected_work?: boolean;
+};
 
 export default function DashboardPortfolio() {
   const [list, setList] = useState<Project[]>([]);
@@ -28,6 +39,8 @@ export default function DashboardPortfolio() {
           image_url: editing.image_url,
           sort_order: editing.sort_order ?? list.length,
           video_url: editing.video_url || undefined,
+          visible: editing.visible !== false,
+          show_in_selected_work: !!editing.show_in_selected_work,
         });
       } else {
         await api.put(`/dashboard/portfolio/${editing.id}`, editing);
@@ -65,6 +78,8 @@ export default function DashboardPortfolio() {
               image_url: "",
               sort_order: list.length,
               video_url: "",
+              visible: true,
+              show_in_selected_work: false,
             })
           }
           className="px-4 py-2 bg-icube-gold text-icube-dark font-semibold rounded-sm hover:bg-icube-gold-light"
@@ -84,6 +99,9 @@ export default function DashboardPortfolio() {
                 category: "",
                 image_url: "",
                 sort_order: list.length,
+                video_url: "",
+                visible: true,
+                show_in_selected_work: false,
               })
             }
             className="px-4 py-2 bg-icube-gold text-icube-dark font-semibold rounded-sm hover:bg-icube-gold-light"
@@ -97,7 +115,15 @@ export default function DashboardPortfolio() {
             <div key={p.id} className="bg-icube-gray border border-white/10 rounded-sm overflow-hidden">
               <img src={p.image_url} alt={p.title} className="w-full h-40 object-cover" />
               <div className="p-4">
-                <p className="font-semibold text-white">{p.title}</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="font-semibold text-white">{p.title}</p>
+                  {p.visible === false && (
+                    <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-red-500/20 text-red-400">Hidden</span>
+                  )}
+                  {p.show_in_selected_work && (
+                    <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-icube-gold/20 text-icube-gold">Selected Work</span>
+                  )}
+                </div>
                 <p className="text-gray-500 text-sm">{p.category}</p>
                 <div className="flex gap-2 mt-2 justify-end">
                   <button
@@ -157,6 +183,24 @@ export default function DashboardPortfolio() {
               folder="portfolio"
               placeholder="https://… or click Upload"
             />
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={editing.visible !== false}
+                onChange={(e) => setEditing((x) => (x ? { ...x, visible: e.target.checked } : null))}
+                className="w-4 h-4 rounded border-white/20 bg-black/50 text-icube-gold focus:ring-icube-gold"
+              />
+              <span className="text-sm text-gray-300">Show work on site</span>
+            </label>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={!!editing.show_in_selected_work}
+                onChange={(e) => setEditing((x) => (x ? { ...x, show_in_selected_work: e.target.checked } : null))}
+                className="w-4 h-4 rounded border-white/20 bg-black/50 text-icube-gold focus:ring-icube-gold"
+              />
+              <span className="text-sm text-gray-300">Show in Selected Work on homepage</span>
+            </label>
             <div className="flex gap-2">
               <button type="submit" className="px-4 py-2 bg-icube-gold text-icube-dark font-semibold rounded-sm">Save</button>
               <button type="button" onClick={() => setEditing(null)} className="px-4 py-2 bg-white/10 text-white rounded-sm">Cancel</button>

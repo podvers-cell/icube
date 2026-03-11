@@ -20,13 +20,13 @@ const AREAS_OF_INTEREST = [
 ];
 
 const COUNTRY_OPTIONS = [
-  { value: "+971", label: "United Arab Emirates (الإمارات)" },
-  { value: "+966", label: "Saudi Arabia (السعودية)" },
-  { value: "+965", label: "Kuwait (الكويت)" },
-  { value: "+973", label: "Bahrain (البحرين)" },
-  { value: "+974", label: "Qatar (قطر)" },
-  { value: "+968", label: "Oman (عُمان)" },
-  { value: "+20", label: "Egypt (مصر)" },
+  { value: "+971", label: "United Arab Emirates" },
+  { value: "+966", label: "Saudi Arabia" },
+  { value: "+965", label: "Kuwait" },
+  { value: "+973", label: "Bahrain" },
+  { value: "+974", label: "Qatar" },
+  { value: "+968", label: "Oman" },
+  { value: "+20", label: "Egypt" },
   { value: "+44", label: "United Kingdom" },
   { value: "+1", label: "USA / Canada" },
   { value: "other", label: "Other" },

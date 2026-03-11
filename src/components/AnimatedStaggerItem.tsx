@@ -8,14 +8,14 @@ type AnimatedStaggerItemProps = {
   children: React.ReactNode;
   index?: number;
   className?: string;
-  /** تأخير إضافي بالثواني (يُضاف إلى index * staggerDelay) */
+  /** Extra delay in seconds (added to index * staggerDelay) */
   delay?: number;
-  /** تأخير بين كل عنصر (بالثواني). الافتراضي 0.08 */
+  /** Delay between each item (seconds). Default 0.08 */
   staggerDelay?: number;
 };
 
 /**
- * عنصر يظهر بتأثير fade + slide up مع تأخير حسب الترتيب (للقوائم والبطاقات). Hover: subtle lift.
+ * Item that appears with fade + slide up and staggered delay. Hover: subtle lift.
  */
 export default function AnimatedStaggerItem({
   children,

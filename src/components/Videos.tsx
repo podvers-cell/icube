@@ -31,7 +31,7 @@ export default function Videos() {
             <div className="w-8 h-[2px] bg-icube-gold" />
           </div>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-display font-bold tracking-tight">
-            الفيديوهات
+            Videos
           </h2>
           <div className="section-header-accent" aria-hidden />
         </div>
@@ -56,7 +56,7 @@ export default function Videos() {
                       </div>
                     </>
                   ) : (
-                    <span className="text-gray-500 text-sm">رابط غير مدعوم</span>
+                    <span className="text-gray-500 text-sm">Unsupported link</span>
                   )}
                 </div>
                 <div className="p-4 md:p-5 border-t border-white/5">
