@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { X, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";

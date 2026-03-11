@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { useSiteData } from "../SiteDataContext";
 import { getIcon } from "../lib/icons";

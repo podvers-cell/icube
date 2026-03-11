@@ -1,3 +1,5 @@
+"use client";
+
 import { useSiteData } from "../SiteDataContext";
 import { getIcon } from "../lib/icons";
 import WavySectionDivider from "./WavySectionDivider";

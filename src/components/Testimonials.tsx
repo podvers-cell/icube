@@ -1,3 +1,5 @@
+"use client";
+
 import { Quote } from "lucide-react";
 import { useSiteData } from "../SiteDataContext";
 import WavySectionDivider from "./WavySectionDivider";
