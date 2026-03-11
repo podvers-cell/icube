@@ -66,6 +66,17 @@ export default function DashboardBookings() {
     getBookingAddons().then(setAddons);
   }, []);
 
+  async function removeBooking(id: string) {
+    if (!confirm("Remove this booking? This will reopen its time slot.")) return;
+    try {
+      await api.delete(`/dashboard/bookings/${id}`);
+      load();
+      if (selected?.id === id) setSelected(null);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed");
+    }
+  }
+
   async function setStatus(id: string, status: string) {
     try {
       await api.patch(`/dashboard/bookings/${id}`, { status });
@@ -140,6 +151,13 @@ export default function DashboardBookings() {
                       <button onClick={() => setStatus(b.id, "cancelled")} className="text-red-400 text-sm">Cancel</button>
                     </>
                   )}
+                  <button
+                    onClick={() => removeBooking(b.id)}
+                    className="text-red-400 text-sm ml-2"
+                    title="Remove booking (reopens slot)"
+                  >
+                    Remove
+                  </button>
                 </td>
               </tr>
             ))}
@@ -281,6 +299,13 @@ export default function DashboardBookings() {
                   </button>
                 </div>
               )}
+              <button
+                type="button"
+                onClick={() => removeBooking(selected.id)}
+                className="px-4 py-2 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/30 text-sm font-medium"
+              >
+                Remove booking
+              </button>
               <button
                 type="button"
                 onClick={() => setSelected(null)}

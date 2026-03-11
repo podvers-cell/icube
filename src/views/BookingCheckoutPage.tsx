@@ -23,13 +23,19 @@ export default function BookingCheckoutPage() {
   const [form, setForm] = useState({ first_name: "", last_name: "", email: "", project_details: "" });
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [successSummary, setSuccessSummary] = useState<{
+    packageName: string;
+    bookingDate: string;
+    timeSlot: string;
+  } | null>(null);
 
   useEffect(() => {
+    if (success) return;
     if (!selectedPackage || !selectedDate || !selectedTimeSlot) {
       router.replace("/packages");
       return;
     }
-  }, [selectedPackage, selectedDate, selectedTimeSlot, router]);
+  }, [selectedPackage, selectedDate, selectedTimeSlot, router, success]);
 
   const totalAmount = selectedPackage ? selectedPackage.price_aed + totalAddonsAmount : 0;
 
@@ -51,6 +57,11 @@ export default function BookingCheckoutPage() {
         addon_ids: selectedAddOns.map((a) => a.id),
         addons_total_aed: totalAddonsAmount,
       });
+      setSuccessSummary({
+        packageName: selectedPackage.name,
+        bookingDate: selectedDate,
+        timeSlot: selectedTimeSlot,
+      });
       setSuccess(true);
       clearBooking();
     } catch (err) {
@@ -60,9 +71,8 @@ export default function BookingCheckoutPage() {
     }
   }
 
-  if (!selectedPackage || !selectedDate || !selectedTimeSlot) return null;
-
   if (success) {
+    if (!successSummary) return null;
     return (
       <div className="min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray to-[#111521] text-white selection:bg-icube-gold selection:text-icube-dark">
         <Navbar />
@@ -73,7 +83,7 @@ export default function BookingCheckoutPage() {
             </div>
             <h1 className="text-3xl font-display font-bold text-white mb-3">Booking made successfully</h1>
             <p className="text-gray-400 font-light mb-4">
-              Thank you for choosing us. We’ve received your request for {selectedPackage.name} on {selectedDate} at {selectedTimeSlot}.
+              Thank you for choosing us. We’ve received your request for {successSummary.packageName} on {successSummary.bookingDate} at {successSummary.timeSlot}.
             </p>
             <p className="text-gray-500 text-sm mb-8">
               We’ll confirm availability and get back to you shortly.
@@ -90,6 +100,8 @@ export default function BookingCheckoutPage() {
       </div>
     );
   }
+
+  if (!selectedPackage || !selectedDate || !selectedTimeSlot) return null;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray to-[#111521] text-white selection:bg-icube-gold selection:text-icube-dark">

@@ -9,6 +9,8 @@ const keys = [
   "hero_title_2",
   "hero_title_3",
   "hero_subtitle",
+  "maintenance_mode",
+  "maintenance_message",
   "contact_address",
   "contact_email",
   "contact_email_bookings",
@@ -48,6 +50,8 @@ export default function DashboardSettings() {
     hero_title_2: "Hero title line 2",
     hero_title_3: "Hero title line 3",
     hero_subtitle: "Hero subtitle",
+    maintenance_mode: "Maintenance mode (close website)",
+    maintenance_message: "Maintenance message",
     contact_address: "Address (Dubai)",
     contact_email: "Email (general)",
     contact_email_bookings: "Email (bookings)",
@@ -65,11 +69,20 @@ export default function DashboardSettings() {
         {keys.map((key) => (
           <div key={key}>
             <label className="block text-sm font-medium text-gray-400 mb-1">{labels[key] || key}</label>
-            {key === "contact_address" ? (
+            {key === "maintenance_mode" ? (
+              <label className="flex items-center gap-2 text-gray-200">
+                <input
+                  type="checkbox"
+                  checked={(settings[key] ?? "") === "1"}
+                  onChange={(e) => update(key, e.target.checked ? "1" : "0")}
+                />
+                Close public website and show maintenance page
+              </label>
+            ) : key === "maintenance_message" || key === "contact_address" ? (
               <textarea
                 value={settings[key] ?? ""}
                 onChange={(e) => update(key, e.target.value)}
-                rows={3}
+                rows={key === "maintenance_message" ? 2 : 3}
                 className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white focus:outline-none focus:border-icube-gold"
               />
             ) : (

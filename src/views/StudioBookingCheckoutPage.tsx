@@ -31,14 +31,21 @@ export default function StudioBookingCheckoutPage() {
   const [form, setForm] = useState({ first_name: "", last_name: "", email: "", phone: "", project_details: "" });
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [successSummary, setSuccessSummary] = useState<{
+    studioName: string;
+    bookingDate: string;
+    timeSlot: string;
+    durationHours: number;
+  } | null>(null);
 
   const durationHours = selectedDurationHours ?? 2;
   useEffect(() => {
+    if (success) return;
     if (!selectedStudio || !selectedDate || !selectedTimeSlot || !selectedDurationHours) {
       router.replace("/#studio");
       return;
     }
-  }, [selectedStudio, selectedDate, selectedTimeSlot, selectedDurationHours, router]);
+  }, [selectedStudio, selectedDate, selectedTimeSlot, selectedDurationHours, router, success]);
 
   const studioTotal = selectedStudio ? selectedStudio.price_aed_per_hour * durationHours : 0;
   const totalAmount = studioTotal + totalAddonsAmount;
@@ -63,6 +70,12 @@ export default function StudioBookingCheckoutPage() {
         addon_ids: selectedAddOns.map((a) => a.id),
         addons_total_aed: totalAddonsAmount,
       });
+      setSuccessSummary({
+        studioName: selectedStudio.name,
+        bookingDate: selectedDate,
+        timeSlot: selectedTimeSlot,
+        durationHours,
+      });
       setSuccess(true);
       clearBooking();
     } catch (err) {
@@ -72,9 +85,8 @@ export default function StudioBookingCheckoutPage() {
     }
   }
 
-  if (!selectedStudio || !selectedDate || !selectedTimeSlot || !selectedDurationHours) return null;
-
   if (success) {
+    if (!successSummary) return null;
     return (
       <div className="min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray to-[#111521] text-white selection:bg-icube-gold selection:text-icube-dark">
         <Navbar />
@@ -85,7 +97,7 @@ export default function StudioBookingCheckoutPage() {
             </div>
             <h1 className="text-3xl font-display font-bold text-white mb-3">Booking made successfully</h1>
             <p className="text-gray-400 font-light mb-4">
-              Thank you for choosing us. We’ve received your request for {selectedStudio.name} on {selectedDate} at {formatTimeSlot(selectedTimeSlot)} for {durationHours} {durationHours === 1 ? "hour" : "hours"}.
+              Thank you for choosing us. We’ve received your request for {successSummary.studioName} on {successSummary.bookingDate} at {formatTimeSlot(successSummary.timeSlot)} for {successSummary.durationHours} {successSummary.durationHours === 1 ? "hour" : "hours"}.
             </p>
             <p className="text-gray-500 text-sm mb-8">
               We’ll confirm availability and get back to you shortly.
@@ -102,6 +114,8 @@ export default function StudioBookingCheckoutPage() {
       </div>
     );
   }
+
+  if (!selectedStudio || !selectedDate || !selectedTimeSlot || !selectedDurationHours) return null;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray to-[#111521] text-white selection:bg-icube-gold selection:text-icube-dark">
