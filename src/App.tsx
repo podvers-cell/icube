@@ -1,25 +1,39 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { lazy, Suspense } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./AuthContext";
 import { SiteDataProvider } from "./SiteDataContext";
-import ProtectedRoute from "./pages/ProtectedRoute";
-import DashboardLayout from "./pages/DashboardLayout";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
+import ProtectedRoute from "./views/ProtectedRoute";
+import Login from "./views/Login";
+import Signup from "./views/Signup";
 import PublicSite from "./PublicSite";
-import DashboardOverview from "./pages/DashboardOverview";
-import DashboardSettings from "./pages/DashboardSettings";
-import DashboardServices from "./pages/DashboardServices";
-import DashboardPortfolio from "./pages/DashboardPortfolio";
-import DashboardTestimonials from "./pages/DashboardTestimonials";
-import DashboardPackages from "./pages/DashboardPackages";
-import DashboardBookings from "./pages/DashboardBookings";
-import DashboardMessages from "./pages/DashboardMessages";
-import DashboardWhyUs from "./pages/DashboardWhyUs";
-import DashboardStudio from "./pages/DashboardStudio";
-import DashboardStudios from "./pages/DashboardStudios";
-import DashboardHero from "./pages/DashboardHero";
-import PackagesPage from "./pages/PackagesPage";
-import PortfolioPage from "./pages/PortfolioPage";
+
+// Dashboard layout (eager: small, needed for shell)
+const DashboardLayout = lazy(() => import("./views/DashboardLayout"));
+
+// Dashboard pages (lazy: split by route)
+const DashboardOverview = lazy(() => import("./views/DashboardOverview"));
+const DashboardSettings = lazy(() => import("./views/DashboardSettings"));
+const DashboardHero = lazy(() => import("./views/DashboardHero"));
+const DashboardServices = lazy(() => import("./views/DashboardServices"));
+const DashboardPortfolio = lazy(() => import("./views/DashboardPortfolio"));
+const DashboardTestimonials = lazy(() => import("./views/DashboardTestimonials"));
+const DashboardPackages = lazy(() => import("./views/DashboardPackages"));
+const DashboardBookings = lazy(() => import("./views/DashboardBookings"));
+const DashboardMessages = lazy(() => import("./views/DashboardMessages"));
+const DashboardWhyUs = lazy(() => import("./views/DashboardWhyUs"));
+const DashboardStudio = lazy(() => import("./views/DashboardStudio"));
+const DashboardStudios = lazy(() => import("./views/DashboardStudios"));
+
+const PackagesPage = lazy(() => import("./views/PackagesPage"));
+const PortfolioPage = lazy(() => import("./views/PortfolioPage"));
+
+function PageLoader() {
+  return (
+    <div className="min-h-[40vh] flex items-center justify-center bg-icube-dark">
+      <div className="w-8 h-8 border-2 border-icube-gold border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
 
 export default function App() {
   return (
@@ -31,24 +45,30 @@ export default function App() {
           <Route
             path="/packages"
             element={
-              <SiteDataProvider>
-                <PackagesPage />
-              </SiteDataProvider>
+              <Suspense fallback={<PageLoader />}>
+                <SiteDataProvider>
+                  <PackagesPage />
+                </SiteDataProvider>
+              </Suspense>
             }
           />
           <Route
             path="/portfolio"
             element={
-              <SiteDataProvider>
-                <PortfolioPage />
-              </SiteDataProvider>
+              <Suspense fallback={<PageLoader />}>
+                <SiteDataProvider>
+                  <PortfolioPage />
+                </SiteDataProvider>
+              </Suspense>
             }
           />
           <Route
             path="/dashboard"
             element={
               <ProtectedRoute>
-                <DashboardLayout />
+                <Suspense fallback={<PageLoader />}>
+                  <DashboardLayout />
+                </Suspense>
               </ProtectedRoute>
             }
           >

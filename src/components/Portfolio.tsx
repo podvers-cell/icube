@@ -91,6 +91,8 @@ export default function Portfolio({ limit, sectionLabel = "Selected work", title
                 <img
                   src={project.image_url}
                   alt={project.title}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
                   referrerPolicy="no-referrer"
                 />

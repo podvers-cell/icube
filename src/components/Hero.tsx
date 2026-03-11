@@ -115,6 +115,8 @@ export default function Hero() {
             alt="Hero Background"
             className="w-full h-full object-cover opacity-60 scale-105 animate-slow-zoom"
             referrerPolicy="no-referrer"
+            fetchPriority="high"
+            decoding="async"
           />
         )}
       </div>

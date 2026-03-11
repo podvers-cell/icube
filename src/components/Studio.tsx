@@ -86,6 +86,8 @@ export default function Studio() {
                   alt={s.name}
                   className="w-full h-full object-cover hover:scale-105 transition-transform duration-500 ease-out"
                   referrerPolicy="no-referrer"
+                  loading="lazy"
+                  decoding="async"
                 />
               </button>
               <div className="flex flex-col flex-1 p-6">

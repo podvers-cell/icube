@@ -18,7 +18,7 @@ type Studio = {
   size_sqm: number;
   cover_image_url: string;
   sort_order: number;
-  images: { image_url: string; caption: string | null; sort_order: number }[];
+  images?: { image_url: string; caption?: string | null; sort_order?: number }[];
 };
 type Video = { id: string; title: string; url: string; sort_order: number };
 
