@@ -2,7 +2,7 @@
 
 import { Quote } from "lucide-react";
 import { useSiteData } from "../SiteDataContext";
-import WavySectionDivider from "./WavySectionDivider";
+import AnimatedStaggerItem from "./AnimatedStaggerItem";
 
 export default function Testimonials() {
   const { testimonials } = useSiteData();
@@ -12,7 +12,6 @@ export default function Testimonials() {
       id="testimonials"
       className="py-28 md:py-32 bg-gradient-to-b from-icube-gray via-icube-dark/80 to-icube-gray relative overflow-hidden"
     >
-      <WavySectionDivider />
       <div className="absolute -bottom-32 left-1/2 -translate-x-1/2 w-96 h-96 bg-icube-gold/5 rounded-full blur-[120px] pointer-events-none" />
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
         <div className="mb-16 text-center">
@@ -30,8 +29,9 @@ export default function Testimonials() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {testimonials.map((t) => (
-            <div key={t.id} className="card-flip-wrap">
+          {testimonials.map((t, index) => (
+            <AnimatedStaggerItem key={t.id} index={index}>
+            <div className="card-flip-wrap">
               <div className="card-flip group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-sm p-8 transition-[border-color,box-shadow] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:border-icube-gold/40 hover:shadow-[0_24px_56px_rgba(0,0,0,0.35),0_0_0_1px_rgba(212,175,55,0.08)]">
               <div className="absolute left-0 top-0 bottom-0 w-1 bg-icube-gold/0 group-hover:bg-icube-gold/50 transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] rounded-r" />
               <Quote size={44} className="text-white/[0.06] absolute top-6 right-6 group-hover:text-icube-gold/15 transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]" />
@@ -45,6 +45,7 @@ export default function Testimonials() {
               </div>
             </div>
             </div>
+            </AnimatedStaggerItem>
           ))}
         </div>
       </div>

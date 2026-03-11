@@ -5,7 +5,7 @@ import { Play } from "lucide-react";
 import { useSiteData } from "../SiteDataContext";
 import { getVideoEmbed } from "../lib/videoEmbed";
 import { VideoPlayerModal } from "./VideoPlayerModal";
-import WavySectionDivider from "./WavySectionDivider";
+import AnimatedStaggerItem from "./AnimatedStaggerItem";
 
 type Video = { id: string; title: string; url: string; sort_order: number };
 
@@ -20,7 +20,6 @@ export default function Videos() {
       id="videos"
       className="py-28 md:py-32 bg-gradient-to-b from-icube-dark/90 via-icube-gray/50 to-icube-dark/80 relative overflow-hidden"
     >
-      <WavySectionDivider />
       <div className="absolute top-1/3 -left-24 w-72 h-72 bg-icube-gold/5 rounded-full blur-[100px] pointer-events-none" />
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
         <div className="mb-16 flex flex-col items-center text-center gap-4">
@@ -38,10 +37,11 @@ export default function Videos() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {videos.map((video) => {
+          {videos.map((video, index) => {
             const embed = getVideoEmbed(video.url);
             return (
-              <div key={video.id} className="card-flip-wrap">
+              <AnimatedStaggerItem key={video.id} index={index}>
+              <div className="card-flip-wrap">
                 <button
                   type="button"
                   onClick={() => embed && setPlaying(video)}
@@ -66,6 +66,7 @@ export default function Videos() {
                 </div>
               </button>
               </div>
+              </AnimatedStaggerItem>
             );
           })}
         </div>

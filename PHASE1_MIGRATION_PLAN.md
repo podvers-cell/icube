@@ -70,7 +70,7 @@ No views are still wired via React Router; no new route mapping is required.
 
 All under `src/components/`:
 
-- **Layout / shell:** `Navbar`, `Footer`, `WavySectionDivider`
+- **Layout / shell:** `Navbar`, `Footer`
 - **Sections:** `Hero`, `Services`, `Studio`, `Portfolio`, `WhyIcube`, `Testimonials`, `Videos`, `Contact`, `Booking`, `BenefitsSection`
 - **UI:** `VideoPlayerModal`, `UserProfile`, `Contact` (form + content)
 

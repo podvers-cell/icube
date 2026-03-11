@@ -11,6 +11,7 @@ import {
   setDoc,
   updateDoc,
   addDoc,
+  where,
 } from "firebase/firestore";
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { firebaseAuth, firestore } from "./firebase";
@@ -52,6 +53,7 @@ export const api = {
     if (path === "/portfolio") return (await listCollection("portfolio")) as T;
     if (path === "/testimonials") return (await listCollection("testimonials")) as T;
     if (path === "/booking-packages") return (await listCollection("booking_packages")) as T;
+    if (path === "/booking-addons") return (await listCollection("booking_addons")) as T;
     if (path === "/why-us") return (await listCollection("why_us")) as T;
     if (path === "/studio-equipment") return (await listCollection("studio_equipment")) as T;
     if (path === "/studios") return (await listCollection("studios")) as T;
@@ -77,6 +79,10 @@ export const api = {
     if (path === "/dashboard/packages") {
       assertAuth();
       return (await listCollection("booking_packages")) as T;
+    }
+    if (path === "/dashboard/addons") {
+      assertAuth();
+      return (await listCollection("booking_addons")) as T;
     }
     if (path === "/dashboard/why-us") {
       assertAuth();
@@ -112,8 +118,17 @@ export const api = {
         first_name: string;
         last_name: string;
         email: string;
+        phone?: string;
         project_details?: string;
         package_id?: string;
+        studio_id?: string;
+        studio_name?: string;
+        booking_duration_hours?: number;
+        studio_total_aed?: number;
+        booking_date?: string;
+        time_slot?: string;
+        addon_ids?: string[];
+        addons_total_aed?: number;
       };
       await addDoc(collection(firestore, "bookings"), {
         ...b,
@@ -171,6 +186,12 @@ export const api = {
       const ref = await addDoc(collection(firestore, "booking_packages"), { ...p, created_at: serverTimestamp() });
       return { id: ref.id, ...p } as T;
     }
+    if (path === "/dashboard/addons") {
+      assertAuth();
+      const a = body as any;
+      const ref = await addDoc(collection(firestore, "booking_addons"), { ...a, created_at: serverTimestamp() });
+      return { id: ref.id, ...a } as T;
+    }
     if (path === "/dashboard/why-us") {
       assertAuth();
       const w = body as any;
@@ -207,18 +228,20 @@ export const api = {
       return { success: true } as T;
     }
 
-    const m = path.match(/^\/dashboard\/(services|portfolio|testimonials|packages|why-us|studio-equipment|studios|videos)\/([^/]+)$/);
+    const m = path.match(/^\/dashboard\/(services|portfolio|testimonials|packages|addons|why-us|studio-equipment|studios|videos)\/([^/]+)$/);
     if (m) {
       assertAuth();
       const [, kind, id] = m;
       const col =
         kind === "packages"
           ? "booking_packages"
-          : kind === "why-us"
-            ? "why_us"
-            : kind === "studio-equipment"
-              ? "studio_equipment"
-              : kind;
+          : kind === "addons"
+            ? "booking_addons"
+            : kind === "why-us"
+              ? "why_us"
+              : kind === "studio-equipment"
+                ? "studio_equipment"
+                : kind;
       await setDoc(doc(firestore, col, id), { ...(body as any), updated_at: serverTimestamp() }, { merge: true });
       return { success: true } as T;
     }
@@ -248,18 +271,20 @@ export const api = {
   },
 
   delete: async <T>(path: string): Promise<T> => {
-    const m = path.match(/^\/dashboard\/(services|portfolio|testimonials|packages|why-us|studio-equipment|studios|videos)\/([^/]+)$/);
+    const m = path.match(/^\/dashboard\/(services|portfolio|testimonials|packages|addons|why-us|studio-equipment|studios|videos)\/([^/]+)$/);
     if (m) {
       assertAuth();
       const [, kind, id] = m;
       const col =
         kind === "packages"
           ? "booking_packages"
-          : kind === "why-us"
-            ? "why_us"
-            : kind === "studio-equipment"
-              ? "studio_equipment"
-              : kind;
+          : kind === "addons"
+            ? "booking_addons"
+            : kind === "why-us"
+              ? "why_us"
+              : kind === "studio-equipment"
+                ? "studio_equipment"
+                : kind;
       await deleteDoc(doc(firestore, col, id));
       return { success: true } as T;
     }
@@ -311,8 +336,72 @@ export async function getVideos() {
   return api.get<VideoItem[]>("/videos");
 }
 
-export function submitBooking(data: { first_name: string; last_name: string; email: string; project_details?: string; package_id?: number }) {
+export type BookingPayload = {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone?: string;
+  project_details?: string;
+  package_id?: string;
+  studio_id?: string;
+  studio_name?: string;
+  booking_duration_hours?: number;
+  studio_total_aed?: number;
+  booking_date?: string;
+  time_slot?: string;
+  addon_ids?: string[];
+  addons_total_aed?: number;
+};
+export function submitBooking(data: BookingPayload) {
   return api.post<{ success: boolean }>("/booking", data);
+}
+
+export type BookingAddon = { id: string; name: string; description?: string; price_aed: number; sort_order?: number };
+export async function getBookingAddons(): Promise<BookingAddon[]> {
+  try {
+    const list = await api.get<BookingAddon[]>("/booking-addons");
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}
+
+const MAX_SLOT_HOUR = 22; // 10:00 PM
+
+/**
+ * Returns time_slot values (e.g. "09:00", "10:00") that are blocked for the given date.
+ * A booking from 3 PM for 3 hours blocks 15:00, 16:00, 17:00 (3 PM–6 PM). Used to prevent double-booking.
+ */
+export async function getBookedSlots(bookingDate: string, studioId?: string): Promise<string[]> {
+  try {
+    const q = query(
+      collection(firestore, "bookings"),
+      where("booking_date", "==", bookingDate)
+    );
+    const snaps = await getDocs(q);
+    const slotSet = new Set<string>();
+    snaps.docs.forEach((d) => {
+      const data = d.data();
+      const status = data.status as string | undefined;
+      if (status === "cancelled") return;
+      if (studioId != null && data.studio_id !== studioId) return;
+      const timeSlot = data.time_slot as string | undefined;
+      const durationHours = (data.booking_duration_hours as number | undefined) ?? 1;
+      if (!timeSlot) return;
+      const [hStr] = timeSlot.split(":");
+      const startHour = parseInt(hStr ?? "0", 10);
+      if (isNaN(startHour)) return;
+      for (let i = 0; i < durationHours; i++) {
+        const hour = startHour + i;
+        if (hour <= MAX_SLOT_HOUR) {
+          slotSet.add(`${String(hour).padStart(2, "0")}:00`);
+        }
+      }
+    });
+    return Array.from(slotSet);
+  } catch {
+    return [];
+  }
 }
 export function submitContact(data: { name: string; email: string; subject: string; message: string }) {
   return api.post<{ success: boolean }>("/contact", data);

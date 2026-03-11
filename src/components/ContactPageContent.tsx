@@ -1,0 +1,274 @@
+"use client";
+
+import { useState, type FormEvent } from "react";
+import {
+  Mail,
+  Phone,
+  MapPin,
+  Clock,
+  Instagram,
+  Youtube,
+  Twitter,
+  Send,
+  MessageSquare,
+} from "lucide-react";
+import { useSiteData } from "../SiteDataContext";
+import { submitContact } from "../api";
+
+export default function ContactPageContent() {
+  const { settings } = useSiteData();
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    subject: "Studio Booking",
+    message: "",
+  });
+  const [submitted, setSubmitted] = useState(false);
+  const [sending, setSending] = useState(false);
+
+  const address =
+    settings.contact_address ||
+    "Dubai Media City, Building 1\nDubai, United Arab Emirates";
+  const email = settings.contact_email || "hello@icube.ae";
+  const emailBookings = settings.contact_email_bookings || "bookings@icube.ae";
+  const phone = settings.contact_phone || "+971 4 123 4567";
+  const hours = settings.contact_hours || "Sun–Thu, 9am – 6pm GST";
+  const instagram = settings.social_instagram || "#";
+  const youtube = settings.social_youtube || "#";
+  const twitter = settings.social_twitter || "#";
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setSending(true);
+    try {
+      await submitContact({
+        name: form.name,
+        email: form.email,
+        subject: form.subject,
+        message: form.message,
+      });
+      setSubmitted(true);
+      setForm({ name: "", email: "", subject: "Studio Booking", message: "" });
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to send. Try again.");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <div className="relative min-h-screen">
+      {/* Ambient background orbs */}
+      <div className="pointer-events-none absolute top-0 right-0 w-[500px] h-[500px] bg-icube-gold/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2" aria-hidden />
+      <div className="pointer-events-none absolute bottom-1/4 left-0 w-[400px] h-[400px] bg-icube-gold/5 rounded-full blur-[100px] -translate-x-1/2" aria-hidden />
+
+      <div className="relative max-w-6xl mx-auto px-5 sm:px-6 md:px-12 py-16 md:py-24 lg:py-28">
+        {/* Hero header */}
+        <header className="text-center mb-20 md:mb-28">
+          <div className="mb-5">
+            <span className="text-icube-gold font-semibold tracking-[0.2em] uppercase text-xs md:text-sm">
+              Contact
+            </span>
+          </div>
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold tracking-tight text-white mb-5">
+            We&apos;d love to hear from you
+          </h1>
+          <p className="text-gray-400 font-light text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
+            Studio location, contact details, and a form to send your message. We’re here to help.
+          </p>
+        </header>
+
+        {/* Contact info cards + form: two columns on large screens */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
+          {/* Left: Contact & visit cards */}
+          <div className="lg:col-span-5 space-y-8">
+            <h2 className="text-lg font-display font-bold text-white tracking-tight">
+              Contact & visit
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-5">
+              {[
+                {
+                  icon: MapPin,
+                  title: "Address",
+                  content: address,
+                  lines: true,
+                },
+                {
+                  icon: Phone,
+                  title: "Phone",
+                  content: phone,
+                  sub: hours,
+                },
+                {
+                  icon: Mail,
+                  title: "Email",
+                  content: (
+                    <>
+                      <a href={`mailto:${email}`} className="hover:text-icube-gold transition-colors">
+                        {email}
+                      </a>
+                      <span className="block mt-1 text-gray-500 text-xs">
+                        Bookings:{" "}
+                        <a href={`mailto:${emailBookings}`} className="text-icube-gold/90 hover:text-icube-gold">
+                          {emailBookings}
+                        </a>
+                      </span>
+                    </>
+                  ),
+                },
+                {
+                  icon: Clock,
+                  title: "Hours",
+                  content: hours,
+                },
+              ].map((item) => (
+                <div
+                  key={item.title}
+                  className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-sm p-6 transition-all duration-300 hover:border-icube-gold/30 hover:bg-white/[0.06] hover:shadow-[0_12px_40px_rgba(0,0,0,0.2),0_0_0_1px_rgba(212,175,55,0.08)]"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-icube-gold/10 border border-icube-gold/20 flex items-center justify-center shrink-0 group-hover:bg-icube-gold/15 group-hover:border-icube-gold/40 transition-colors duration-300">
+                      <item.icon size={22} className="text-icube-gold" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-display font-semibold text-white mb-1.5">{item.title}</h3>
+                      {typeof item.content === "string" ? (
+                        <p
+                          className={`text-gray-400 font-light text-sm leading-relaxed ${item.lines ? "whitespace-pre-line" : ""}`}
+                        >
+                          {item.content}
+                        </p>
+                      ) : (
+                        <div className="text-gray-400 font-light text-sm leading-relaxed">
+                          {item.content}
+                        </div>
+                      )}
+                      {item.sub && (
+                        <p className="text-gray-500 text-xs mt-2">{item.sub}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Social */}
+            <div className="pt-4">
+              <p className="text-gray-500 text-xs font-medium uppercase tracking-wider mb-4">
+                Follow us
+              </p>
+              <div className="flex gap-3">
+                {[
+                  { href: instagram, icon: Instagram, label: "Instagram" },
+                  { href: youtube, icon: Youtube, label: "YouTube" },
+                  { href: twitter, icon: Twitter, label: "Twitter" },
+                ].map(({ href, icon: Icon, label }) => (
+                  <a
+                    key={label}
+                    href={href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:border-icube-gold/50 hover:text-icube-gold hover:bg-icube-gold/10 transition-all duration-300 hover:scale-105"
+                    aria-label={label}
+                  >
+                    <Icon size={20} />
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Send message form */}
+          <div className="lg:col-span-7">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-sm p-8 md:p-10 lg:p-12 shadow-[0_24px_64px_rgba(0,0,0,0.2)]">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-icube-gold/10 border border-icube-gold/30 flex items-center justify-center">
+                  <MessageSquare size={20} className="text-icube-gold" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-display font-bold text-white tracking-tight">
+                    Send a message
+                  </h2>
+                  <p className="text-gray-500 text-sm font-light">
+                    We’ll get back to you as soon as we can.
+                  </p>
+                </div>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {submitted && (
+                  <div className="rounded-xl bg-icube-gold/10 border border-icube-gold/30 px-4 py-3 text-icube-gold text-sm font-medium">
+                    Message sent. We’ll get back to you soon.
+                  </div>
+                )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                      Name
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={form.name}
+                      onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                      className="w-full bg-icube-dark/80 border border-white/10 p-4 rounded-xl focus:outline-none focus:border-icube-gold focus:ring-1 focus:ring-icube-gold/30 text-white transition-all duration-200 placeholder:text-gray-500"
+                      placeholder="Your name"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={form.email}
+                      onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                      className="w-full bg-icube-dark/80 border border-white/10 p-4 rounded-xl focus:outline-none focus:border-icube-gold focus:ring-1 focus:ring-icube-gold/30 text-white transition-all duration-200 placeholder:text-gray-500"
+                      placeholder="you@example.com"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    Subject
+                  </label>
+                  <select
+                    value={form.subject}
+                    onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
+                    className="w-full bg-icube-dark/80 border border-white/10 p-4 rounded-xl focus:outline-none focus:border-icube-gold focus:ring-1 focus:ring-icube-gold/30 text-white transition-all duration-200 appearance-none cursor-pointer"
+                  >
+                    <option value="Studio Booking">Studio Booking</option>
+                    <option value="Video Production">Video Production</option>
+                    <option value="General Inquiry">General Inquiry</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    Message
+                  </label>
+                  <textarea
+                    rows={5}
+                    required
+                    value={form.message}
+                    onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
+                    className="w-full bg-icube-dark/80 border border-white/10 p-4 rounded-xl focus:outline-none focus:border-icube-gold focus:ring-1 focus:ring-icube-gold/30 text-white transition-all duration-200 resize-none placeholder:text-gray-500"
+                    placeholder="Tell us about your project or inquiry..."
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={sending}
+                  className="inline-flex items-center justify-center gap-2 w-full sm:w-auto min-w-[200px] px-8 py-4 bg-icube-gold text-icube-dark font-semibold uppercase tracking-wider rounded-xl hover:bg-icube-gold-light transition-all duration-300 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-icube-gold focus:ring-offset-2 focus:ring-offset-icube-dark shadow-[0_4px_20px_rgba(212,175,55,0.25)]"
+                >
+                  <Send size={18} className="shrink-0" />
+                  {sending ? "Sending…" : "Send message"}
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

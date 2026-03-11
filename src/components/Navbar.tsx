@@ -3,16 +3,44 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Menu, X, LogOut, LayoutDashboard } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "../AuthContext";
-import { useContactModal } from "../ContactModalContext";
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
   const { user, logout, isAdmin = false } = useAuth();
-  const { openContact } = useContactModal();
+
+  /** عند الضغط على رابط: إن كنا على الهوم نمرّر للقسم مباشرة؛ وإن كنا على صفحة أخرى نروح للهوم مع الهاش (بدون إعادة تحميل) ثم الصفحة الرئيسية تتمرّر للقسم */
+  function handleNavLinkClick(e: React.MouseEvent<HTMLAnchorElement>, href: string) {
+    setIsMobileMenuOpen(false);
+    const hash = href.includes("#") ? href.split("#")[1] : null;
+    const isHomeSection = href === "/" || hash === "home" || (hash && ["services", "studio", "why-us", "portfolio", "testimonials", "videos", "benefits"].includes(hash));
+
+    if (pathname === "/") {
+      if (href === "/" || hash === "home") {
+        e.preventDefault();
+        document.getElementById("home")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+      if (hash) {
+        e.preventDefault();
+        const el = document.getElementById(hash);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+        else router.push(href);
+      }
+      return;
+    }
+
+    if (isHomeSection) {
+      e.preventDefault();
+      if (hash) sessionStorage.setItem("scrollToSection", hash);
+      else sessionStorage.removeItem("scrollToSection");
+      router.push("/");
+    }
+  }
 
   useEffect(() => {
     const handleScroll = () => {
@@ -24,12 +52,10 @@ export default function Navbar() {
 
   const navLinks = [
     { name: "Home", href: "/" },
-    { name: "Services", href: "/#services" },
     { name: "Studio", href: "/#studio" },
     { name: "Portfolio", href: "/portfolio" },
-    { name: "Why Us", href: "/#why-us" },
     { name: "Packages", href: "/packages" },
-    { name: "Contact", openContact: true },
+    { name: "Contact", href: "/contact" },
   ];
 
   const displayName =
@@ -56,7 +82,7 @@ export default function Navbar() {
           : "bg-transparent border-b border-transparent"
       }`}
     >
-      <div className="w-full px-4 md:px-8 lg:px-10 py-2 flex items-center gap-4 md:gap-6">
+      <div className="w-full px-4 md:px-8 lg:px-10 py-2 flex items-center justify-between gap-4 md:justify-start md:gap-6">
         {/* Logo – left */}
         <Link href="/" className="flex items-center gap-2 z-50 shrink-0">
           <img
@@ -69,26 +95,16 @@ export default function Navbar() {
         {/* Desktop Nav – flex-1 so it shifts left when right section grows; scrolls if needed */}
         <div className="hidden md:flex flex-1 min-w-0 justify-center overflow-x-auto overflow-y-visible py-1">
           <nav className="flex items-center gap-5 lg:gap-7 shrink-0 h-full">
-            {navLinks.map((link) =>
-              "openContact" in link && link.openContact ? (
-                <button
-                  key={link.name}
-                  type="button"
-                  onClick={() => openContact()}
-                  className="relative inline-block py-2 pb-2.5 whitespace-nowrap text-[11px] font-medium text-gray-200/80 hover:text-white tracking-[0.18em] uppercase transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-full after:bg-icube-gold after:scale-x-0 after:origin-left after:transition-transform after:duration-300 after:[transition-timing-function:cubic-bezier(0.4,0,0.2,1)] hover:after:scale-x-100 bg-transparent border-0 cursor-pointer"
-                >
-                  {link.name}
-                </button>
-              ) : (
+            {navLinks.map((link) => (
                 <Link
                   key={link.name}
                   href={(link as { href: string }).href}
+                  onClick={(e) => handleNavLinkClick(e, (link as { href: string }).href)}
                   className="relative inline-block py-2 pb-2.5 whitespace-nowrap text-[11px] font-medium text-gray-200/80 hover:text-white tracking-[0.18em] uppercase transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-full after:bg-icube-gold after:scale-x-0 after:origin-left after:transition-transform after:duration-300 after:[transition-timing-function:cubic-bezier(0.4,0,0.2,1)] hover:after:scale-x-100"
                 >
                   {link.name}
                 </Link>
-              )
-            )}
+              ))}
           </nav>
         </div>
 
@@ -117,7 +133,7 @@ export default function Navbar() {
                 <LogOut size={14} />
               </button>
               <Link
-                href="/packages"
+                href="/#studio"
                 className="px-4 py-1.5 rounded-full border border-icube-gold/70 text-[11px] font-semibold uppercase tracking-[0.22em] text-icube-gold hover:bg-icube-gold hover:text-icube-dark transition-colors"
               >
                 Book Studio
@@ -138,7 +154,7 @@ export default function Navbar() {
                 Sign up
               </Link>
               <Link
-                href="/packages"
+                href="/#studio"
                 className="px-4 py-1.5 rounded-full border border-icube-gold/70 text-[11px] font-semibold uppercase tracking-[0.22em] text-icube-gold hover:bg-icube-gold hover:text-icube-dark transition-colors"
               >
                 Book Studio
@@ -159,27 +175,16 @@ export default function Navbar() {
       {/* Mobile Nav */}
       {isMobileMenuOpen && (
           <div className="absolute top-0 left-0 right-0 h-screen bg-icube-dark/95 backdrop-blur-xl flex flex-col items-center justify-center gap-8">
-            {navLinks.map((link) =>
-              "openContact" in link && link.openContact ? (
-                <button
-                  key={link.name}
-                  type="button"
-                  onClick={() => { openContact(); setIsMobileMenuOpen(false); }}
-                  className="relative text-xl font-display font-medium text-gray-300 hover:text-white transition-colors tracking-[0.2em] uppercase after:absolute after:left-0 after:-bottom-1 after:h-[2px] after:w-full after:bg-icube-gold after:scale-x-0 hover:after:scale-x-100 after:origin-left after:transition-transform after:duration-300 bg-transparent border-0 cursor-pointer"
-                >
-                  {link.name}
-                </button>
-              ) : (
+            {navLinks.map((link) => (
                 <Link
                   key={link.name}
                   href={(link as { href: string }).href}
-                  onClick={() => setIsMobileMenuOpen(false)}
+                  onClick={(e) => handleNavLinkClick(e, (link as { href: string }).href)}
                   className="relative text-xl font-display font-medium text-gray-300 hover:text-white transition-colors tracking-[0.2em] uppercase after:absolute after:left-0 after:-bottom-1 after:h-[2px] after:w-full after:bg-icube-gold after:scale-x-0 hover:after:scale-x-100 after:origin-left after:transition-transform after:duration-300"
                 >
                   {link.name}
                 </Link>
-              )
-            )}
+              ))}
             {user ? (
               <>
                 <span className="mt-4 text-xs uppercase tracking-[0.2em] text-gray-300">
@@ -204,8 +209,8 @@ export default function Navbar() {
                   <LogOut size={16} />
                 </button>
                 <Link
-                  href="/packages"
-                  onClick={() => setIsMobileMenuOpen(false)}
+                  href="/#studio"
+                  onClick={(e) => { handleNavLinkClick(e, "/#studio"); setIsMobileMenuOpen(false); }}
                   className="px-8 py-3 bg-icube-gold text-icube-dark text-sm font-semibold uppercase tracking-[0.24em] rounded-full hover:bg-icube-gold-light"
                 >
                   Book Studio
@@ -228,8 +233,8 @@ export default function Navbar() {
                   Sign up
                 </Link>
                 <Link
-                  href="/packages"
-                  onClick={() => setIsMobileMenuOpen(false)}
+                  href="/#studio"
+                  onClick={(e) => { handleNavLinkClick(e, "/#studio"); setIsMobileMenuOpen(false); }}
                   className="px-8 py-3 bg-icube-gold text-icube-dark text-sm font-semibold uppercase tracking-[0.24em] rounded-full hover:bg-icube-gold-light"
                 >
                   Book Studio

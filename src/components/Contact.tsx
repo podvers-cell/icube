@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import { Mail, Phone, MapPin, Instagram, Youtube, Twitter } from "lucide-react";
 import { useSiteData } from "../SiteDataContext";
 import { submitContact } from "../api";
-import WavySectionDivider from "./WavySectionDivider";
+import AnimatedStaggerItem from "./AnimatedStaggerItem";
 
 export default function Contact() {
   const { settings } = useSiteData();
@@ -40,10 +40,10 @@ export default function Contact() {
       id="contact"
       className="py-28 md:py-32 bg-gradient-to-b from-icube-dark via-icube-gray/70 to-icube-dark/90 relative overflow-hidden"
     >
-      <WavySectionDivider />
       <div className="absolute -bottom-40 right-0 w-80 h-80 bg-icube-gold/5 rounded-full blur-[100px] pointer-events-none" />
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+          <AnimatedStaggerItem index={0}>
           <div>
             <div className="flex items-center gap-3 mb-3">
               <div className="w-8 h-[2px] bg-icube-gold" />
@@ -111,7 +111,9 @@ export default function Contact() {
               </div>
             </div>
           </div>
+          </AnimatedStaggerItem>
 
+          <AnimatedStaggerItem index={1}>
           <div className="bg-white/5 border border-white/10 p-8 md:p-12 rounded-2xl h-full flex flex-col justify-center shadow-[0_12px_40px_rgba(0,0,0,0.25)]">
             <h3 className="text-3xl font-display font-bold mb-8">Send a Message</h3>
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -167,6 +169,7 @@ export default function Contact() {
               </button>
             </form>
           </div>
+          </AnimatedStaggerItem>
         </div>
       </div>
     </section>

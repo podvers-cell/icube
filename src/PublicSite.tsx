@@ -13,6 +13,8 @@ import Videos from "./components/Videos";
 import Contact from "./components/Contact";
 import Footer from "./components/Footer";
 import BenefitsSection from "./components/BenefitsSection";
+import SectionDivider from "./components/SectionDivider";
+import AnimatedSection from "./components/AnimatedSection";
 import { useSiteData } from "./SiteDataContext";
 
 const WHATSAPP_URL = "https://wa.me/971548886318";
@@ -68,11 +70,28 @@ export default function PublicSite() {
     }
   }, [loading]);
 
-  // Scroll to contact when URL hash is #contact (e.g. from "Get in touch about a project")
+  // عند القدوم من صفحة أخرى (مثل portfolio) والضغط على استديو: التمرير المباشر للقسم بعد تحميل الهوم
   useEffect(() => {
-    if (hash === "#contact" || hash === "contact") {
-      const el = document.getElementById("contact");
+    const fromStorage = typeof window !== "undefined" ? sessionStorage.getItem("scrollToSection") : null;
+    if (!fromStorage) return;
+    sessionStorage.removeItem("scrollToSection");
+    const t = setTimeout(() => {
+      const el = document.getElementById(fromStorage);
       if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 150);
+    return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    const raw = hash.replace(/^#/, "");
+    if (!raw) return;
+    const id = raw === "contact" ? "contact" : raw;
+    const el = document.getElementById(id);
+    if (el) {
+      const t = requestAnimationFrame(() => {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+      return () => cancelAnimationFrame(t);
     }
   }, [hash]);
 
@@ -119,17 +138,45 @@ export default function PublicSite() {
       </a>
       <Navbar />
       <main id="main-content">
-        <Hero />
-        <Services />
-        <Studio />
-        <Portfolio limit={6} showFullPortfolioLink />
-        <WhyIcube />
-        <BenefitsSection />
-        <Testimonials />
-        <Videos />
-        <Contact />
+        <AnimatedSection>
+          <Hero />
+        </AnimatedSection>
+        <SectionDivider />
+        <AnimatedSection>
+          <Services />
+        </AnimatedSection>
+        <SectionDivider />
+        <AnimatedSection>
+          <Studio />
+        </AnimatedSection>
+        <SectionDivider />
+        <AnimatedSection>
+          <Portfolio limit={6} showFullPortfolioLink />
+        </AnimatedSection>
+        <SectionDivider />
+        <AnimatedSection>
+          <WhyIcube />
+        </AnimatedSection>
+        <SectionDivider />
+        <AnimatedSection>
+          <BenefitsSection />
+        </AnimatedSection>
+        <SectionDivider />
+        <AnimatedSection>
+          <Testimonials />
+        </AnimatedSection>
+        <SectionDivider />
+        <AnimatedSection>
+          <Videos />
+        </AnimatedSection>
+        <SectionDivider />
+        <AnimatedSection>
+          <Contact />
+        </AnimatedSection>
       </main>
-      <Footer />
+      <AnimatedSection>
+        <Footer />
+      </AnimatedSection>
 
       {/* Back to top – appears on scroll */}
       {showBackToTop && (

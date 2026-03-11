@@ -91,7 +91,7 @@ export function VideoPlayerModal({
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(100);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
 
   const tickRef = useRef<number | null>(null);
 
@@ -129,7 +129,7 @@ export function VideoPlayerModal({
             videoId: ytId,
             playerVars: {
               autoplay: 1,
-              mute: 1,
+              mute: 0,
               controls: 0,
               modestbranding: 1,
               rel: 0,
@@ -156,7 +156,10 @@ export function VideoPlayerModal({
                 };
                 setDuration(yt.getDuration());
                 setVolume(yt.getVolume());
-                setIsMuted(yt.isMuted());
+                yt.unMute();
+                yt.setVolume(100);
+                setIsMuted(false);
+                setVolume(100);
                 setIsPlaying(true);
                 setReady(true);
                 startTick();
@@ -199,6 +202,10 @@ export function VideoPlayerModal({
       vimeoPlayerRef.current = vp;
       vp.getDuration().then((d) => setDuration(d));
       vp.getVolume().then((v) => setVolume(Math.round(v * 100)));
+      vp.setMuted(false);
+      vp.setVolume(1);
+      setIsMuted(false);
+      setVolume(100);
       vp.getMuted().then(setIsMuted);
       vp.getPaused().then((p) => setIsPlaying(!p));
       playerRef.current = {
@@ -283,7 +290,11 @@ export function VideoPlayerModal({
   };
 
   const handleFullscreen = () => {
-    containerRef.current?.requestFullscreen?.();
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      containerRef.current?.requestFullscreen?.();
+    }
   };
 
   return (
@@ -293,24 +304,24 @@ export function VideoPlayerModal({
     >
       <div
         ref={containerRef}
-        className="relative w-full max-w-4xl aspect-video bg-black rounded-lg overflow-hidden shadow-2xl flex flex-col"
+        className="relative w-full max-w-4xl bg-transparent rounded-lg overflow-hidden shadow-2xl flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Top: close + title */}
-        <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-3 bg-gradient-to-b from-black/70 to-transparent">
-          <p className="text-white font-semibold text-sm truncate max-w-[70%]">{title}</p>
+        {/* Header: اسم الفيديو في الأعلى وزر الإغلاق على اليمين (فوق الفيديو وليس عليه) */}
+        <div className="flex items-center justify-between gap-3 px-4 py-3 bg-icube-dark border-b border-white/10 shrink-0">
+          <p className="text-white font-semibold text-sm truncate flex-1 min-w-0">{title}</p>
           <button
             type="button"
             onClick={onClose}
-            className="w-10 h-10 rounded-full bg-black/70 text-white flex items-center justify-center hover:bg-black transition-colors shrink-0"
+            className="w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-icube-gold hover:text-icube-dark transition-colors shrink-0"
             aria-label="Close"
           >
             <X size={20} />
           </button>
         </div>
 
-        {/* Video area */}
-        <div className="relative flex-1 min-h-0">
+        {/* Video area – aspect-video هنا فقط */}
+        <div className="relative w-full aspect-video min-h-0 bg-transparent">
           {embed.provider === "youtube" && <div ref={ytDivRef} className="absolute inset-0 w-full h-full" />}
           {embed.provider === "vimeo" && (
             <iframe
@@ -322,11 +333,10 @@ export function VideoPlayerModal({
               allowFullScreen
             />
           )}
-          {/* Overlay to block hover; corner mask hides YT/Vimeo logo */}
-          <div className="absolute inset-0 z-10 pointer-events-none" aria-hidden />
           <div
-            className="absolute bottom-0 right-0 z-10 w-36 h-24 pointer-events-none bg-gradient-to-tl from-black/95 via-black/40 to-transparent"
+            className="absolute inset-0 z-10 bg-transparent cursor-default"
             aria-hidden
+            style={{ pointerEvents: "auto" }}
           />
         </div>
 

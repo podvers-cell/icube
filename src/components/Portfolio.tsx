@@ -7,7 +7,7 @@ import { useSiteData } from "../SiteDataContext";
 import { useContactModal } from "../ContactModalContext";
 import { getVideoEmbed } from "../lib/videoEmbed";
 import { VideoPlayerModal } from "./VideoPlayerModal";
-import WavySectionDivider from "./WavySectionDivider";
+import AnimatedStaggerItem from "./AnimatedStaggerItem";
 
 type Project = { id: number; title: string; category: string; image_url: string; sort_order: number; video_url?: string };
 
@@ -33,7 +33,6 @@ export default function Portfolio({ limit, sectionLabel = "Selected work", title
       id="portfolio"
       className="py-28 md:py-32 bg-gradient-to-b from-icube-dark via-icube-gray/70 to-icube-dark/80 relative overflow-hidden"
     >
-      <WavySectionDivider />
       <div className="absolute top-1/2 -right-32 w-80 h-80 bg-icube-gold/5 rounded-full blur-[100px] pointer-events-none" />
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
         <div className="mb-16 flex flex-col items-center text-center gap-4">
@@ -67,11 +66,11 @@ export default function Portfolio({ limit, sectionLabel = "Selected work", title
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {items.map((project) => {
+          {items.map((project, index) => {
             const hasVideo = project.video_url && getVideoEmbed(project.video_url);
             return (
+              <AnimatedStaggerItem key={project.id} index={index}>
               <div
-                key={project.id}
                 role={hasVideo ? "button" : undefined}
                 tabIndex={hasVideo ? 0 : undefined}
                 onClick={() => hasVideo && setPlayingProject(project)}
@@ -99,6 +98,7 @@ export default function Portfolio({ limit, sectionLabel = "Selected work", title
                   <h3 className="text-2xl md:text-3xl font-display font-bold text-white tracking-tight drop-shadow-sm">{project.title}</h3>
                 </div>
               </div>
+              </AnimatedStaggerItem>
             );
           })}
         </div>

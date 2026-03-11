@@ -4,6 +4,8 @@
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  /* توقيت الأنيميشن: ظهور الأقسام والانتقالات الراقية */
+  --ease-out-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
   /* ICUBE Vision TV – هوية بصرية: ذهبي / برونزي على أسود */
   --color-icube-gold: #D4AF37;
   --color-icube-gold-light: #E8C547;

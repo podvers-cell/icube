@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Play, ArrowRight } from "lucide-react";
+import { motion } from "motion/react";
 import { useSiteData } from "../SiteDataContext";
 
 function getYouTubeEmbedUrl(raw: string): string | null {
@@ -62,6 +63,7 @@ export default function Hero() {
   const youtubeEmbed = bgVideo ? getYouTubeEmbedUrl(bgVideo) : null;
 
   const [activeIndex, setActiveIndex] = useState(0);
+  const [scrollProgress, setScrollProgress] = useState(0);
 
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -70,12 +72,24 @@ export default function Hero() {
     return () => window.clearInterval(id);
   }, [phrases.length]);
 
+  useEffect(() => {
+    function updateScrollProgress() {
+      const scrollY = window.scrollY;
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = maxScroll <= 0 ? 0 : Math.min(1, scrollY / maxScroll);
+      setScrollProgress(progress);
+    }
+    updateScrollProgress();
+    window.addEventListener("scroll", updateScrollProgress, { passive: true });
+    return () => window.removeEventListener("scroll", updateScrollProgress);
+  }, []);
+
   return (
     <section
       id="home"
-      className="relative h-screen min-h-[100dvh] w-full flex items-end md:items-center justify-center overflow-hidden pt-16 md:pt-0"
+      className="relative min-h-[85dvh] h-[85dvh] md:h-screen md:min-h-[100dvh] w-full flex items-center justify-center overflow-hidden pt-20 pb-24 md:pt-0 md:pb-0"
     >
-      <div className="absolute inset-0 z-0">
+      <div className="absolute inset-0 z-0 w-full h-full min-h-full">
         <div
           className={bgType === "video" && bgVideo ? "absolute inset-0 z-10" : "absolute inset-0 z-10 bg-gradient-to-b from-black/70 via-black/50 to-black/60"}
           style={
@@ -88,13 +102,15 @@ export default function Hero() {
         />
         {bgType === "video" && bgVideo ? (
           youtubeEmbed ? (
-            <div className="absolute inset-0 overflow-hidden">
+            <div className="absolute inset-0 overflow-hidden w-full h-full min-h-full">
               <iframe
                 src={youtubeEmbed}
                 className="absolute top-1/2 left-1/2 pointer-events-none"
                 style={{
-                  width: "100%",
-                  height: "100%",
+                  width: "max(100%, 177.78vh)",
+                  height: "max(100%, 56.25vw)",
+                  minWidth: "100%",
+                  minHeight: "100%",
                   transform: "translate(-50%, -50%) scale(1.10)",
                 }}
                 allow="autoplay; fullscreen; picture-in-picture"
@@ -103,12 +119,10 @@ export default function Hero() {
               />
             </div>
           ) : (
-            <div className="absolute inset-0 overflow-hidden">
+            <div className="absolute inset-0 overflow-hidden w-full h-full min-h-full">
               <video
-                className="absolute top-1/2 left-1/2 object-cover opacity-35"
+                className="absolute top-1/2 left-1/2 min-w-full min-h-full w-[130%] h-[130%] object-cover object-center opacity-35"
                 style={{
-                  width: "130%",
-                  height: "130%",
                   transform: "translate(-50%, -50%) scale(1.10)",
                 }}
                 autoPlay
@@ -124,7 +138,7 @@ export default function Hero() {
           <img
             src={bgImage}
             alt="Hero Background"
-            className="w-full h-full object-cover opacity-60 scale-105"
+            className="absolute inset-0 w-full h-full min-w-full min-h-full object-cover object-center opacity-60 scale-105"
             referrerPolicy="no-referrer"
             fetchPriority="high"
             decoding="async"
@@ -132,47 +146,76 @@ export default function Hero() {
         )}
       </div>
 
-      <div className="relative z-20 max-w-7xl mx-auto px-6 md:px-12 w-full flex flex-col items-center text-center gap-8">
-        <div className="mb-4 min-h-[6rem] md:min-h-[7rem] flex items-center justify-center">
+      <motion.div
+        className="relative z-20 max-w-7xl mx-auto px-5 sm:px-6 md:px-12 w-full flex flex-col items-center text-center gap-6 sm:gap-7 md:gap-8"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7, delay: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
+      >
+        <div className="min-h-[3.5rem] sm:min-h-[4rem] md:mb-4 md:min-h-[7rem] flex items-center justify-center">
           <h1
             key={activeIndex}
-            className="text-5xl md:text-7xl lg:text-9xl font-display font-extrabold tracking-tight text-white leading-tight"
+            className="text-4xl md:text-7xl lg:text-9xl font-display font-extrabold tracking-tight text-white leading-tight px-1"
             style={{ textShadow: "0 0 32px rgba(212,175,55,0.65)" }}
           >
             {phrases[activeIndex]}
           </h1>
         </div>
 
-        <p className="max-w-2xl text-sm md:text-base text-gray-300/90 leading-relaxed">
+        <p className="max-w-2xl text-sm md:text-base text-gray-300/90 leading-relaxed mt-1 sm:mt-0">
           {subtitle}
         </p>
 
-        <div className="flex flex-col sm:flex-row items-center gap-6">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 w-full sm:w-auto mt-8 sm:mt-10 md:mt-1">
           <Link
             href="/packages"
-            className="group relative px-8 py-4 bg-icube-gold text-icube-dark font-semibold uppercase tracking-wider rounded-lg overflow-hidden flex items-center gap-2 hover:bg-icube-gold-light transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shadow-[0_4px_20px_rgba(212,175,55,0.35)]"
+            className="group relative w-full sm:w-auto text-center px-6 py-3.5 sm:px-8 sm:py-4 bg-icube-gold text-icube-dark font-semibold uppercase tracking-wider rounded-lg overflow-hidden flex items-center justify-center gap-2 hover:bg-icube-gold-light transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shadow-[0_4px_20px_rgba(212,175,55,0.35)]"
           >
             <span className="relative z-10">Book Studio</span>
             <ArrowRight size={18} className="relative z-10 group-hover:translate-x-1 transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]" />
           </Link>
           <Link
             href="/portfolio"
-            className="group flex items-center gap-4 text-white hover:text-icube-gold transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
+            className="group flex items-center justify-center gap-3 sm:gap-4 text-white hover:text-icube-gold transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] py-2"
           >
-            <div className="w-14 h-14 rounded-full border border-white/30 flex items-center justify-center group-hover:border-icube-gold transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border border-white/30 flex items-center justify-center group-hover:border-icube-gold transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shrink-0">
               <Play size={20} className="ml-1" />
             </div>
             <span className="font-semibold uppercase tracking-wider text-sm">View Portfolio</span>
           </Link>
         </div>
-      </div>
+      </motion.div>
 
-      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-20">
+      <motion.div
+        className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-20"
+        animate={{ y: [0, 6, 0] }}
+        transition={{
+          duration: 2,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+      >
         <span className="text-xs text-gray-500 uppercase tracking-widest rotate-90 mb-8">Scroll</span>
-        <div className="w-[1px] h-16 bg-white/20 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-1/2 bg-icube-gold" />
+        <div className="w-[1px] h-16 bg-white/20 relative overflow-hidden rounded-full">
+          <motion.div
+            className="absolute top-0 left-0 w-full bg-icube-gold rounded-full"
+            initial={{ height: "0%" }}
+            animate={{ height: `${scrollProgress * 100}%` }}
+            transition={{ type: "tween", duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
+            style={{ willChange: "height" }}
+          />
+          <motion.div
+            className="absolute left-0 top-0 w-full h-4 bg-icube-gold rounded-full"
+            animate={{ y: [0, 48, 0] }}
+            transition={{
+              duration: 2.2,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            style={{ willChange: "transform" }}
+          />
         </div>
-      </div>
+      </motion.div>
     </section>
   );
 }

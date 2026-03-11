@@ -1,13 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { X, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import { useSiteData } from "../SiteDataContext";
-import WavySectionDivider from "./WavySectionDivider";
+import { useBooking } from "../BookingContext";
+import AnimatedStaggerItem from "./AnimatedStaggerItem";
 
 export default function Studio() {
+  const router = useRouter();
   const { studios } = useSiteData();
+  const { setSelectedStudio, setSelectedPackage } = useBooking();
   const [openId, setOpenId] = useState<string | null>(null);
   const [activeImage, setActiveImage] = useState(0);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -40,7 +43,6 @@ export default function Studio() {
       id="studio"
       className="py-28 md:py-32 bg-gradient-to-b from-icube-gray via-icube-dark/90 to-icube-gray/80 relative overflow-hidden"
     >
-      <WavySectionDivider />
       <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-icube-gold/5 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
@@ -62,9 +64,9 @@ export default function Studio() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {studios.map((s) => (
+          {studios.map((s, index) => (
+            <AnimatedStaggerItem key={s.id} index={index}>
             <article
-              key={s.id}
               className="flex flex-col rounded-2xl bg-white/[0.06] overflow-hidden shadow-[0_12px_40px_rgba(0,0,0,0.25)] transition-all duration-300"
             >
               <button
@@ -117,14 +119,24 @@ export default function Studio() {
                   )}
                 </div>
 
-                <Link
-                  href="/packages"
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedStudio({
+                      id: s.id,
+                      name: s.name,
+                      price_aed_per_hour: s.price_aed_per_hour,
+                    });
+                    setSelectedPackage(null);
+                    router.push("/studio/booking/date-time");
+                  }}
                   className="mt-4 inline-flex items-center justify-center w-full py-3 px-4 bg-icube-dark border border-icube-gold/40 text-white font-semibold uppercase tracking-wider text-sm rounded-lg hover:bg-icube-gold hover:text-icube-dark transition-colors duration-200"
                 >
                   Book now
-                </Link>
+                </button>
               </div>
             </article>
+            </AnimatedStaggerItem>
           ))}
         </div>
       </div>
@@ -230,13 +242,24 @@ export default function Studio() {
                   </div>
 
                   <div className="mt-auto pt-2">
-                    <Link
-                      href="/packages"
-                      onClick={() => setOpenId(null)}
-                      className="inline-flex items-center justify-center w-full px-6 py-3 bg-icube-gold text-icube-dark font-semibold rounded-sm hover:bg-icube-gold-light transition-colors"
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (selected) {
+                          setSelectedStudio({
+                            id: selected.id,
+                            name: selected.name,
+                            price_aed_per_hour: selected.price_aed_per_hour,
+                          });
+                          setSelectedPackage(null);
+                          setOpenId(null);
+                          router.push("/studio/booking/date-time");
+                        }
+                      }}
+                      className="w-full px-6 py-3 bg-icube-gold text-icube-dark font-semibold rounded-sm hover:bg-icube-gold-light transition-colors"
                     >
                       Book this studio
-                    </Link>
+                    </button>
                     <p className="text-gray-500 text-[11px] mt-3">
                       Tip: Use ← → to browse images, Esc to close.
                     </p>

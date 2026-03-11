@@ -1,4 +1,6 @@
-import WavySectionDivider from "./WavySectionDivider";
+"use client";
+
+import AnimatedStaggerItem from "./AnimatedStaggerItem";
 
 export default function BenefitsSection() {
   return (
@@ -6,13 +8,12 @@ export default function BenefitsSection() {
       id="benefits"
       className="relative py-24 md:py-32 overflow-hidden bg-gradient-to-b from-icube-dark via-icube-gray/70 to-icube-dark/90"
     >
-      <WavySectionDivider />
       <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-icube-gold/5 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
           {/* Content block – title, intro, separator, columns */}
-          <div className="lg:col-span-7 xl:col-span-8 space-y-10">
+          <AnimatedStaggerItem index={0} className="lg:col-span-7 xl:col-span-8 space-y-10">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-8 h-[2px] bg-icube-gold" />
               <span className="text-icube-gold font-semibold tracking-[0.18em] uppercase text-xs md:text-sm">
@@ -51,16 +52,16 @@ export default function BenefitsSection() {
                 </p>
               </div>
             </div>
-          </div>
+          </AnimatedStaggerItem>
 
           {/* Visual – podcast still */}
-          <div className="lg:col-span-5 xl:col-span-4 flex items-center justify-center lg:justify-end">
+          <AnimatedStaggerItem index={1} className="lg:col-span-5 xl:col-span-4 flex items-center justify-center lg:justify-end">
             <img
               src="/podcast-still.png"
               alt="Podcast production at ICUBE Media Studio – professional recording setup"
               className="w-full h-auto max-h-[480px] object-contain max-w-md lg:max-w-lg"
             />
-          </div>
+          </AnimatedStaggerItem>
         </div>
       </div>
     </section>
