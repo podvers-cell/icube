@@ -56,15 +56,42 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: ownerError.message }, { status: 500 });
   }
 
-  // 2) Confirmation email to the customer so they know the message was received
+  // 2) Confirmation email to the customer – professional layout
   const customerName = name.trim() || "there";
   const customerHtml = `
-    <div style="font-family: sans-serif; max-width: 560px;">
-      <p>Dear ${escapeHtml(customerName)},</p>
-      <p>Thank you for getting in touch. We have received your message and will get back to you as soon as possible.</p>
-      <p>If your matter is urgent, you can reach us at <a href="mailto:${CONTACT_EMAIL}">${CONTACT_EMAIL}</a>.</p>
-      <p>Best regards,<br/><strong>ICUBE Media Studio</strong></p>
-    </div>
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+    <body style="margin:0; padding:0; background-color:#f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f5;">
+        <tr><td style="padding: 32px 16px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 560px; margin: 0 auto; background-color:#ffffff; border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); overflow: hidden;">
+            <tr>
+              <td style="height: 4px; background: linear-gradient(90deg, #c9a227 0%, #d4af37 100%);"></td>
+            </tr>
+            <tr>
+              <td style="padding: 32px 40px 24px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                  <tr><td style="padding-bottom: 8px;"><span style="font-size: 12px; font-weight: 600; letter-spacing: 0.12em; color: #c9a227; text-transform: uppercase;">ICUBE Media Studio</span></td></tr>
+                  <tr><td style="padding-bottom: 24px;"><h1 style="margin:0; font-size: 22px; font-weight: 700; color: #1a1a2e; letter-spacing: -0.02em;">We received your message</h1></td></tr>
+                  <tr><td style="padding-bottom: 20px; font-size: 15px; line-height: 1.6; color: #374151;">Dear ${escapeHtml(customerName)},</td></tr>
+                  <tr><td style="padding-bottom: 20px; font-size: 15px; line-height: 1.6; color: #374151;">Thank you for getting in touch. We have received your message and will get back to you as soon as possible.</td></tr>
+                  <tr><td style="padding-bottom: 24px; font-size: 15px; line-height: 1.6; color: #374151;">If your matter is urgent, you can reach us directly:</td></tr>
+                  <tr><td style="padding-bottom: 28px;">
+                    <a href="mailto:${CONTACT_EMAIL}" style="display: inline-block; padding: 12px 24px; background-color: #1a1a2e; color: #ffffff !important; font-size: 14px; font-weight: 600; text-decoration: none; border-radius: 8px;">${CONTACT_EMAIL}</a>
+                  </td></tr>
+                  <tr><td style="padding-top: 24px; border-top: 1px solid #e5e7eb; font-size: 14px; color: #6b7280;">Best regards,<br/><strong style="color: #1a1a2e;">ICUBE Media Studio</strong></td></tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 16px 40px; background-color: #f9fafb; font-size: 12px; color: #9ca3af;">Dubai, UAE · info@icubeproduction.com</td>
+            </tr>
+          </table>
+        </td></tr>
+      </table>
+    </body>
+    </html>
   `;
   const customerText = `Dear ${customerName},\n\nThank you for getting in touch. We have received your message and will get back to you as soon as possible.\n\nIf your matter is urgent, you can reach us at ${CONTACT_EMAIL}.\n\nBest regards,\nICUBE Media Studio`;
 

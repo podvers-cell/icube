@@ -49,31 +49,63 @@ export async function POST(request: Request) {
   const customerName = [firstName, b.last_name?.trim()].filter(Boolean).join(" ") || "Guest";
   const toEmail = b.email.trim();
 
-  const lines: string[] = [];
-  if (b.studio_name) {
-    lines.push(`<strong>Studio:</strong> ${escapeHtml(b.studio_name)}`);
-    if (b.booking_date) lines.push(`<strong>Date:</strong> ${escapeHtml(b.booking_date)}`);
-    if (b.time_slot) lines.push(`<strong>Time:</strong> ${formatTimeSlot(b.time_slot)}`);
-    if (b.booking_duration_hours != null) lines.push(`<strong>Duration:</strong> ${b.booking_duration_hours} hour(s)`);
-    if (b.studio_total_aed != null) lines.push(`<strong>Studio total:</strong> ${b.studio_total_aed} AED`);
-  }
-  if (b.package_id) lines.push(`<strong>Package ID:</strong> ${escapeHtml(b.package_id)}`);
-  if (b.booking_date && !b.studio_name) lines.push(`<strong>Date:</strong> ${escapeHtml(b.booking_date)}`);
-  if (b.time_slot && !b.studio_name) lines.push(`<strong>Time:</strong> ${formatTimeSlot(b.time_slot)}`);
-  if (b.addons_total_aed != null && b.addons_total_aed > 0) lines.push(`<strong>Add-ons total:</strong> ${b.addons_total_aed} AED`);
-  if (b.project_details) lines.push(`<strong>Project details:</strong><br/><pre style="white-space: pre-wrap; font-family: sans-serif;">${escapeHtml(b.project_details)}</pre>`);
+  const detailRows: { label: string; value: string }[] = [];
+  if (b.studio_name) detailRows.push({ label: "Studio", value: b.studio_name });
+  if (b.booking_date) detailRows.push({ label: "Date", value: b.booking_date });
+  if (b.time_slot) detailRows.push({ label: "Time", value: formatTimeSlot(b.time_slot) });
+  if (b.booking_duration_hours != null) detailRows.push({ label: "Duration", value: `${b.booking_duration_hours} hour(s)` });
+  if (b.studio_total_aed != null) detailRows.push({ label: "Studio total", value: `${b.studio_total_aed} AED` });
+  if (b.package_id) detailRows.push({ label: "Package", value: b.package_id });
+  if (b.booking_date && !b.studio_name) detailRows.push({ label: "Date", value: b.booking_date });
+  if (b.time_slot && !b.studio_name) detailRows.push({ label: "Time", value: formatTimeSlot(b.time_slot) });
+  if (b.addons_total_aed != null && b.addons_total_aed > 0) detailRows.push({ label: "Add-ons total", value: `${b.addons_total_aed} AED` });
+  if (b.project_details) detailRows.push({ label: "Project details", value: b.project_details });
 
-  const summaryHtml = lines.length > 0 ? `<p>${lines.join("<br/>")}</p>` : "";
+  const detailsTableRows = detailRows
+    .map((row) => {
+      const valueHtml = escapeHtml(row.value).replace(/\n/g, "<br/>");
+      const isLong = row.label === "Project details";
+      return `
+    <tr><td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-size: 14px; color: #6b7280; vertical-align: top;">${escapeHtml(row.label)}</td><td style="padding: 10px 12px; border-bottom: 1px solid #e5e7eb; font-size: 14px; font-weight: ${isLong ? "400" : "600"}; color: #1a1a2e; text-align: right; ${isLong ? "white-space: pre-wrap; text-align: left;" : ""}">${valueHtml}</td></tr>`;
+    })
+    .join("");
 
   const html = `
-    <div style="font-family: sans-serif; max-width: 560px; margin: 0 auto;">
-      <h2 style="color: #1a1a2e;">Thank you for your booking</h2>
-      <p>Dear ${escapeHtml(customerName)},</p>
-      <p>We have received your booking request at ICUBE Media Studio.</p>
-      ${summaryHtml}
-      <p>We will confirm availability and get back to you shortly. If you have any questions, reply to this email or contact us at <a href="mailto:info@icubeproduction.com">info@icubeproduction.com</a>.</p>
-      <p>Best regards,<br/><strong>ICUBE Media Studio</strong></p>
-    </div>
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+    <body style="margin:0; padding:0; background-color:#f4f4f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f5;">
+        <tr><td style="padding: 32px 16px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 560px; margin: 0 auto; background-color:#ffffff; border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); overflow: hidden;">
+            <tr>
+              <td style="height: 4px; background: linear-gradient(90deg, #c9a227 0%, #d4af37 100%);"></td>
+            </tr>
+            <tr>
+              <td style="padding: 32px 40px 24px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                  <tr><td style="padding-bottom: 8px;"><span style="font-size: 12px; font-weight: 600; letter-spacing: 0.12em; color: #c9a227; text-transform: uppercase;">ICUBE Media Studio</span></td></tr>
+                  <tr><td style="padding-bottom: 24px;"><h1 style="margin:0; font-size: 22px; font-weight: 700; color: #1a1a2e; letter-spacing: -0.02em;">Thank you for your booking</h1></td></tr>
+                  <tr><td style="padding-bottom: 20px; font-size: 15px; line-height: 1.6; color: #374151;">Dear ${escapeHtml(customerName)},</td></tr>
+                  <tr><td style="padding-bottom: 20px; font-size: 15px; line-height: 1.6; color: #374151;">We have received your booking request at ICUBE Media Studio.</td></tr>
+                  ${detailsTableRows ? `<tr><td style="padding-bottom: 24px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;"><tbody>${detailsTableRows}</tbody></table></td></tr>` : ""}
+                  <tr><td style="padding-bottom: 20px; font-size: 15px; line-height: 1.6; color: #374151;">We will confirm availability and get back to you shortly.</td></tr>
+                  <tr><td style="padding-bottom: 28px; font-size: 15px; line-height: 1.6; color: #374151;">If you have any questions, reply to this email or contact us:</td></tr>
+                  <tr><td style="padding-bottom: 28px;">
+                    <a href="mailto:info@icubeproduction.com" style="display: inline-block; padding: 12px 24px; background-color: #1a1a2e; color: #ffffff !important; font-size: 14px; font-weight: 600; text-decoration: none; border-radius: 8px;">info@icubeproduction.com</a>
+                  </td></tr>
+                  <tr><td style="padding-top: 24px; border-top: 1px solid #e5e7eb; font-size: 14px; color: #6b7280;">Best regards,<br/><strong style="color: #1a1a2e;">ICUBE Media Studio</strong></td></tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 16px 40px; background-color: #f9fafb; font-size: 12px; color: #9ca3af;">Dubai, UAE · info@icubeproduction.com</td>
+            </tr>
+          </table>
+        </td></tr>
+      </table>
+    </body>
+    </html>
   `;
 
   const summaryTextLines: string[] = [];
