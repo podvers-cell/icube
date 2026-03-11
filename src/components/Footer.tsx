@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import Link from "next/link";
 import { Heart } from "lucide-react";
 import { useContactModal } from "../ContactModalContext";
 
@@ -36,13 +37,13 @@ export default function Footer() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8">
           {/* Brand + Newsletter */}
           <div className="lg:col-span-5 space-y-8">
-            <a href="/" className="inline-block">
+            <Link href="/" className="inline-block">
               <img
                 src="/icube-logo.svg"
                 alt="ICUBE Media Studio"
                 className="h-20 w-auto object-contain"
               />
-            </a>
+            </Link>
             <div>
               <h3 className="text-lg font-display font-semibold text-white uppercase tracking-[0.2em] mb-3">
                 Newsletter
@@ -86,13 +87,13 @@ export default function Footer() {
                     {link.label}
                   </button>
                 ) : (
-                  <a
+                  <Link
                     key={link.href}
-                    href={link.href}
+                    href={link.href!}
                     className="text-gray-400 text-sm hover:text-icube-gold transition-colors"
                   >
                     {link.label}
-                  </a>
+                  </Link>
                 )
               )}
             </div>

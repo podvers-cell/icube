@@ -3,8 +3,9 @@
 import { useState, type FormEvent } from "react";
 import { motion } from "motion/react";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth } from "../AuthContext";
-import { useAppNavigate } from "../AppNavigateContext";
 import { firebaseAuth } from "../firebase";
 
 const ADMIN_EMAIL = "admin@icube.ae";
@@ -23,7 +24,7 @@ export default function Login() {
   const [googleSubmitting, setGoogleSubmitting] = useState(false);
 
   const { login } = useAuth();
-  const navigate = useAppNavigate();
+  const router = useRouter();
   const from = getRedirectFrom();
 
   async function handleSubmit(e: FormEvent) {
@@ -34,9 +35,9 @@ export default function Login() {
       const trimmedEmail = email.trim().toLowerCase();
       await login(trimmedEmail, password);
       if (trimmedEmail === ADMIN_EMAIL.toLowerCase()) {
-        navigate(from, { replace: true });
+        router.replace(from);
       } else {
-        navigate("/", { replace: true });
+        router.replace("/");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
@@ -53,9 +54,9 @@ export default function Login() {
       const cred = await signInWithPopup(firebaseAuth, provider);
       const userEmail = cred.user.email?.toLowerCase() ?? "";
       if (userEmail === ADMIN_EMAIL.toLowerCase()) {
-        navigate(from, { replace: true });
+        router.replace(from);
       } else {
-        navigate("/", { replace: true });
+        router.replace("/");
       }
     } catch (err: any) {
       if (err?.code === "auth/popup-closed-by-user") {
@@ -80,9 +81,9 @@ export default function Login() {
             <h1 className="text-xl font-display font-semibold text-white tracking-tight">
               Welcome back
             </h1>
-            <a href="/" className="text-[11px] text-gray-400 hover:text-icube-gold transition-colors">
+            <Link href="/" className="text-[11px] text-gray-400 hover:text-icube-gold transition-colors">
               Back to site
-            </a>
+            </Link>
           </div>
           <p className="text-gray-400 text-xs mb-6">
             Sign in with your email or continue with Google. Admins go to the dashboard,
@@ -147,12 +148,12 @@ export default function Login() {
             </p>
             <p className="text-gray-400 text-xs text-center mt-4">
               Don&apos;t have an account?{" "}
-              <a
+              <Link
                 href="/signup"
                 className="text-icube-gold hover:text-icube-gold-light underline-offset-2 hover:underline"
               >
                 Sign up
-              </a>
+              </Link>
             </p>
           </form>
         </div>

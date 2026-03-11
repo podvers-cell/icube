@@ -917,10 +917,6 @@
     min-height: 6rem;
   }
 
-  .min-h-\[40vh\] {
-    min-height: 40vh;
-  }
-
   .min-h-\[100dvh\] {
     min-height: 100dvh;
   }

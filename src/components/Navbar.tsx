@@ -1,16 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { Menu, X, LogOut, LayoutDashboard } from "lucide-react";
-import { useAppNavigate } from "../AppNavigateContext";
+import { useRouter } from "next/navigation";
 import { useAuth } from "../AuthContext";
 import { useContactModal } from "../ContactModalContext";
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const navigate = useAppNavigate();
+  const router = useRouter();
   const { user, logout, isAdmin = false } = useAuth();
   const { openContact } = useContactModal();
 
@@ -42,7 +43,7 @@ export default function Navbar() {
   async function handleLogout() {
     try {
       await logout();
-      navigate("/", { replace: true } as { replace?: boolean });
+      router.replace("/");
     } catch {
       // ignore for now
     }
@@ -61,13 +62,13 @@ export default function Navbar() {
     >
       <div className="w-full px-4 md:px-8 lg:px-10 py-2 flex items-center gap-4 md:gap-6">
         {/* Logo – left */}
-        <a href="/" className="flex items-center gap-2 z-50 shrink-0">
+        <Link href="/" className="flex items-center gap-2 z-50 shrink-0">
           <img
             src="/icube-logo.svg"
             alt="ICUBE Vision TV Production"
             className="h-14 w-auto object-contain"
           />
-        </a>
+        </Link>
 
         {/* Desktop Nav – flex-1 so it shifts left when right section grows; scrolls if needed */}
         <div className="hidden md:flex flex-1 min-w-0 justify-center overflow-x-auto overflow-y-visible py-1">
@@ -83,13 +84,13 @@ export default function Navbar() {
                   {link.name}
                 </button>
               ) : (
-                <a
+                <Link
                   key={link.name}
                   href={(link as { href: string }).href}
                   className="relative inline-block py-2 pb-2.5 whitespace-nowrap text-[11px] font-medium text-gray-200/80 hover:text-white tracking-[0.18em] uppercase transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-full after:bg-icube-gold after:scale-x-0 after:origin-left after:transition-transform after:duration-300 after:[transition-timing-function:cubic-bezier(0.4,0,0.2,1)] hover:after:scale-x-100"
                 >
                   {link.name}
-                </a>
+                </Link>
               )
             )}
           </nav>
@@ -103,13 +104,13 @@ export default function Navbar() {
                 Welcome <span className="text-icube-gold">{displayName}</span>
               </span>
               {isAdmin && (
-                <a
+                <Link
                   href="/dashboard"
                   className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-icube-gold/20 border border-icube-gold/50 text-[11px] font-semibold uppercase tracking-[0.18em] text-icube-gold hover:bg-icube-gold hover:text-icube-dark transition-colors"
                 >
                   <LayoutDashboard size={14} className="shrink-0" />
                   Dashboard
-                </a>
+                </Link>
               )}
               <button
                 type="button"
@@ -119,33 +120,33 @@ export default function Navbar() {
               >
                 <LogOut size={14} />
               </button>
-              <a
+              <Link
                 href="/packages"
                 className="px-4 py-1.5 rounded-full border border-icube-gold/70 text-[11px] font-semibold uppercase tracking-[0.22em] text-icube-gold hover:bg-icube-gold hover:text-icube-dark transition-colors"
               >
                 Book Studio
-              </a>
+              </Link>
             </>
           ) : (
             <>
-              <a
+              <Link
                 href="/login"
                 className="px-4 py-1.5 rounded-full bg-white/5 border border-white/20 text-[11px] font-medium uppercase tracking-[0.2em] text-gray-50 hover:bg-white/15 transition-colors"
               >
                 Sign in
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/signup"
                 className="px-4 py-1.5 rounded-full bg-icube-gold/90 text-[11px] font-semibold uppercase tracking-[0.22em] text-icube-dark hover:bg-icube-gold-light transition-colors shadow-[0_0_18px_rgba(212,175,55,0.45)]"
               >
                 Sign up
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/packages"
                 className="px-4 py-1.5 rounded-full border border-icube-gold/70 text-[11px] font-semibold uppercase tracking-[0.22em] text-icube-gold hover:bg-icube-gold hover:text-icube-dark transition-colors"
               >
                 Book Studio
-              </a>
+              </Link>
             </>
           )}
         </div>
@@ -179,14 +180,14 @@ export default function Navbar() {
                   {link.name}
                 </button>
               ) : (
-                <a
+                <Link
                   key={link.name}
                   href={(link as { href: string }).href}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="relative text-xl font-display font-medium text-gray-300 hover:text-white transition-colors tracking-[0.2em] uppercase after:absolute after:left-0 after:-bottom-1 after:h-[2px] after:w-full after:bg-icube-gold after:scale-x-0 hover:after:scale-x-100 after:origin-left after:transition-transform after:duration-300"
                 >
                   {link.name}
-                </a>
+                </Link>
               )
             )}
             {user ? (
@@ -195,14 +196,14 @@ export default function Navbar() {
                   Welcome <span className="text-icube-gold">{displayName}</span>
                 </span>
                 {isAdmin && (
-                  <a
+                  <Link
                     href="/dashboard"
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-icube-gold/20 border border-icube-gold/50 text-xs font-semibold uppercase tracking-[0.2em] text-icube-gold hover:bg-icube-gold hover:text-icube-dark transition-colors"
                   >
                     <LayoutDashboard size={16} className="shrink-0" />
                     Dashboard
-                  </a>
+                  </Link>
                 )}
                 <button
                   type="button"
@@ -212,37 +213,37 @@ export default function Navbar() {
                 >
                   <LogOut size={16} />
                 </button>
-                <a
+                <Link
                   href="/packages"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="px-8 py-3 bg-icube-gold text-icube-dark text-sm font-semibold uppercase tracking-[0.24em] rounded-full hover:bg-icube-gold-light"
                 >
                   Book Studio
-                </a>
+                </Link>
               </>
             ) : (
               <>
-                <a
+                <Link
                   href="/login"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="mt-4 px-8 py-3 rounded-full bg-white/5 border border-white/20 text-sm font-medium tracking-[0.24em] uppercase text-gray-100 hover:bg-white/10"
                 >
                   Sign in
-                </a>
-                <a
+                </Link>
+                <Link
                   href="/signup"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="px-8 py-3 rounded-full bg-icube-gold text-icube-dark text-sm font-semibold tracking-[0.24em] uppercase hover:bg-icube-gold-light"
                 >
                   Sign up
-                </a>
-                <a
+                </Link>
+                <Link
                   href="/packages"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="px-8 py-3 bg-icube-gold text-icube-dark text-sm font-semibold uppercase tracking-[0.24em] rounded-full hover:bg-icube-gold-light"
                 >
                   Book Studio
-                </a>
+                </Link>
               </>
             )}
           </motion.div>

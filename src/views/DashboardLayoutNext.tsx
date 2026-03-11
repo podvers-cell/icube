@@ -3,8 +3,8 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useAuth } from "../AuthContext";
-import { useAppNavigate } from "../AppNavigateContext";
 import {
   Settings,
   LayoutGrid,
@@ -38,7 +38,7 @@ const nav = [
 
 export default function DashboardLayoutNext({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
-  const navigate = useAppNavigate();
+  const router = useRouter();
   const pathname = usePathname();
   const [cloudStatus, setCloudStatus] = useState<"checking" | "online" | "offline">("checking");
 
@@ -59,7 +59,7 @@ export default function DashboardLayoutNext({ children }: { children: React.Reac
 
   async function handleLogout() {
     await logout();
-    navigate("/", { replace: true });
+    router.replace("/");
   }
 
   return (

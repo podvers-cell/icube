@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import Link from "next/link";
 import { motion } from "motion/react";
-import { useAppNavigate } from "../AppNavigateContext";
+import { useRouter } from "next/navigation";
 import { GoogleAuthProvider, createUserWithEmailAndPassword, signInWithPopup, updateProfile } from "firebase/auth";
 import { firebaseAuth } from "../firebase";
 
@@ -14,7 +15,7 @@ export default function Signup() {
   const [submitting, setSubmitting] = useState(false);
   const [googleSubmitting, setGoogleSubmitting] = useState(false);
 
-  const navigate = useAppNavigate();
+  const router = useRouter();
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -25,7 +26,7 @@ export default function Signup() {
       if (name && cred.user) {
         await updateProfile(cred.user, { displayName: name });
       }
-      navigate("/", { replace: true });
+      router.replace("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign up failed");
     } finally {
@@ -39,7 +40,7 @@ export default function Signup() {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(firebaseAuth, provider);
-      navigate("/", { replace: true });
+      router.replace("/");
     } catch (err: any) {
       if (err?.code === "auth/popup-closed-by-user") {
         // ignore
@@ -63,9 +64,9 @@ export default function Signup() {
             <h1 className="text-xl font-display font-semibold text-white tracking-tight">
               Create your account
             </h1>
-            <a href="/" className="text-[11px] text-gray-400 hover:text-icube-gold transition-colors">
+            <Link href="/" className="text-[11px] text-gray-400 hover:text-icube-gold transition-colors">
               Back to site
-            </a>
+            </Link>
           </div>
           <p className="text-gray-400 text-xs mb-6">
             Sign up as a client or creator to manage bookings and stay connected with ICUBE.
@@ -136,12 +137,12 @@ export default function Signup() {
             </button>
             <p className="text-gray-400 text-xs text-center mt-4">
               Already have an account?{" "}
-              <a
+              <Link
                 href="/login"
                 className="text-icube-gold hover:text-icube-gold-light underline-offset-2 hover:underline"
               >
                 Sign in
-              </a>
+              </Link>
             </p>
           </form>
         </div>

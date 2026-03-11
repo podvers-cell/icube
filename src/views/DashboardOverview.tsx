@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { api } from "../api";
 import { Calendar, Mail, Package, Image } from "lucide-react";
 
@@ -28,7 +29,7 @@ export default function DashboardOverview() {
           <p className="text-3xl font-bold text-white">{bookings.length}</p>
           <p className="text-gray-500 text-sm">Total requests</p>
         </div>
-        <a
+        <Link
           href="/dashboard/messages"
           className="bg-icube-gray border border-white/10 rounded-sm p-6 block hover:border-icube-gold/30 transition-colors"
         >
@@ -38,7 +39,7 @@ export default function DashboardOverview() {
           </div>
           <p className="text-3xl font-bold text-white">{messages.length}</p>
           <p className="text-gray-500 text-sm">{unreadMessages} unread</p>
-        </a>
+        </Link>
         <div className="bg-icube-gray border border-white/10 rounded-sm p-6">
           <div className="flex items-center gap-3 text-icube-gold mb-2">
             <Package size={24} />

@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, type ReactNode } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { X } from "lucide-react";
 import { useSiteData } from "./SiteDataContext";
@@ -205,9 +206,9 @@ function ContactModalInner() {
             {/* Privacy */}
             <p className="text-gray-400 text-xs leading-relaxed">
               We&apos;re committed to your privacy. ICUBE uses the information you provide to contact you about our relevant content, products, and services. You may unsubscribe at any time. For more information, see our{" "}
-              <a href="/#contact" onClick={closeContact} className="text-icube-gold hover:underline">
+              <Link href="/#contact" onClick={closeContact} className="text-icube-gold hover:underline">
                 Privacy Policy
-              </a>
+              </Link>
               .
             </p>
 
