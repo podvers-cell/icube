@@ -88,9 +88,10 @@ export default function BookingDatePicker({ value, onChange, min, max }: Props) 
     const prevCount = prevMonth.getDate();
     for (let i = startOffset - 1; i >= 0; i--) {
       const d = new Date(viewYear, viewMonth - 1, prevCount - i);
-      const disabled =
+      const disabled: boolean = !!(
         (minDate && isBefore(d, minDate)) ||
-        (maxDate && isAfter(d, maxDate));
+        (maxDate && isAfter(d, maxDate))
+      );
       days.push({
         date: d,
         isCurrentMonth: false,
@@ -102,9 +103,10 @@ export default function BookingDatePicker({ value, onChange, min, max }: Props) 
 
     for (let d = 1; d <= last.getDate(); d++) {
       const date = new Date(viewYear, viewMonth, d);
-      const disabled =
+      const disabled: boolean = !!(
         (minDate && isBefore(date, minDate)) ||
-        (maxDate && isAfter(date, maxDate));
+        (maxDate && isAfter(date, maxDate))
+      );
       days.push({
         date,
         isCurrentMonth: true,
@@ -117,9 +119,10 @@ export default function BookingDatePicker({ value, onChange, min, max }: Props) 
     const remaining = 42 - days.length;
     for (let i = 1; i <= remaining; i++) {
       const date = new Date(viewYear, viewMonth + 1, i);
-      const disabled =
+      const disabled: boolean = !!(
         (minDate && isBefore(date, minDate)) ||
-        (maxDate && isAfter(date, maxDate));
+        (maxDate && isAfter(date, maxDate))
+      );
       days.push({
         date,
         isCurrentMonth: false,
