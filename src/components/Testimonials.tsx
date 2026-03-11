@@ -1,6 +1,8 @@
 import { motion } from "motion/react";
 import { Quote } from "lucide-react";
 import { useSiteData } from "../SiteDataContext";
+import { viewportTransition, hoverTransition } from "../lib/motion";
+import WavySectionDivider from "./WavySectionDivider";
 
 export default function Testimonials() {
   const { testimonials } = useSiteData();
@@ -8,13 +10,16 @@ export default function Testimonials() {
   return (
     <section
       id="testimonials"
-      className="py-32 bg-gradient-to-b from-icube-gray via-icube-dark/80 to-icube-gray relative overflow-hidden"
+      className="py-28 md:py-32 bg-gradient-to-b from-icube-gray via-icube-dark/80 to-icube-gray relative overflow-hidden"
     >
+      <WavySectionDivider />
+      <div className="absolute -bottom-32 left-1/2 -translate-x-1/2 w-96 h-96 bg-icube-gold/5 rounded-full blur-[120px] pointer-events-none" />
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={viewportTransition}
           className="mb-16 text-center"
         >
           <div className="flex items-center justify-center gap-3 mb-3">
@@ -27,28 +32,37 @@ export default function Testimonials() {
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-display font-bold tracking-tight">
             What our clients say
           </h2>
+          <div className="section-header-accent" aria-hidden />
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {testimonials.map((t, i) => (
-            <motion.div
-              key={t.id}
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.6, delay: i * 0.2 }}
-              className="bg-white/5 p-8 border border-white/10 rounded-xl relative group hover:border-icube-gold/30 shadow-[0_18px_45px_rgba(0,0,0,0.35)] transition-colors duration-500"
-            >
-              <Quote size={48} className="text-white/5 absolute top-6 right-6 group-hover:text-icube-gold/10 transition-colors duration-500" />
-              <p className="text-gray-300 font-light leading-relaxed mb-8 relative z-10">"{t.quote}"</p>
-              <div className="flex items-center gap-4">
-                <img src={t.image_url} alt={t.author} className="w-12 h-12 rounded-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" referrerPolicy="no-referrer" />
+            <div key={t.id} className="card-flip-wrap">
+              <motion.div
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.15 }}
+                transition={{ ...viewportTransition, delay: i * 0.06 }}
+                whileHover={{
+                  y: -6,
+                  rotateY: 6,
+                  rotateX: -3,
+                  transition: hoverTransition,
+                }}
+                className="card-flip group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-sm p-8 transition-[border-color,box-shadow] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:border-icube-gold/40 hover:shadow-[0_24px_56px_rgba(0,0,0,0.35),0_0_0_1px_rgba(212,175,55,0.08)]"
+              >
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-icube-gold/0 group-hover:bg-icube-gold/50 transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] rounded-r" />
+              <Quote size={44} className="text-white/[0.06] absolute top-6 right-6 group-hover:text-icube-gold/15 transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]" />
+              <p className="text-gray-300 font-light leading-relaxed mb-8 relative z-10 pl-2 text-[15px]">"{t.quote}"</p>
+              <div className="flex items-center gap-4 pl-2">
+                <img src={t.image_url} alt={t.author} className="w-12 h-12 rounded-xl object-cover ring-2 ring-white/10 group-hover:ring-icube-gold/30 grayscale group-hover:grayscale-0 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]" referrerPolicy="no-referrer" />
                 <div>
                   <h4 className="font-display font-semibold text-white">{t.author}</h4>
-                  <p className="text-icube-gold text-xs uppercase tracking-wider">{t.role}</p>
+                  <p className="text-icube-gold/90 text-xs uppercase tracking-wider">{t.role}</p>
                 </div>
               </div>
             </motion.div>
+            </div>
           ))}
         </div>
       </div>

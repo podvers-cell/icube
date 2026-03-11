@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../api";
 import { Calendar, Mail, Package, Image } from "lucide-react";
 
 export default function DashboardOverview() {
-  const [bookings, setBookings] = useState<{ id: number; created_at: string }[]>([]);
-  const [messages, setMessages] = useState<{ id: number; read_at: string | null }[]>([]);
+  const [bookings, setBookings] = useState<{ id: string; created_at: string }[]>([]);
+  const [messages, setMessages] = useState<{ id: string; read_at: string | null }[]>([]);
 
   useEffect(() => {
-    api.get<{ id: number; created_at: string }[]>("/dashboard/bookings").then(setBookings).catch(() => {});
-    api.get<{ id: number; read_at: string | null }[]>("/dashboard/messages").then(setMessages).catch(() => {});
+    api.get<{ id: string; created_at: string }[]>("/dashboard/bookings").then(setBookings).catch(() => {});
+    api.get<{ id: string; read_at: string | null }[]>("/dashboard/messages").then(setMessages).catch(() => {});
   }, []);
 
   const unreadMessages = messages.filter((m) => !m.read_at).length;
@@ -26,14 +27,17 @@ export default function DashboardOverview() {
           <p className="text-3xl font-bold text-white">{bookings.length}</p>
           <p className="text-gray-500 text-sm">Total requests</p>
         </div>
-        <div className="bg-icube-gray border border-white/10 rounded-sm p-6">
+        <Link
+          to="/dashboard/messages"
+          className="bg-icube-gray border border-white/10 rounded-sm p-6 block hover:border-icube-gold/30 transition-colors"
+        >
           <div className="flex items-center gap-3 text-icube-gold mb-2">
             <Mail size={24} />
             <span className="font-semibold">Messages</span>
           </div>
           <p className="text-3xl font-bold text-white">{messages.length}</p>
           <p className="text-gray-500 text-sm">{unreadMessages} unread</p>
-        </div>
+        </Link>
         <div className="bg-icube-gray border border-white/10 rounded-sm p-6">
           <div className="flex items-center gap-3 text-icube-gold mb-2">
             <Package size={24} />

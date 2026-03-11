@@ -16,7 +16,10 @@ import DashboardBookings from "./pages/DashboardBookings";
 import DashboardMessages from "./pages/DashboardMessages";
 import DashboardWhyUs from "./pages/DashboardWhyUs";
 import DashboardStudio from "./pages/DashboardStudio";
+import DashboardStudios from "./pages/DashboardStudios";
 import DashboardHero from "./pages/DashboardHero";
+import PackagesPage from "./pages/PackagesPage";
+import PortfolioPage from "./pages/PortfolioPage";
 
 export default function App() {
   return (
@@ -25,6 +28,22 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route
+            path="/packages"
+            element={
+              <SiteDataProvider>
+                <PackagesPage />
+              </SiteDataProvider>
+            }
+          />
+          <Route
+            path="/portfolio"
+            element={
+              <SiteDataProvider>
+                <PortfolioPage />
+              </SiteDataProvider>
+            }
+          />
           <Route
             path="/dashboard"
             element={
@@ -44,6 +63,7 @@ export default function App() {
             <Route path="messages" element={<DashboardMessages />} />
             <Route path="why-us" element={<DashboardWhyUs />} />
             <Route path="studio" element={<DashboardStudio />} />
+            <Route path="studios" element={<DashboardStudios />} />
           </Route>
           <Route
             path="*"

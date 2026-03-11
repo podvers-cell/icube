@@ -3,7 +3,7 @@ import * as api from "./api";
 
 type Settings = Record<string, string>;
 type Service = { id: number; title: string; description: string; icon: string; sort_order: number };
-type Project = { id: number; title: string; category: string; image_url: string; sort_order: number };
+type Project = { id: number; title: string; category: string; image_url: string; sort_order: number; video_url?: string };
 type Testimonial = { id: number; quote: string; author: string; role: string; image_url: string; sort_order: number };
 type Package = { id: number; name: string; price_aed: number; duration: string; features: string; is_popular: number; sort_order: number };
 type Why = { id: number; icon: string; title: string; description: string; sort_order: number };
@@ -20,6 +20,7 @@ type Studio = {
   sort_order: number;
   images: { image_url: string; caption: string | null; sort_order: number }[];
 };
+type Video = { id: string; title: string; url: string; sort_order: number };
 
 type SiteData = {
   settings: Settings;
@@ -30,6 +31,7 @@ type SiteData = {
   whyUs: Why[];
   studioEquipment: Equipment[];
   studios: Studio[];
+  videos: Video[];
   loading: boolean;
   refresh: () => void;
 };
@@ -43,6 +45,7 @@ const defaultData: SiteData = {
   whyUs: [],
   studioEquipment: [],
   studios: [],
+  videos: [],
   loading: true,
   refresh: () => {},
 };
@@ -182,6 +185,8 @@ const FALLBACK_WHY_US: Why[] = [
   },
 ];
 
+const FALLBACK_VIDEOS: Video[] = [];
+
 const FALLBACK_STUDIOS: Studio[] = [
   {
     id: "demo-main",
@@ -228,12 +233,13 @@ export function SiteDataProvider({ children }: { children: ReactNode }) {
     packages: FALLBACK_PACKAGES,
     whyUs: FALLBACK_WHY_US,
     studios: FALLBACK_STUDIOS,
+    videos: FALLBACK_VIDEOS,
   });
 
   const refresh = useCallback(async () => {
     setData((d) => ({ ...d, loading: true }));
     try {
-      const [settings, services, portfolio, testimonials, packages, whyUs, studioEquipment, studios] = await Promise.all([
+      const [settings, services, portfolio, testimonials, packages, whyUs, studioEquipment, studios, videos] = await Promise.all([
         api.getSiteSettings(),
         api.getServices(),
         api.getPortfolio(),
@@ -242,6 +248,7 @@ export function SiteDataProvider({ children }: { children: ReactNode }) {
         api.getWhyUs(),
         api.getStudioEquipment(),
         api.getStudios(),
+        api.getVideos(),
       ]);
       setData({
         settings: Object.keys(settings || {}).length ? settings : FALLBACK_SETTINGS,
@@ -252,6 +259,7 @@ export function SiteDataProvider({ children }: { children: ReactNode }) {
         whyUs: withFallbackArray(whyUs, FALLBACK_WHY_US),
         studioEquipment,
         studios: withFallbackArray(studios, FALLBACK_STUDIOS),
+        videos: withFallbackArray(videos, FALLBACK_VIDEOS),
         loading: false,
         refresh,
       });

@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { api } from "../api";
 
-type Project = { id: number; title: string; category: string; image_url: string; sort_order: number };
+type Project = { id: number; title: string; category: string; image_url: string; sort_order: number; video_url?: string };
 
 export default function DashboardPortfolio() {
   const [list, setList] = useState<Project[]>([]);
@@ -24,6 +24,7 @@ export default function DashboardPortfolio() {
           category: editing.category,
           image_url: editing.image_url,
           sort_order: editing.sort_order ?? list.length,
+          video_url: editing.video_url || undefined,
         });
       } else {
         await api.put(`/dashboard/portfolio/${editing.id}`, editing);
@@ -60,6 +61,7 @@ export default function DashboardPortfolio() {
               category: "",
               image_url: "",
               sort_order: list.length,
+              video_url: "",
             })
           }
           className="px-4 py-2 bg-icube-gold text-icube-dark font-semibold rounded-sm hover:bg-icube-gold-light"
@@ -141,6 +143,12 @@ export default function DashboardPortfolio() {
               onChange={(e) => setEditing((x) => (x ? { ...x, image_url: e.target.value } : null))}
               className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white"
               placeholder="Image URL"
+            />
+            <input
+              value={editing.video_url ?? ""}
+              onChange={(e) => setEditing((x) => (x ? { ...x, video_url: e.target.value } : null))}
+              className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white"
+              placeholder="Video URL (YouTube or Vimeo – opens in site player when card is clicked)"
             />
             <div className="flex gap-2">
               <button type="submit" className="px-4 py-2 bg-icube-gold text-icube-dark font-semibold rounded-sm">Save</button>

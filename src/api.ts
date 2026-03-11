@@ -55,6 +55,7 @@ export const api = {
     if (path === "/why-us") return (await listCollection("why_us")) as T;
     if (path === "/studio-equipment") return (await listCollection("studio_equipment")) as T;
     if (path === "/studios") return (await listCollection("studios")) as T;
+    if (path === "/videos") return (await listCollection("videos")) as T;
 
     // Dashboard
     if (path === "/dashboard/settings") {
@@ -88,6 +89,10 @@ export const api = {
     if (path === "/dashboard/studios") {
       assertAuth();
       return (await listCollection("studios")) as T;
+    }
+    if (path === "/dashboard/videos") {
+      assertAuth();
+      return (await listCollection("videos")) as T;
     }
     if (path === "/dashboard/bookings") {
       assertAuth();
@@ -184,6 +189,12 @@ export const api = {
       const ref = await addDoc(collection(firestore, "studios"), { ...s, created_at: serverTimestamp() });
       return { id: ref.id, ...s } as T;
     }
+    if (path === "/dashboard/videos") {
+      assertAuth();
+      const v = body as any;
+      const ref = await addDoc(collection(firestore, "videos"), { ...v, created_at: serverTimestamp() });
+      return { id: ref.id, ...v } as T;
+    }
 
     throw new Error(`Unknown POST path: ${path}`);
   },
@@ -196,7 +207,7 @@ export const api = {
       return { success: true } as T;
     }
 
-    const m = path.match(/^\/dashboard\/(services|portfolio|testimonials|packages|why-us|studio-equipment|studios)\/([^/]+)$/);
+    const m = path.match(/^\/dashboard\/(services|portfolio|testimonials|packages|why-us|studio-equipment|studios|videos)\/([^/]+)$/);
     if (m) {
       assertAuth();
       const [, kind, id] = m;
@@ -237,7 +248,7 @@ export const api = {
   },
 
   delete: async <T>(path: string): Promise<T> => {
-    const m = path.match(/^\/dashboard\/(services|portfolio|testimonials|packages|why-us|studio-equipment|studios)\/([^/]+)$/);
+    const m = path.match(/^\/dashboard\/(services|portfolio|testimonials|packages|why-us|studio-equipment|studios|videos)\/([^/]+)$/);
     if (m) {
       assertAuth();
       const [, kind, id] = m;
@@ -264,7 +275,7 @@ export async function getServices() {
   return api.get<{ id: number; title: string; description: string; icon: string; sort_order: number }[]>("/services");
 }
 export async function getPortfolio() {
-  return api.get<{ id: number; title: string; category: string; image_url: string; sort_order: number }[]>("/portfolio");
+  return api.get<{ id: number; title: string; category: string; image_url: string; sort_order: number; video_url?: string }[]>("/portfolio");
 }
 export async function getTestimonials() {
   return api.get<{ id: number; quote: string; author: string; role: string; image_url: string; sort_order: number }[]>("/testimonials");
@@ -293,6 +304,11 @@ export async function getStudios() {
       images?: { image_url: string; caption?: string | null; sort_order?: number }[];
     }[]
   >("/studios");
+}
+
+export type VideoItem = { id: string; title: string; url: string; sort_order: number };
+export async function getVideos() {
+  return api.get<VideoItem[]>("/videos");
 }
 
 export function submitBooking(data: { first_name: string; last_name: string; email: string; project_details?: string; package_id?: number }) {

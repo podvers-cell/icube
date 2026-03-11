@@ -13,6 +13,7 @@ import {
   Video,
   LogOut,
   Home,
+  Building2,
 } from "lucide-react";
 import { getSiteSettings } from "../api";
 
@@ -27,6 +28,7 @@ const nav = [
   { to: "/dashboard/bookings", end: false, label: "Bookings", icon: Calendar },
   { to: "/dashboard/messages", end: false, label: "Contact Messages", icon: Mail },
   { to: "/dashboard/why-us", end: false, label: "Why Us", icon: Sparkles },
+  { to: "/dashboard/studios", end: false, label: "Studios", icon: Building2 },
   { to: "/dashboard/studio", end: false, label: "Studio Equipment", icon: Video },
 ];
 

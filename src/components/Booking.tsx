@@ -3,6 +3,8 @@ import { motion } from "motion/react";
 import { Calendar, Clock, CheckCircle2 } from "lucide-react";
 import { useSiteData } from "../SiteDataContext";
 import { submitBooking } from "../api";
+import { viewportTransition, hoverTransition } from "../lib/motion";
+import WavySectionDivider from "./WavySectionDivider";
 
 function parseFeatures(s: string): string[] {
   try {
@@ -46,13 +48,14 @@ export default function Booking() {
   return (
     <section
       id="booking"
-      className="py-32 bg-gradient-to-b from-icube-dark via-icube-gray/70 to-icube-dark/80 relative overflow-hidden"
+      className="py-28 md:py-32 bg-gradient-to-b from-icube-dark via-icube-gray/70 to-icube-dark/80 relative overflow-hidden"
     >
+      <WavySectionDivider />
       <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-icube-gold/5 rounded-full blur-[150px] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
         <div className="text-center mb-16">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="flex items-center justify-center gap-3 mb-3">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={viewportTransition} className="flex items-center justify-center gap-3 mb-3">
             <div className="w-8 h-[2px] bg-icube-gold" />
             <span className="text-icube-gold font-semibold tracking-[0.18em] uppercase text-xs md:text-sm">
               Reserve your spot
@@ -62,43 +65,51 @@ export default function Booking() {
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ ...viewportTransition, delay: 0.05 }}
             className="text-3xl md:text-4xl lg:text-5xl font-display font-bold tracking-tight"
           >
             Book a studio session
           </motion.h2>
+          <div className="section-header-accent" aria-hidden />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {pkgs.map((pkg, i) => {
             const features = parseFeatures(pkg.features);
             return (
-              <motion.div
-                key={pkg.id}
-                initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={{ duration: 0.6, delay: i * 0.2 }}
-                className={`relative bg-white/5 border ${
-                  pkg.is_popular ? "border-icube-gold" : "border-white/10"
-                } p-8 rounded-xl hover:border-icube-gold/50 shadow-[0_18px_45px_rgba(0,0,0,0.4)] transition-colors duration-500`}
-              >
+              <div key={pkg.id} className="card-flip-wrap">
+                <motion.div
+                  initial={{ opacity: 0, y: 24 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.15 }}
+                  transition={{ ...viewportTransition, delay: i * 0.06 }}
+                  whileHover={{
+                    y: -6,
+                    rotateY: 6,
+                    rotateX: -3,
+                    transition: hoverTransition,
+                  }}
+                  className={`card-flip relative overflow-hidden rounded-2xl border ${
+                    pkg.is_popular ? "border-icube-gold/70 bg-icube-gold/5" : "border-white/10 bg-white/[0.06]"
+                  } backdrop-blur-sm p-8 hover:border-icube-gold/50 shadow-[0_12px_40px_rgba(0,0,0,0.3)] hover:shadow-[0_24px_56px_rgba(0,0,0,0.4)] transition-[border-color,box-shadow] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]`}
+                >
                 {pkg.is_popular && (
-                  <div className="absolute top-0 right-0 bg-icube-gold text-icube-dark text-xs font-bold uppercase tracking-wider py-1 px-3 rounded-bl-sm rounded-tr-sm">
+                  <div className="absolute top-0 right-0 bg-icube-gold text-icube-dark text-[10px] font-bold uppercase tracking-wider py-2 px-4 rounded-bl-2xl rounded-tr-2xl shadow-lg">
                     Most Popular
                   </div>
                 )}
-                <h3 className="text-2xl font-display font-semibold mb-2 tracking-tight">{pkg.name}</h3>
-                <div className="flex items-end gap-2 mb-6">
-                  <span className="text-4xl font-display font-bold text-white">{pkg.price_aed} AED</span>
+                <div className={pkg.is_popular ? "absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-icube-gold/50 via-icube-gold to-icube-gold/50" : ""} />
+                <h3 className="text-xl font-display font-semibold mb-2 tracking-tight text-white pt-1">{pkg.name}</h3>
+                <div className="flex items-end gap-2 mb-5">
+                  <span className="text-3xl md:text-4xl font-display font-bold text-white">{pkg.price_aed} AED</span>
                   <span className="text-gray-500 text-sm mb-1">/ session</span>
                 </div>
-                <div className="flex items-center gap-2 text-gray-400 text-sm mb-8 bg-black/30 p-3 rounded-sm">
-                  <Clock size={16} className="text-icube-gold" />
+                <div className="flex items-center gap-2 text-gray-400 text-sm mb-6 bg-black/30 border border-white/5 p-3 rounded-xl">
+                  <Clock size={16} className="text-icube-gold shrink-0" />
                   <span>{pkg.duration}</span>
                 </div>
-                <ul className="space-y-4 mb-10">
+                <ul className="space-y-3 mb-8">
                   {features.map((feature, j) => (
                     <li key={j} className="flex items-start gap-3 text-gray-300 font-light text-sm">
                       <CheckCircle2 size={18} className="text-icube-gold shrink-0 mt-0.5" />
@@ -109,22 +120,23 @@ export default function Booking() {
                 <button
                   type="button"
                   onClick={() => handlePackageSelect(pkg.id)}
-                  className={`w-full py-4 font-semibold uppercase tracking-wider rounded-sm transition-colors ${pkg.is_popular ? "bg-icube-gold text-icube-dark hover:bg-icube-gold-light" : "bg-white/5 text-white hover:bg-white/10"}`}
+                  className={`w-full py-4 font-semibold uppercase tracking-wider rounded-xl transition-all duration-300 ${pkg.is_popular ? "bg-icube-gold text-icube-dark hover:bg-icube-gold-light shadow-[0_4px_20px_rgba(212,175,55,0.3)]" : "bg-white/10 text-white border border-white/10 hover:bg-white/15 hover:border-icube-gold/30"}`}
                 >
                   Select Package
                 </button>
               </motion.div>
+              </div>
             );
           })}
         </div>
 
         <motion.div
           id="custom-booking-form"
-          initial={{ opacity: 0, y: 40 }}
+          initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.6 }}
-          className="mt-20 bg-white/5 border border-white/10 p-8 md:p-12 rounded-xl shadow-[0_18px_45px_rgba(0,0,0,0.4)]"
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ ...viewportTransition, delay: 0.1 }}
+          className="mt-20 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-sm p-8 md:p-12 shadow-[0_12px_40px_rgba(0,0,0,0.3)]"
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <div>

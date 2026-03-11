@@ -18,6 +18,7 @@ service cloud.firestore {
     match /why_us/{id} { allow read: if true; allow write: if isAdmin(); }
     match /studio_equipment/{id} { allow read: if true; allow write: if isAdmin(); }
     match /studios/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /videos/{id} { allow read: if true; allow write: if isAdmin(); }
 
     // Public submits (write only), admin reads
     match /bookings/{id} {
@@ -29,9 +30,9 @@ service cloud.firestore {
       allow read, update, delete: if isAdmin();
     }
 
-    // Admins collection (only admins can manage)
+    // Admins collection: list of admin UIDs (add via Firebase Console). Logged-in user can read own doc to check if admin.
     match /admins/{uid} {
-      allow read: if isAdmin() && request.auth.uid == uid;
+      allow read: if request.auth != null && request.auth.uid == uid;
       allow write: if false; // manage via Firebase Console
     }
   }

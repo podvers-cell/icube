@@ -74,7 +74,7 @@ export default function Hero() {
       className="relative h-screen min-h-[100dvh] w-full flex items-end md:items-center justify-center overflow-hidden pt-16 md:pt-0"
     >
       <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-gradient-to-b from-icube-dark/60 via-icube-dark/40 to-icube-dark z-10" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/60 z-10" />
         {bgType === "video" && bgVideo ? (
           youtubeEmbed ? (
             <div className="absolute inset-0 overflow-hidden">
@@ -82,9 +82,9 @@ export default function Hero() {
                 src={youtubeEmbed}
                 className="absolute top-1/2 left-1/2 pointer-events-none"
                 style={{
-                  width: "130%",
-                  height: "130%",
-                  transform: "translate(-50%, -50%) scale(1.15)",
+                  width: "100%",
+                  height: "100%",
+                  transform: "translate(-50%, -50%) scale(1.05)",
                 }}
                 allow="autoplay; fullscreen; picture-in-picture"
                 frameBorder="0"
@@ -126,7 +126,7 @@ export default function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
             className="text-5xl md:text-7xl lg:text-9xl font-display font-extrabold tracking-tight text-white leading-tight"
             style={{ textShadow: "0 0 32px rgba(212,175,55,0.65)" }}
           >
@@ -137,7 +137,7 @@ export default function Hero() {
         <motion.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.9, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.5, delay: 0.2, ease: [0.4, 0, 0.2, 1] }}
           className="max-w-2xl text-sm md:text-base text-gray-300/90 leading-relaxed"
         >
           {subtitle}
@@ -146,21 +146,21 @@ export default function Hero() {
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.5, delay: 0.35, ease: [0.4, 0, 0.2, 1] }}
           className="flex flex-col sm:flex-row items-center gap-6"
         >
           <a
-            href="#booking"
-            className="group relative px-8 py-4 bg-icube-gold text-icube-dark font-semibold uppercase tracking-wider rounded-sm overflow-hidden flex items-center gap-2 hover:bg-icube-gold-light transition-colors"
+            href="/packages"
+            className="group relative px-8 py-4 bg-icube-gold text-icube-dark font-semibold uppercase tracking-wider rounded-lg overflow-hidden flex items-center gap-2 hover:bg-icube-gold-light transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shadow-[0_4px_20px_rgba(212,175,55,0.35)]"
           >
             <span className="relative z-10">Book Studio</span>
-            <ArrowRight size={18} className="relative z-10 group-hover:translate-x-1 transition-transform" />
+            <ArrowRight size={18} className="relative z-10 group-hover:translate-x-1 transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]" />
           </a>
           <a
-            href="#portfolio"
-            className="group flex items-center gap-4 text-white hover:text-icube-gold transition-colors"
+            href="/portfolio"
+            className="group flex items-center gap-4 text-white hover:text-icube-gold transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
           >
-            <div className="w-14 h-14 rounded-full border border-white/30 flex items-center justify-center group-hover:border-icube-gold transition-colors">
+            <div className="w-14 h-14 rounded-full border border-white/30 flex items-center justify-center group-hover:border-icube-gold transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
               <Play size={20} className="ml-1" />
             </div>
             <span className="font-semibold uppercase tracking-wider text-sm">View Portfolio</span>
@@ -171,14 +171,14 @@ export default function Hero() {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 1, delay: 1.5 }}
+        transition={{ duration: 0.5, delay: 0.5, ease: [0.4, 0, 0.2, 1] }}
         className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-20"
       >
         <span className="text-xs text-gray-500 uppercase tracking-widest rotate-90 mb-8">Scroll</span>
         <div className="w-[1px] h-16 bg-white/20 relative overflow-hidden">
           <motion.div
             animate={{ y: [0, 64] }}
-            transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+            transition={{ repeat: Infinity, duration: 2, ease: [0.4, 0, 0.2, 1] }}
             className="absolute top-0 left-0 w-full h-1/2 bg-icube-gold"
           />
         </div>

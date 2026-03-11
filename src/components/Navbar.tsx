@@ -1,14 +1,16 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Menu, X, LogOut } from "lucide-react";
+import { Menu, X, LogOut, LayoutDashboard } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
+import { useContactModal } from "../ContactModalContext";
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin = false } = useAuth();
+  const { openContact } = useContactModal();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -19,13 +21,13 @@ export default function Navbar() {
   }, []);
 
   const navLinks = [
-    { name: "Home", href: "#home" },
-    { name: "Services", href: "#services" },
-    { name: "Studio", href: "#studio" },
-    { name: "Portfolio", href: "#portfolio" },
-    { name: "Why Us", href: "#why-us" },
-    { name: "Testimonials", href: "#testimonials" },
-    { name: "Contact", href: "#contact" },
+    { name: "Home", href: "/" },
+    { name: "Services", href: "/#services" },
+    { name: "Studio", href: "/#studio" },
+    { name: "Portfolio", href: "/portfolio" },
+    { name: "Why Us", href: "/#why-us" },
+    { name: "Packages", href: "/packages" },
+    { name: "Contact", openContact: true },
   ];
 
   const displayName =
@@ -48,16 +50,16 @@ export default function Navbar() {
     <motion.nav
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-      className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
+      transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+      className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
         isScrolled
           ? "bg-black/35 border-b border-white/10 backdrop-blur-2xl shadow-lg"
           : "bg-transparent border-b border-transparent"
       }`}
     >
-      <div className="w-full px-4 md:px-8 lg:px-10 py-2 flex items-center justify-between gap-4 relative">
-        {/* Logo – left, links to home */}
-        <a href="#home" className="flex items-center gap-2 z-50">
+      <div className="w-full px-4 md:px-8 lg:px-10 py-2 flex items-center gap-4 md:gap-6">
+        {/* Logo – left */}
+        <a href="/" className="flex items-center gap-2 z-50 shrink-0">
           <img
             src="/icube-logo.svg"
             alt="ICUBE Vision TV Production"
@@ -65,28 +67,48 @@ export default function Navbar() {
           />
         </a>
 
-        {/* Desktop Nav – perfectly centered */}
-        <div className="hidden md:block absolute left-1/2 -translate-x-1/2">
-          <nav className="flex items-center gap-7">
-            {navLinks.map((link) => (
-              <a
-                key={link.name}
-                href={link.href}
-                className="relative text-[11px] font-medium text-gray-200/80 hover:text-white transition-colors tracking-[0.18em] uppercase after:absolute after:left-0 after:-bottom-1 after:h-[1px] after:w-full after:bg-icube-gold after:scale-x-0 hover:after:scale-x-100 after:origin-left after:transition-transform after:duration-300"
-              >
-                {link.name}
-              </a>
-            ))}
+        {/* Desktop Nav – flex-1 so it shifts left when right section grows; scrolls if needed */}
+        <div className="hidden md:flex flex-1 min-w-0 justify-center overflow-x-auto overflow-y-visible py-1">
+          <nav className="flex items-center gap-5 lg:gap-7 shrink-0 h-full">
+            {navLinks.map((link) =>
+              "openContact" in link && link.openContact ? (
+                <button
+                  key={link.name}
+                  type="button"
+                  onClick={() => openContact()}
+                  className="relative inline-block py-2 pb-2.5 whitespace-nowrap text-[11px] font-medium text-gray-200/80 hover:text-white tracking-[0.18em] uppercase transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-full after:bg-icube-gold after:scale-x-0 after:origin-left after:transition-transform after:duration-300 after:[transition-timing-function:cubic-bezier(0.4,0,0.2,1)] hover:after:scale-x-100 bg-transparent border-0 cursor-pointer"
+                >
+                  {link.name}
+                </button>
+              ) : (
+                <a
+                  key={link.name}
+                  href={(link as { href: string }).href}
+                  className="relative inline-block py-2 pb-2.5 whitespace-nowrap text-[11px] font-medium text-gray-200/80 hover:text-white tracking-[0.18em] uppercase transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-full after:bg-icube-gold after:scale-x-0 after:origin-left after:transition-transform after:duration-300 after:[transition-timing-function:cubic-bezier(0.4,0,0.2,1)] hover:after:scale-x-100"
+                >
+                  {link.name}
+                </a>
+              )
+            )}
           </nav>
         </div>
 
-        {/* Desktop auth / CTA – right */}
-        <div className="hidden md:flex items-center gap-3">
+        {/* Desktop auth / CTA – right, never shrinks */}
+        <div className="hidden md:flex items-center gap-2 lg:gap-3 shrink-0">
           {user ? (
             <>
               <span className="text-[11px] uppercase tracking-[0.18em] text-gray-300/90">
                 Welcome <span className="text-icube-gold">{displayName}</span>
               </span>
+              {isAdmin && (
+                <a
+                  href="/dashboard"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-icube-gold/20 border border-icube-gold/50 text-[11px] font-semibold uppercase tracking-[0.18em] text-icube-gold hover:bg-icube-gold hover:text-icube-dark transition-colors"
+                >
+                  <LayoutDashboard size={14} className="shrink-0" />
+                  Dashboard
+                </a>
+              )}
               <button
                 type="button"
                 onClick={handleLogout}
@@ -96,7 +118,7 @@ export default function Navbar() {
                 <LogOut size={14} />
               </button>
               <a
-                href="#booking"
+                href="/packages"
                 className="px-4 py-1.5 rounded-full border border-icube-gold/70 text-[11px] font-semibold uppercase tracking-[0.22em] text-icube-gold hover:bg-icube-gold hover:text-icube-dark transition-colors"
               >
                 Book Studio
@@ -117,7 +139,7 @@ export default function Navbar() {
                 Sign up
               </a>
               <a
-                href="#booking"
+                href="/packages"
                 className="px-4 py-1.5 rounded-full border border-icube-gold/70 text-[11px] font-semibold uppercase tracking-[0.22em] text-icube-gold hover:bg-icube-gold hover:text-icube-dark transition-colors"
               >
                 Book Studio
@@ -144,21 +166,42 @@ export default function Navbar() {
             exit={{ opacity: 0, y: -20 }}
             className="absolute top-0 left-0 right-0 h-screen bg-icube-dark/95 backdrop-blur-xl flex flex-col items-center justify-center gap-8"
           >
-            {navLinks.map((link) => (
-              <a
-                key={link.name}
-                href={link.href}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="relative text-xl font-display font-medium text-gray-300 hover:text-white transition-colors tracking-[0.2em] uppercase after:absolute after:left-0 after:-bottom-1 after:h-[2px] after:w-full after:bg-icube-gold after:scale-x-0 hover:after:scale-x-100 after:origin-left after:transition-transform after:duration-300"
-              >
-                {link.name}
-              </a>
-            ))}
+            {navLinks.map((link) =>
+              "openContact" in link && link.openContact ? (
+                <button
+                  key={link.name}
+                  type="button"
+                  onClick={() => { openContact(); setIsMobileMenuOpen(false); }}
+                  className="relative text-xl font-display font-medium text-gray-300 hover:text-white transition-colors tracking-[0.2em] uppercase after:absolute after:left-0 after:-bottom-1 after:h-[2px] after:w-full after:bg-icube-gold after:scale-x-0 hover:after:scale-x-100 after:origin-left after:transition-transform after:duration-300 bg-transparent border-0 cursor-pointer"
+                >
+                  {link.name}
+                </button>
+              ) : (
+                <a
+                  key={link.name}
+                  href={(link as { href: string }).href}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="relative text-xl font-display font-medium text-gray-300 hover:text-white transition-colors tracking-[0.2em] uppercase after:absolute after:left-0 after:-bottom-1 after:h-[2px] after:w-full after:bg-icube-gold after:scale-x-0 hover:after:scale-x-100 after:origin-left after:transition-transform after:duration-300"
+                >
+                  {link.name}
+                </a>
+              )
+            )}
             {user ? (
               <>
                 <span className="mt-4 text-xs uppercase tracking-[0.2em] text-gray-300">
                   Welcome <span className="text-icube-gold">{displayName}</span>
                 </span>
+                {isAdmin && (
+                  <a
+                    href="/dashboard"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-icube-gold/20 border border-icube-gold/50 text-xs font-semibold uppercase tracking-[0.2em] text-icube-gold hover:bg-icube-gold hover:text-icube-dark transition-colors"
+                  >
+                    <LayoutDashboard size={16} className="shrink-0" />
+                    Dashboard
+                  </a>
+                )}
                 <button
                   type="button"
                   onClick={handleLogout}
@@ -168,7 +211,7 @@ export default function Navbar() {
                   <LogOut size={16} />
                 </button>
                 <a
-                  href="#booking"
+                  href="/packages"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="px-8 py-3 bg-icube-gold text-icube-dark text-sm font-semibold uppercase tracking-[0.24em] rounded-full hover:bg-icube-gold-light"
                 >
@@ -192,7 +235,7 @@ export default function Navbar() {
                   Sign up
                 </a>
                 <a
-                  href="#booking"
+                  href="/packages"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="px-8 py-3 bg-icube-gold text-icube-dark text-sm font-semibold uppercase tracking-[0.24em] rounded-full hover:bg-icube-gold-light"
                 >
