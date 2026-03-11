@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Wrench } from "lucide-react";
 import { useSiteData } from "@/SiteDataContext";
+import { useAuth } from "@/AuthContext";
 
 function isMaintenanceEnabled(value: unknown): boolean {
   if (typeof value !== "string") return false;
@@ -15,13 +16,18 @@ function isMaintenanceEnabled(value: unknown): boolean {
 export default function MaintenanceGate({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || "/";
   const { settings } = useSiteData();
+  const { isAdmin, loading } = useAuth();
 
   const enabled = useMemo(() => isMaintenanceEnabled(settings?.maintenance_mode), [settings]);
   const message =
     (typeof settings?.maintenance_message === "string" && settings.maintenance_message.trim()) ||
     "We’re currently performing scheduled maintenance. Please check back shortly.";
 
-  const allow = pathname.startsWith("/dashboard") || pathname.startsWith("/login") || pathname.startsWith("/maintenance");
+  const allow =
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/maintenance") ||
+    (!loading && isAdmin);
 
   if (!enabled || allow) return children;
 

@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
-import { api, getBookingAddons, type BookingAddon } from "../api";
+import { api, getBookingAddons, getBookingPackages, type BookingAddon } from "../api";
+
+type BookingPackage = { id: number; name: string; price_aed: number };
 
 type Booking = {
   id: string;
@@ -57,6 +59,7 @@ export default function DashboardBookings() {
   const [list, setList] = useState<Booking[]>([]);
   const [selected, setSelected] = useState<Booking | null>(null);
   const [addons, setAddons] = useState<BookingAddon[]>([]);
+  const [packages, setPackages] = useState<BookingPackage[]>([]);
 
   function load() {
     api.get<Booking[]>("/dashboard/bookings").then(setList).catch(() => {});
@@ -64,6 +67,11 @@ export default function DashboardBookings() {
   useEffect(() => load(), []);
   useEffect(() => {
     getBookingAddons().then(setAddons);
+  }, []);
+  useEffect(() => {
+    getBookingPackages()
+      .then((p) => setPackages((p || []).map((x) => ({ id: Number((x as any).id), name: (x as any).name, price_aed: Number((x as any).price_aed) }))))
+      .catch(() => {});
   }, []);
 
   async function removeBooking(id: string) {
@@ -235,6 +243,19 @@ export default function DashboardBookings() {
 
               {(selected.studio_total_aed != null || selected.addons_total_aed != null || (selected.addon_ids?.length ?? 0) > 0) && (
                 <div className="space-y-4">
+                  {selected.package_id && selected.studio_total_aed == null && (
+                    <div>
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Package</p>
+                      <p className="text-white">
+                        {(() => {
+                          const pkgId = Number(selected.package_id);
+                          const pkg = packages.find((p) => p.id === pkgId);
+                          if (pkg) return `${pkg.name} · ${pkg.price_aed} AED`;
+                          return selected.package_name || selected.package_id;
+                        })()}
+                      </p>
+                    </div>
+                  )}
                   {selected.studio_total_aed != null && (
                     <div>
                       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Studio total</p>
@@ -270,6 +291,21 @@ export default function DashboardBookings() {
                       <p className="text-white">{selected.addons_total_aed} AED</p>
                     </div>
                   )}
+                  {(() => {
+                    const addonsTotal = selected.addons_total_aed ?? 0;
+                    const studioTotal = selected.studio_total_aed ?? null;
+                    const pkgId = selected.package_id != null ? Number(selected.package_id) : null;
+                    const pkgPrice = pkgId != null && !isNaN(pkgId) ? packages.find((p) => p.id === pkgId)?.price_aed ?? null : null;
+                    const base = studioTotal ?? pkgPrice ?? null;
+                    if (base == null && addonsTotal <= 0) return null;
+                    const total = (base ?? 0) + addonsTotal;
+                    return (
+                      <div className="border-t border-white/10 pt-4 flex items-center justify-between">
+                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total amount</p>
+                        <p className="text-icube-gold font-semibold">{total} AED</p>
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
 

@@ -8,6 +8,8 @@ import { firebaseAuth, firestore } from "./firebase";
 
 export type User = { id: string; email: string; name: string | null; photoURL: string | null };
 
+const ADMIN_EMAIL = "admin@icube.ae";
+
 const AuthContext = createContext<{
   user: User | null;
   loading: boolean;
@@ -31,10 +33,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       setUser({ id: u.uid, email: u.email || "", name: u.displayName || null, photoURL: u.photoURL || null });
       try {
+        const emailIsAdmin = (u.email || "").trim().toLowerCase() === ADMIN_EMAIL.toLowerCase();
         const adminSnap = await getDoc(doc(firestore, "admins", u.uid));
-        setIsAdmin(adminSnap.exists());
+        setIsAdmin(emailIsAdmin || adminSnap.exists());
       } catch {
-        setIsAdmin(false);
+        const emailIsAdmin = (u.email || "").trim().toLowerCase() === ADMIN_EMAIL.toLowerCase();
+        setIsAdmin(emailIsAdmin);
       }
       setLoading(false);
     });

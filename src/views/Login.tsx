@@ -7,8 +7,6 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../AuthContext";
 import { firebaseAuth } from "../firebase";
 
-const ADMIN_EMAIL = "admin@icube.ae";
-
 function getRedirectFrom(): string {
   if (typeof window === "undefined") return "/dashboard";
   const from = new URLSearchParams(window.location.search).get("from");
@@ -33,11 +31,7 @@ export default function Login() {
     try {
       const trimmedEmail = email.trim().toLowerCase();
       await login(trimmedEmail, password);
-      if (trimmedEmail === ADMIN_EMAIL.toLowerCase()) {
-        router.replace(from);
-      } else {
-        router.replace("/");
-      }
+      router.replace(from);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {
@@ -51,12 +45,7 @@ export default function Login() {
     try {
       const provider = new GoogleAuthProvider();
       const cred = await signInWithPopup(firebaseAuth, provider);
-      const userEmail = cred.user.email?.toLowerCase() ?? "";
-      if (userEmail === ADMIN_EMAIL.toLowerCase()) {
-        router.replace(from);
-      } else {
-        router.replace("/");
-      }
+      router.replace(from);
     } catch (err: any) {
       if (err?.code === "auth/popup-closed-by-user") {
         // Silent fail if user closed the popup

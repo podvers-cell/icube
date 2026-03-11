@@ -134,6 +134,7 @@ export default function Navbar() {
               </button>
               <Link
                 href="/#studio"
+                onClick={(e) => handleNavLinkClick(e, "/#studio")}
                 className="px-4 py-1.5 rounded-full border border-icube-gold/70 text-[11px] font-semibold uppercase tracking-[0.22em] text-icube-gold hover:bg-icube-gold hover:text-icube-dark transition-colors"
               >
                 Book Studio
@@ -155,6 +156,7 @@ export default function Navbar() {
               </Link>
               <Link
                 href="/#studio"
+                onClick={(e) => handleNavLinkClick(e, "/#studio")}
                 className="px-4 py-1.5 rounded-full border border-icube-gold/70 text-[11px] font-semibold uppercase tracking-[0.22em] text-icube-gold hover:bg-icube-gold hover:text-icube-dark transition-colors"
               >
                 Book Studio

@@ -22,6 +22,10 @@ function assertAuth() {
   if (!firebaseAuth.currentUser) throw new Error("Unauthorized");
 }
 
+function stripUndefined<T extends Record<string, unknown>>(obj: T): Partial<T> {
+  return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined)) as Partial<T>;
+}
+
 async function getSettingsDoc() {
   const ref = doc(firestore, "site_settings", "main");
   const snap = await getDoc(ref);
@@ -131,7 +135,7 @@ export const api = {
         addons_total_aed?: number;
       };
       await addDoc(collection(firestore, "bookings"), {
-        ...b,
+        ...stripUndefined(b),
         status: "pending",
         created_at: serverTimestamp(),
       });
@@ -391,12 +395,18 @@ export async function getBookedSlots(bookingDate: string, studioId?: string): Pr
       const data = d.data();
       const status = data.status as string | undefined;
       if (status === "cancelled") return;
-      if (studioId != null && data.studio_id !== studioId) return;
-      const timeSlot = data.time_slot as string | undefined;
-      const durationHours = (data.booking_duration_hours as number | undefined) ?? 1;
-      if (!timeSlot) return;
-      const [hStr] = timeSlot.split(":");
-      const startHour = parseInt(hStr ?? "0", 10);
+      if (studioId != null && String(data.studio_id ?? "") !== String(studioId)) return;
+      const timeSlotRaw = data.time_slot as string | undefined;
+      const rawDuration = data.booking_duration_hours as unknown;
+      const parsedDuration =
+        typeof rawDuration === "number" ? rawDuration : parseInt(String(rawDuration ?? ""), 10);
+      const durationHours = Number.isFinite(parsedDuration) && parsedDuration > 0 ? parsedDuration : 1;
+      if (!timeSlotRaw) return;
+
+      // Accept "13:00", "13:00 - 15:00", "1:00 PM" (legacy / inconsistent data).
+      const m = timeSlotRaw.match(/(\d{1,2}):(\d{2})/);
+      if (!m) return;
+      const startHour = parseInt(m[1] ?? "0", 10);
       if (isNaN(startHour)) return;
       for (let i = 0; i < durationHours; i++) {
         const hour = startHour + i;

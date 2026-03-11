@@ -5,8 +5,32 @@ import Link from "next/link";
 import { api } from "../api";
 import { Calendar, Mail, Package, Image } from "lucide-react";
 
+type FirestoreTimestampLike =
+  | string
+  | { seconds: number; nanoseconds?: number }
+  | { _seconds: number; _nanoseconds?: number }
+  | { toDate?: () => Date };
+
+function formatCreatedAt(raw: FirestoreTimestampLike): string {
+  if (!raw) return "—";
+  let date: Date;
+  if (typeof raw === "string") {
+    date = new Date(raw);
+  } else if (typeof raw === "object" && raw !== null && "toDate" in raw && typeof raw.toDate === "function") {
+    date = raw.toDate();
+  } else if (typeof raw === "object" && raw !== null && "seconds" in raw) {
+    date = new Date((raw as { seconds: number }).seconds * 1000);
+  } else if (typeof raw === "object" && raw !== null && "_seconds" in raw) {
+    date = new Date((raw as { _seconds: number })._seconds * 1000);
+  } else {
+    date = new Date(Number(raw));
+  }
+  if (isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString("en-AE", { dateStyle: "medium" });
+}
+
 export default function DashboardOverview() {
-  const [bookings, setBookings] = useState<{ id: string; created_at: string }[]>([]);
+  const [bookings, setBookings] = useState<{ id: string; created_at: FirestoreTimestampLike }[]>([]);
   const [messages, setMessages] = useState<{ id: string; read_at: string | null }[]>([]);
 
   useEffect(() => {
@@ -64,7 +88,7 @@ export default function DashboardOverview() {
             {recentBookings.map((b) => (
               <li key={b.id} className="text-gray-300 text-sm flex justify-between">
                 <span>Booking #{b.id}</span>
-                <span className="text-gray-500">{new Date(b.created_at).toLocaleDateString("en-AE")}</span>
+                <span className="text-gray-500">{formatCreatedAt(b.created_at)}</span>
               </li>
             ))}
           </ul>

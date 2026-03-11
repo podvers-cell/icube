@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { Play, ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
 import { useSiteData } from "../SiteDataContext";
@@ -45,6 +46,8 @@ function getYouTubeEmbedUrl(raw: string): string | null {
 
 export default function Hero() {
   const { settings, loading } = useSiteData();
+  const router = useRouter();
+  const pathname = usePathname();
   const phrase1 =
     settings.hero_title_1 || "Premium media & podcast studio crafting cinematic stories for modern brands.";
   const phrase2 =
@@ -168,7 +171,21 @@ export default function Hero() {
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 w-full sm:w-auto mt-8 sm:mt-10 md:mt-1">
           <Link
-            href="/packages"
+            href="/#studio"
+            onClick={(e) => {
+              const hash = "studio";
+              if (pathname === "/") {
+                e.preventDefault();
+                const el = document.getElementById(hash);
+                if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                else router.push("/#studio");
+                return;
+              }
+              // If somehow rendered on another route, go home then scroll.
+              e.preventDefault();
+              sessionStorage.setItem("scrollToSection", hash);
+              router.push("/");
+            }}
             className="group relative w-full sm:w-auto text-center px-6 py-3.5 sm:px-8 sm:py-4 bg-icube-gold text-icube-dark font-semibold uppercase tracking-wider rounded-lg overflow-hidden flex items-center justify-center gap-2 hover:bg-icube-gold-light transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shadow-[0_4px_20px_rgba(212,175,55,0.35)]"
           >
             <span className="relative z-10">Book Studio</span>
