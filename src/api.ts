@@ -310,8 +310,18 @@ export async function getSiteSettings() {
 export async function getServices() {
   return api.get<{ id: number; title: string; description: string; icon: string; sort_order: number }[]>("/services");
 }
+export type PortfolioProject = {
+  id: number | string;
+  title: string;
+  category: string;
+  image_url: string;
+  sort_order: number;
+  video_url?: string;
+  visible?: boolean;
+  show_in_selected_work?: boolean;
+};
 export async function getPortfolio() {
-  return api.get<{ id: number; title: string; category: string; image_url: string; sort_order: number; video_url?: string }[]>("/portfolio");
+  return api.get<PortfolioProject[]>("/portfolio");
 }
 export async function getTestimonials() {
   return api.get<{ id: number; quote: string; author: string; role: string; image_url: string; sort_order: number }[]>("/testimonials");

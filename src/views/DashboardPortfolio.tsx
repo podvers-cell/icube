@@ -52,7 +52,7 @@ export default function DashboardPortfolio() {
     }
   }
 
-  async function remove(id: number) {
+  async function remove(id: number | string) {
     if (!confirm("Delete this project?")) return;
     try {
       await api.delete(`/dashboard/portfolio/${id}`);
