@@ -372,6 +372,25 @@ export function submitBooking(data: BookingPayload) {
   return api.post<{ success: boolean }>("/booking", data);
 }
 
+/** Sends a confirmation email to the customer after booking. Call after submitBooking. */
+export async function sendBookingConfirmationEmail(data: BookingPayload): Promise<void> {
+  const base = typeof window !== "undefined" ? "" : process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "";
+  const res = await fetch(`${base}/api/send-booking-confirmation`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    if (res.status === 503) {
+      if (typeof window !== "undefined") console.warn("[Booking] Confirmation email not configured (RESEND_API_KEY missing).");
+      return;
+    }
+    if (typeof window !== "undefined") console.error("[Booking] Confirmation email failed:", res.status, body?.error);
+    return; // don't throw; booking was already saved
+  }
+}
+
 export type BookingAddon = { id: string; name: string; description?: string; price_aed: number; sort_order?: number };
 export async function getBookingAddons(): Promise<BookingAddon[]> {
   try {

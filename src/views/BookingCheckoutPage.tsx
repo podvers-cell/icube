@@ -7,7 +7,7 @@ import { ChevronLeft, Loader2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useBooking } from "@/BookingContext";
-import { submitBooking } from "@/api";
+import { submitBooking, sendBookingConfirmationEmail } from "@/api";
 
 export default function BookingCheckoutPage() {
   const router = useRouter();
@@ -45,7 +45,7 @@ export default function BookingCheckoutPage() {
     if (!selectedPackage) return;
     setSubmitting(true);
     try {
-      await submitBooking({
+      const payload = {
         first_name: form.first_name,
         last_name: form.last_name,
         email: form.email,
@@ -56,7 +56,13 @@ export default function BookingCheckoutPage() {
         ...(selectedDate && { booking_date: selectedDate }),
         ...(selectedTimeSlot && { time_slot: selectedTimeSlot }),
         ...(selectedAddOns.length > 0 && { addon_ids: selectedAddOns.map((a) => a.id), addons_total_aed: totalAddonsAmount }),
-      });
+      };
+      await submitBooking(payload);
+      try {
+        await sendBookingConfirmationEmail(payload);
+      } catch {
+        // Booking saved; email is best-effort
+      }
       setSuccessSummary({
         packageName: selectedPackage.name,
         ...(selectedDate && { bookingDate: selectedDate }),

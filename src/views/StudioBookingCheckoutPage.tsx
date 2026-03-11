@@ -7,7 +7,7 @@ import { ChevronLeft, Loader2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useBooking } from "@/BookingContext";
-import { submitBooking } from "@/api";
+import { submitBooking, sendBookingConfirmationEmail } from "@/api";
 
 function formatTimeSlot(value: string): string {
   const [hStr] = value.split(":");
@@ -55,7 +55,7 @@ export default function StudioBookingCheckoutPage() {
     if (!selectedStudio || !selectedDate || !selectedTimeSlot || !selectedDurationHours) return;
     setSubmitting(true);
     try {
-      await submitBooking({
+      const payload = {
         first_name: form.first_name,
         last_name: form.last_name,
         email: form.email,
@@ -69,7 +69,13 @@ export default function StudioBookingCheckoutPage() {
         time_slot: selectedTimeSlot,
         addon_ids: selectedAddOns.map((a) => a.id),
         addons_total_aed: totalAddonsAmount,
-      });
+      };
+      await submitBooking(payload);
+      try {
+        await sendBookingConfirmationEmail(payload);
+      } catch {
+        // Booking saved; email is best-effort
+      }
       setSuccessSummary({
         studioName: selectedStudio.name,
         bookingDate: selectedDate,

@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Calendar, Clock, CheckCircle2, Sparkles, ArrowRight } from "lucide-react";
 import { useSiteData } from "../SiteDataContext";
-import { submitBooking } from "../api";
+import { submitBooking, sendBookingConfirmationEmail } from "../api";
 import { useBooking } from "@/BookingContext";
 
 function parseFeatures(s: string): string[] {
@@ -51,13 +51,19 @@ export default function Booking() {
     e.preventDefault();
     setCustomSubmitting(true);
     try {
-      await submitBooking({
+      const payload = {
         first_name: customForm.first_name,
         last_name: customForm.last_name,
         email: customForm.email,
         phone: customForm.phone || undefined,
         project_details: customForm.project_details || undefined,
-      });
+      };
+      await submitBooking(payload);
+      try {
+        await sendBookingConfirmationEmail(payload);
+      } catch {
+        // Booking saved; email is best-effort
+      }
       setSubmitted(true);
       setCustomForm({ first_name: "", last_name: "", email: "", phone: "", project_details: "" });
     } catch (err) {
