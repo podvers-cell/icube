@@ -3,12 +3,13 @@ import { Resend } from "resend";
 import { contactFormSchema } from "@/schemas/contact";
 import { CONTACT_EMAIL } from "@/constants/contact";
 
-const FROM_EMAIL = process.env.CONTACT_FROM_EMAIL || "ICUBE Media Studio <onboarding@resend.dev>";
+const FROM_EMAIL = process.env.CONTACT_FROM_EMAIL || "onboarding@resend.dev";
 const TO_EMAIL = process.env.CONTACT_TO_EMAIL || CONTACT_EMAIL;
 
 export async function POST(request: Request) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
+    console.error("[send-contact-email] RESEND_API_KEY is not set");
     return NextResponse.json(
       { error: "Email not configured (RESEND_API_KEY missing)" },
       { status: 503 }
@@ -48,9 +49,11 @@ export async function POST(request: Request) {
   });
 
   if (error) {
+    console.error("[send-contact-email] Resend error:", error.message, { to: TO_EMAIL });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  console.info("[send-contact-email] Sent to", TO_EMAIL, "id:", data?.id);
   return NextResponse.json({ success: true, id: data?.id });
 }
 

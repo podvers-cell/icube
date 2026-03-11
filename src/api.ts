@@ -442,8 +442,15 @@ export async function sendContactEmailNotification(data: {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  if (!res.ok && res.status !== 503) {
-    throw new Error((await res.json().catch(() => ({}))).error || "Failed to send email notification");
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    if (res.status === 503) {
+      if (typeof window !== "undefined") console.warn("[Contact] Email not configured (RESEND_API_KEY missing). Message was still saved.");
+      return;
+    }
+    const msg = (body && typeof body.error === "string" ? body.error : "Failed to send email notification") as string;
+    if (typeof window !== "undefined") console.error("[Contact] Email send failed:", res.status, msg);
+    throw new Error(msg);
   }
 }
 
