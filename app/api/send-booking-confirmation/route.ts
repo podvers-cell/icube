@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { bookingPayloadSchema } from "@/schemas/booking";
+import { CONTACT_EMAIL } from "@/constants/contact";
 
 const FROM_EMAIL = process.env.CONTACT_FROM_EMAIL || "onboarding@resend.dev";
+const INFO_EMAIL = process.env.CONTACT_TO_EMAIL || CONTACT_EMAIL;
 
 function escapeHtml(s: string): string {
   return s
@@ -136,6 +138,31 @@ export async function POST(request: Request) {
   if (error) {
     console.error("[send-booking-confirmation] Resend error:", error.message, { to: toEmail });
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  // Notify info@icubeproduction.com about the new booking
+  const ownerDetailRows = detailRows
+    .map((r) => `<tr><td style="padding: 6px 0; font-size: 14px; color: #6b7280;">${escapeHtml(r.label)}</td><td style="padding: 6px 0; font-size: 14px; font-weight: 600; color: #1a1a2e;">${escapeHtml(r.value).replace(/\n/g, "<br/>")}</td></tr>`)
+    .join("");
+  const ownerHtml = `
+    <h2 style="margin: 0 0 16px; font-size: 18px; color: #1a1a2e;">New booking request</h2>
+    <p style="margin: 0 0 12px; font-size: 14px; color: #374151;"><strong>From:</strong> ${escapeHtml(customerName)} &lt;${escapeHtml(toEmail)}&gt;</p>
+    ${b.phone ? `<p style="margin: 0 0 12px; font-size: 14px; color: #374151;"><strong>Phone:</strong> ${escapeHtml(b.phone)}</p>` : ""}
+    <table style="margin-top: 16px; border-collapse: collapse; width: 100%; max-width: 480px;"><tbody>${ownerDetailRows}</tbody></table>
+  `;
+  const ownerText = `New booking request\nFrom: ${customerName} <${toEmail}>${b.phone ? `\nPhone: ${b.phone}` : ""}\n\n${detailRows.map((r) => `${r.label}: ${r.value}`).join("\n")}`;
+
+  const { error: ownerError } = await resend.emails.send({
+    from: FROM_EMAIL,
+    to: [INFO_EMAIL],
+    replyTo: toEmail,
+    subject: `[ICUBE Booking] ${b.studio_name || b.package_id || "Booking"} – ${customerName}`,
+    html: ownerHtml,
+    text: ownerText,
+  });
+
+  if (ownerError) {
+    console.error("[send-booking-confirmation] Resend error (notify info):", ownerError.message, { to: INFO_EMAIL });
   }
 
   console.info("[send-booking-confirmation] Sent to", toEmail, "id:", data?.id);

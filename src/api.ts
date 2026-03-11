@@ -391,6 +391,38 @@ export async function sendBookingConfirmationEmail(data: BookingPayload): Promis
   }
 }
 
+/** Payload for "booking confirmed by admin" email. Pass the booking row from the dashboard. */
+export type BookingConfirmedPayload = {
+  first_name?: string;
+  last_name?: string;
+  email: string;
+  phone?: string;
+  studio_name?: string;
+  package_id?: string;
+  package_name?: string;
+  booking_date?: string;
+  time_slot?: string;
+  booking_duration_hours?: number;
+  studio_total_aed?: number;
+  addons_total_aed?: number;
+  project_details?: string;
+};
+
+/** Sends "Your booking is confirmed" email to the customer. Call after admin sets status to confirmed. */
+export async function sendBookingConfirmedEmail(data: BookingConfirmedPayload): Promise<void> {
+  const base = typeof window !== "undefined" ? "" : process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "";
+  const res = await fetch(`${base}/api/send-booking-confirmed`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    if (res.status === 503 && typeof window !== "undefined") console.warn("[Booking] Confirmed email not configured.");
+    else if (typeof window !== "undefined") console.error("[Booking] Confirmed email failed:", res.status, body?.error);
+  }
+}
+
 export type BookingAddon = { id: string; name: string; description?: string; price_aed: number; sort_order?: number };
 export async function getBookingAddons(): Promise<BookingAddon[]> {
   try {

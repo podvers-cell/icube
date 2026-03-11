@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { X } from "lucide-react";
-import { api, getBookingPackages } from "../api";
+import { api, getBookingPackages, sendBookingConfirmedEmail } from "../api";
 
 type BookingPackage = { id: number; name: string; price_aed: number };
 
@@ -78,9 +78,30 @@ export default function DashboardPackageBookings() {
     }
   }
 
-  async function setStatus(id: string, status: string) {
+  async function setStatus(id: string, status: string, booking?: Booking) {
     try {
       await api.patch(`/dashboard/bookings/${id}`, { status });
+      if (status === "confirmed" && booking?.email) {
+        try {
+          await sendBookingConfirmedEmail({
+            first_name: booking.first_name,
+            last_name: booking.last_name,
+            email: booking.email,
+            phone: booking.phone ?? undefined,
+            studio_name: booking.studio_name ?? undefined,
+            package_id: booking.package_id ?? undefined,
+            package_name: getPackageName(booking, packages),
+            booking_date: booking.booking_date ?? undefined,
+            time_slot: booking.time_slot ?? undefined,
+            booking_duration_hours: booking.booking_duration_hours ?? undefined,
+            studio_total_aed: booking.studio_total_aed ?? undefined,
+            addons_total_aed: booking.addons_total_aed,
+            project_details: booking.project_details ?? undefined,
+          });
+        } catch {
+          // Status updated; email is best-effort
+        }
+      }
       load();
       if (selected?.id === id) setSelected(null);
     } catch (err) {
@@ -136,7 +157,7 @@ export default function DashboardPackageBookings() {
                 <td className="py-3" onClick={(e) => e.stopPropagation()}>
                   {b.status === "pending" && (
                     <>
-                      <button onClick={() => setStatus(b.id, "confirmed")} className="text-green-400 text-sm mr-2">Confirm</button>
+                      <button onClick={() => setStatus(b.id, "confirmed", b)} className="text-green-400 text-sm mr-2">Confirm</button>
                       <button onClick={() => setStatus(b.id, "cancelled")} className="text-red-400 text-sm">Cancel</button>
                     </>
                   )}
@@ -228,7 +249,7 @@ export default function DashboardPackageBookings() {
             <div className="border-t border-white/10 px-6 py-4 flex items-center justify-between gap-4 bg-white/[0.02]">
               {selected.status === "pending" && (
                 <div className="flex gap-2">
-                  <button onClick={() => setStatus(selected.id, "confirmed")} className="px-4 py-2 rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30 text-sm font-medium">
+                  <button onClick={() => setStatus(selected.id, "confirmed", selected)} className="px-4 py-2 rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30 text-sm font-medium">
                     Confirm
                   </button>
                   <button onClick={() => setStatus(selected.id, "cancelled")} className="px-4 py-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 text-sm font-medium">
