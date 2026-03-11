@@ -20,6 +20,7 @@ import {
   Building2,
 } from "lucide-react";
 import { getSiteSettings } from "../api";
+import UserProfile from "../components/UserProfile";
 
 const nav = [
   { href: "/dashboard", end: true, label: "Overview", icon: LayoutGrid },
@@ -142,22 +143,9 @@ export default function DashboardLayoutNext({ children }: { children: React.Reac
 
         <main className="flex-1">
           <div className="bg-white/5 border border-white/10 rounded-2xl shadow-2xl backdrop-blur-xl h-full overflow-hidden">
-            <div className="px-4 md:px-6 py-4 border-b border-white/10 flex items-center justify-between sm:hidden">
-              <div>
-                <h1 className="font-display text-lg font-semibold">Dashboard</h1>
-                <p className="text-xs text-gray-400">
-                  Signed in as <span className="font-medium">{user?.email}</span>
-                </p>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="text-xs text-gray-400 hover:text-red-400 flex items-center gap-1"
-              >
-                <LogOut size={14} /> Logout
-              </button>
-            </div>
-            <div className="p-4 md:p-6 lg:p-8 overflow-auto h-[calc(100vh-5rem)] sm:h-[calc(100vh-6rem)]">
-              <div className="mb-4 flex items-center justify-end">
+            <header className="px-4 md:px-6 py-4 border-b border-white/10 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3 min-w-0">
+                <h1 className="font-display text-lg font-semibold text-white shrink-0">Dashboard</h1>
                 <button
                   type="button"
                   onClick={() => {
@@ -166,7 +154,7 @@ export default function DashboardLayoutNext({ children }: { children: React.Reac
                       .then(() => setCloudStatus("online"))
                       .catch(() => setCloudStatus("offline"));
                   }}
-                  className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium bg-black/30 ${
+                  className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium bg-black/30 shrink-0 ${
                     cloudStatus === "online"
                       ? "border-emerald-500/60 text-emerald-300"
                       : cloudStatus === "offline"
@@ -190,6 +178,9 @@ export default function DashboardLayoutNext({ children }: { children: React.Reac
                       : "Cloud sync: Checking…"}
                 </button>
               </div>
+              <UserProfile onLogout={() => router.replace("/")} className="shrink-0" />
+            </header>
+            <div className="p-4 md:p-6 lg:p-8 overflow-auto h-[calc(100vh-5rem)] sm:h-[calc(100vh-6rem)]">
               <Suspense
                 fallback={
                   <div className="flex items-center justify-center min-h-[200px]">

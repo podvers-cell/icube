@@ -16,6 +16,7 @@ type Studio = {
   short_description: string;
   details: string;
   price_aed_per_hour: number;
+  price_aed_per_hour_before?: number;
   capacity: number;
   size_sqm: number;
   cover_image_url: string;

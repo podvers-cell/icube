@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "motion/react";
 import { Menu, X, LogOut, LayoutDashboard } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../AuthContext";
@@ -50,10 +49,7 @@ export default function Navbar() {
   }
 
   return (
-    <motion.nav
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+    <nav
       className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
         isScrolled
           ? "bg-black/35 border-b border-white/10 backdrop-blur-2xl shadow-lg"
@@ -161,14 +157,8 @@ export default function Navbar() {
       </div>
 
       {/* Mobile Nav */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="absolute top-0 left-0 right-0 h-screen bg-icube-dark/95 backdrop-blur-xl flex flex-col items-center justify-center gap-8"
-          >
+      {isMobileMenuOpen && (
+          <div className="absolute top-0 left-0 right-0 h-screen bg-icube-dark/95 backdrop-blur-xl flex flex-col items-center justify-center gap-8">
             {navLinks.map((link) =>
               "openContact" in link && link.openContact ? (
                 <button
@@ -246,9 +236,8 @@ export default function Navbar() {
                 </Link>
               </>
             )}
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
-    </motion.nav>
+    </nav>
   );
 }

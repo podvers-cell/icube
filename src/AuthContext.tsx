@@ -6,7 +6,7 @@ import * as api from "./api";
 import { onAuthStateChanged } from "firebase/auth";
 import { firebaseAuth, firestore } from "./firebase";
 
-type User = { id: string; email: string; name: string | null };
+export type User = { id: string; email: string; name: string | null; photoURL: string | null };
 
 const AuthContext = createContext<{
   user: User | null;
@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false);
         return;
       }
-      setUser({ id: u.uid, email: u.email || "", name: u.displayName || null });
+      setUser({ id: u.uid, email: u.email || "", name: u.displayName || null, photoURL: u.photoURL || null });
       try {
         const adminSnap = await getDoc(doc(firestore, "admins", u.uid));
         setIsAdmin(adminSnap.exists());

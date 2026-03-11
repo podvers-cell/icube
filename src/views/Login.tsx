@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { motion } from "motion/react";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -71,11 +70,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-icube-dark via-black to-icube-gray flex items-center justify-center px-4">
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md bg-black/70 border border-white/10 rounded-2xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.75)]"
-      >
+      <div className="w-full max-w-md bg-black/70 border border-white/10 rounded-2xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.75)]">
         <div className="p-8">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-xl font-display font-semibold text-white tracking-tight">
@@ -158,7 +153,7 @@ export default function Login() {
           </form>
         </div>
 
-      </motion.div>
+      </div>
     </div>
   );
 }

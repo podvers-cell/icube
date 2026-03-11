@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { motion } from "motion/react";
 import { Play, ArrowRight } from "lucide-react";
 import { useSiteData } from "../SiteDataContext";
 
@@ -75,7 +74,16 @@ export default function Hero() {
       className="relative h-screen min-h-[100dvh] w-full flex items-end md:items-center justify-center overflow-hidden pt-16 md:pt-0"
     >
       <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/60 z-10" />
+        <div
+          className={bgType === "video" && bgVideo ? "absolute inset-0 z-10" : "absolute inset-0 z-10 bg-gradient-to-b from-black/70 via-black/50 to-black/60"}
+          style={
+            bgType === "video" && bgVideo
+              ? {
+                  background: `linear-gradient(to bottom, var(--color-icube-dark) 0%, color-mix(in srgb, var(--color-icube-dark) 85%, transparent) 12%, rgba(0,0,0,0.72) 50%, color-mix(in srgb, var(--color-icube-dark) 85%, transparent) 88%, var(--color-icube-dark) 100%)`,
+                }
+              : undefined
+          }
+        />
         {bgType === "video" && bgVideo ? (
           youtubeEmbed ? (
             <div className="absolute inset-0 overflow-hidden">
@@ -85,7 +93,7 @@ export default function Hero() {
                 style={{
                   width: "100%",
                   height: "100%",
-                  transform: "translate(-50%, -50%) scale(1.05)",
+                  transform: "translate(-50%, -50%) scale(1.10)",
                 }}
                 allow="autoplay; fullscreen; picture-in-picture"
                 frameBorder="0"
@@ -95,11 +103,11 @@ export default function Hero() {
           ) : (
             <div className="absolute inset-0 overflow-hidden">
               <video
-                className="absolute top-1/2 left-1/2 object-cover opacity-70"
+                className="absolute top-1/2 left-1/2 object-cover opacity-35"
                 style={{
                   width: "130%",
                   height: "130%",
-                  transform: "translate(-50%, -50%) scale(1.15)",
+                  transform: "translate(-50%, -50%) scale(1.10)",
                 }}
                 autoPlay
                 muted
@@ -114,7 +122,7 @@ export default function Hero() {
           <img
             src={bgImage}
             alt="Hero Background"
-            className="w-full h-full object-cover opacity-60 scale-105 animate-slow-zoom"
+            className="w-full h-full object-cover opacity-60 scale-105"
             referrerPolicy="no-referrer"
             fetchPriority="high"
             decoding="async"
@@ -124,34 +132,20 @@ export default function Hero() {
 
       <div className="relative z-20 max-w-7xl mx-auto px-6 md:px-12 w-full flex flex-col items-center text-center gap-8">
         <div className="mb-4 min-h-[6rem] md:min-h-[7rem] flex items-center justify-center">
-          <motion.h1
+          <h1
             key={activeIndex}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
             className="text-5xl md:text-7xl lg:text-9xl font-display font-extrabold tracking-tight text-white leading-tight"
             style={{ textShadow: "0 0 32px rgba(212,175,55,0.65)" }}
           >
             {phrases[activeIndex]}
-          </motion.h1>
+          </h1>
         </div>
 
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2, ease: [0.4, 0, 0.2, 1] }}
-          className="max-w-2xl text-sm md:text-base text-gray-300/90 leading-relaxed"
-        >
+        <p className="max-w-2xl text-sm md:text-base text-gray-300/90 leading-relaxed">
           {subtitle}
-        </motion.p>
+        </p>
 
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.35, ease: [0.4, 0, 0.2, 1] }}
-          className="flex flex-col sm:flex-row items-center gap-6"
-        >
+        <div className="flex flex-col sm:flex-row items-center gap-6">
           <Link
             href="/packages"
             className="group relative px-8 py-4 bg-icube-gold text-icube-dark font-semibold uppercase tracking-wider rounded-lg overflow-hidden flex items-center gap-2 hover:bg-icube-gold-light transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shadow-[0_4px_20px_rgba(212,175,55,0.35)]"
@@ -168,24 +162,15 @@ export default function Hero() {
             </div>
             <span className="font-semibold uppercase tracking-wider text-sm">View Portfolio</span>
           </Link>
-        </motion.div>
+        </div>
       </div>
 
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.5, ease: [0.4, 0, 0.2, 1] }}
-        className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-20"
-      >
+      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-20">
         <span className="text-xs text-gray-500 uppercase tracking-widest rotate-90 mb-8">Scroll</span>
         <div className="w-[1px] h-16 bg-white/20 relative overflow-hidden">
-          <motion.div
-            animate={{ y: [0, 64] }}
-            transition={{ repeat: Infinity, duration: 2, ease: [0.4, 0, 0.2, 1] }}
-            className="absolute top-0 left-0 w-full h-1/2 bg-icube-gold"
-          />
+          <div className="absolute top-0 left-0 w-full h-1/2 bg-icube-gold" />
         </div>
-      </motion.div>
+      </div>
     </section>
   );
 }

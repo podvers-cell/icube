@@ -1,5 +1,3 @@
-import { motion } from "motion/react";
-import { viewportTransition } from "../lib/motion";
 import WavySectionDivider from "./WavySectionDivider";
 
 export default function BenefitsSection() {
@@ -22,25 +20,13 @@ export default function BenefitsSection() {
               </span>
               <div className="w-8 h-[2px] bg-icube-gold" />
             </div>
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={viewportTransition}
-              className="text-3xl md:text-4xl lg:text-[2.75rem] font-display font-bold text-white leading-tight tracking-tight"
-            >
+            <h2 className="text-3xl md:text-4xl lg:text-[2.75rem] font-display font-bold text-white leading-tight tracking-tight">
               The benefits of working with a media & podcast studio
-            </motion.h2>
+            </h2>
 
-            <motion.p
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={{ ...viewportTransition, delay: 0.05 }}
-              className="text-gray-300 font-light leading-relaxed max-w-2xl text-base md:text-lg"
-            >
+            <p className="text-gray-300 font-light leading-relaxed max-w-2xl text-base md:text-lg">
               At <span className="text-icube-gold font-medium">ICUBE</span>, we bring years of experience in premium production and podcasting in Dubai. From concept to final cut, we help brands and creators tell stories that resonate—with the right gear, the right space, and a team that cares about quality.
-            </motion.p>
+            </p>
 
             <div
               className="h-px w-full max-w-2xl bg-gradient-to-r from-transparent via-icube-gold/50 to-transparent"
@@ -48,51 +34,33 @@ export default function BenefitsSection() {
             />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ ...viewportTransition, delay: 0.08 }}
-                className="space-y-4"
-              >
+              <div className="space-y-4">
                 <p className="text-gray-400 font-light leading-relaxed text-sm md:text-base">
                   Our team combines industry expertise with deep knowledge of digital media, current trends, and how to navigate the content landscape. We don’t just record—we shape narratives that fit your brand and audience.
                 </p>
                 <p className="text-gray-400 font-light leading-relaxed text-sm md:text-base">
                   ICUBE’s production approach drives real engagement: strategic content creation, community management, and campaign execution. We focus on measurable results so you can see the impact of your investment.
                 </p>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ ...viewportTransition, delay: 0.12 }}
-                className="space-y-4"
-              >
+              </div>
+              <div className="space-y-4">
                 <p className="text-gray-400 font-light leading-relaxed text-sm md:text-base">
                   We manage the full production pipeline: podcast recording, video shoots, and multi-format content. From our Dubai studios we support creators and businesses across the UAE and beyond with a skilled team of producers, sound engineers, and creatives.
                 </p>
                 <p className="text-gray-400 font-light leading-relaxed text-sm md:text-base">
                   Our clients get access to professional-grade technology and workflows designed for scalability. Whether you’re launching a new show or levelling up your brand content, we’re here to help you grow your audience and reach.
                 </p>
-              </motion.div>
+              </div>
             </div>
           </div>
 
           {/* Visual – podcast still */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ ...viewportTransition, delay: 0.1 }}
-            className="lg:col-span-5 xl:col-span-4 flex items-center justify-center lg:justify-end"
-          >
+          <div className="lg:col-span-5 xl:col-span-4 flex items-center justify-center lg:justify-end">
             <img
               src="/podcast-still.png"
               alt="Podcast production at ICUBE Media Studio – professional recording setup"
               className="w-full h-auto max-h-[480px] object-contain max-w-md lg:max-w-lg"
             />
-          </motion.div>
+          </div>
         </div>
       </div>
     </section>

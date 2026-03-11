@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { motion } from "motion/react";
 import { X, Play, Pause, Volume2, VolumeX, Maximize } from "lucide-react";
 import type { VideoEmbedResult } from "../lib/videoEmbed";
 
@@ -288,19 +287,12 @@ export function VideoPlayerModal({
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+    <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90"
       onClick={onClose}
     >
-      <motion.div
+      <div
         ref={containerRef}
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.95, opacity: 0 }}
-        transition={{ type: "tween", duration: 0.2 }}
         className="relative w-full max-w-4xl aspect-video bg-black rounded-lg overflow-hidden shadow-2xl flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
@@ -389,7 +381,7 @@ export function VideoPlayerModal({
             <Maximize size={18} />
           </button>
         </div>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }
