@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
 import * as api from "./api";
+import { CONTACT_EMAIL } from "./constants/contact";
 
 type Settings = Record<string, string>;
 type Service = { id: number; title: string; description: string; icon: string; sort_order: number };
@@ -77,8 +78,8 @@ const FALLBACK_SETTINGS: Record<string, string> = {
     "https://images.unsplash.com/photo-1598550880863-4e8aa3d0edb4?q=80&w=2070&auto=format&fit=crop",
   hero_bg_video_url: "",
   contact_address: "Dubai Media City, Building 1\nDubai, United Arab Emirates",
-  contact_email: "hello@icube.ae",
-  contact_email_bookings: "bookings@icube.ae",
+  contact_email: CONTACT_EMAIL,
+  contact_email_bookings: CONTACT_EMAIL,
   contact_phone: "+971 4 123 4567",
   contact_hours: "Sun–Thu, 9am – 6pm GST",
 };

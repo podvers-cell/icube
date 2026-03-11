@@ -76,11 +76,29 @@ export async function POST(request: Request) {
     </div>
   `;
 
+  const summaryTextLines: string[] = [];
+  if (b.studio_name) {
+    summaryTextLines.push(`Studio: ${b.studio_name}`);
+    if (b.booking_date) summaryTextLines.push(`Date: ${b.booking_date}`);
+    if (b.time_slot) summaryTextLines.push(`Time: ${formatTimeSlot(b.time_slot)}`);
+    if (b.booking_duration_hours != null) summaryTextLines.push(`Duration: ${b.booking_duration_hours} hour(s)`);
+    if (b.studio_total_aed != null) summaryTextLines.push(`Studio total: ${b.studio_total_aed} AED`);
+  }
+  if (b.package_id) summaryTextLines.push(`Package ID: ${b.package_id}`);
+  if (b.booking_date && !b.studio_name) summaryTextLines.push(`Date: ${b.booking_date}`);
+  if (b.time_slot && !b.studio_name) summaryTextLines.push(`Time: ${formatTimeSlot(b.time_slot)}`);
+  if (b.addons_total_aed != null && b.addons_total_aed > 0) summaryTextLines.push(`Add-ons total: ${b.addons_total_aed} AED`);
+  if (b.project_details) summaryTextLines.push(`Project details: ${b.project_details}`);
+  const summaryText = summaryTextLines.length > 0 ? summaryTextLines.join("\n") + "\n\n" : "";
+
+  const text = `Thank you for your booking\n\nDear ${customerName},\n\nWe have received your booking request at ICUBE Media Studio.\n\n${summaryText}We will confirm availability and get back to you shortly. If you have any questions, contact us at info@icubeproduction.com.\n\nBest regards,\nICUBE Media Studio`;
+
   const { data, error } = await resend.emails.send({
     from: FROM_EMAIL,
     to: [toEmail],
     subject: `Booking confirmation – ICUBE Media Studio`,
     html,
+    text,
   });
 
   if (error) {
