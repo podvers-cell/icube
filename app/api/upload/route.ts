@@ -19,7 +19,10 @@ export async function POST(request: NextRequest) {
   const config = getConfig();
   if (!config) {
     return NextResponse.json(
-      { error: "Cloudinary not configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET (or CLOUDINARY_URL) in .env.local." },
+      {
+        error:
+          "Cloudinary not configured. Set CLOUDINARY_URL (or CLOUDINARY_CLOUD_NAME, API_KEY, API_SECRET) in .env.local for local dev, or in your hosting provider's environment variables for production.",
+      },
       { status: 503 }
     );
   }
