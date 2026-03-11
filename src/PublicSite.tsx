@@ -1,5 +1,6 @@
+"use client";
+
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
 import { ArrowUp } from "lucide-react";
 import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
@@ -13,13 +14,26 @@ import Contact from "./components/Contact";
 import Footer from "./components/Footer";
 import BenefitsSection from "./components/BenefitsSection";
 import { useSiteData } from "./SiteDataContext";
-import { ContactModalProvider } from "./ContactModalContext";
 
 const WHATSAPP_URL = "https://wa.me/971548886318";
 
+/** Hash from URL (works in both Vite and Next.js; no react-router dependency). */
+function useHash() {
+  const [hash, setHash] = useState(
+    typeof window !== "undefined" ? window.location.hash : ""
+  );
+  useEffect(() => {
+    setHash(window.location.hash);
+    const onHashChange = () => setHash(window.location.hash);
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
+  return hash;
+}
+
 export default function PublicSite() {
   const { loading } = useSiteData();
-  const location = useLocation();
+  const hash = useHash();
   const [showSplash, setShowSplash] = useState(true);
   const [progress, setProgress] = useState(0);
   const [showWhatsAppBubble, setShowWhatsAppBubble] = useState(true);
@@ -56,11 +70,11 @@ export default function PublicSite() {
 
   // Scroll to contact when URL hash is #contact (e.g. from "Get in touch about a project")
   useEffect(() => {
-    if (location.hash === "#contact" || location.hash === "contact") {
+    if (hash === "#contact" || hash === "contact") {
       const el = document.getElementById("contact");
       if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-  }, [location.hash]);
+  }, [hash]);
 
   // Back to top visibility
   useEffect(() => {
@@ -96,7 +110,6 @@ export default function PublicSite() {
   }
 
   return (
-    <ContactModalProvider>
     <div className="min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray to-[#111521] text-white selection:bg-icube-gold selection:text-icube-dark">
       <a
         href="#main-content"
@@ -186,6 +199,5 @@ export default function PublicSite() {
         </a>
       </div>
     </div>
-    </ContactModalProvider>
   );
 }

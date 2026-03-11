@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 export default function ProtectedRoute({ children }: { children: ReactNode }) {
   const { user, loading, isAdmin } = useAuth();
   const location = useLocation();
+  const from = location.pathname || "/dashboard";
 
   if (loading) {
     return (
@@ -15,7 +16,7 @@ export default function ProtectedRoute({ children }: { children: ReactNode }) {
     );
   }
   if (!user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to={"/login?from=" + encodeURIComponent(from)} replace />;
   }
 
   if (!isAdmin) {

@@ -1,6 +1,8 @@
+"use client";
+
 import { useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
+import { useAppNavigate } from "../AppNavigateContext";
 import { GoogleAuthProvider, createUserWithEmailAndPassword, signInWithPopup, updateProfile } from "firebase/auth";
 import { firebaseAuth } from "../firebase";
 
@@ -12,7 +14,7 @@ export default function Signup() {
   const [submitting, setSubmitting] = useState(false);
   const [googleSubmitting, setGoogleSubmitting] = useState(false);
 
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();

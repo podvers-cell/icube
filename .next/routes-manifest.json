@@ -39,6 +39,108 @@
       "regex": "^/_not\\-found(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/_not\\-found(?:/)?$"
+    },
+    {
+      "page": "/contact",
+      "regex": "^/contact(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/contact(?:/)?$"
+    },
+    {
+      "page": "/dashboard",
+      "regex": "^/dashboard(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard(?:/)?$"
+    },
+    {
+      "page": "/dashboard/bookings",
+      "regex": "^/dashboard/bookings(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/bookings(?:/)?$"
+    },
+    {
+      "page": "/dashboard/hero",
+      "regex": "^/dashboard/hero(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/hero(?:/)?$"
+    },
+    {
+      "page": "/dashboard/messages",
+      "regex": "^/dashboard/messages(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/messages(?:/)?$"
+    },
+    {
+      "page": "/dashboard/packages",
+      "regex": "^/dashboard/packages(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/packages(?:/)?$"
+    },
+    {
+      "page": "/dashboard/portfolio",
+      "regex": "^/dashboard/portfolio(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/portfolio(?:/)?$"
+    },
+    {
+      "page": "/dashboard/services",
+      "regex": "^/dashboard/services(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/services(?:/)?$"
+    },
+    {
+      "page": "/dashboard/settings",
+      "regex": "^/dashboard/settings(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/settings(?:/)?$"
+    },
+    {
+      "page": "/dashboard/studio",
+      "regex": "^/dashboard/studio(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/studio(?:/)?$"
+    },
+    {
+      "page": "/dashboard/studios",
+      "regex": "^/dashboard/studios(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/studios(?:/)?$"
+    },
+    {
+      "page": "/dashboard/testimonials",
+      "regex": "^/dashboard/testimonials(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/testimonials(?:/)?$"
+    },
+    {
+      "page": "/dashboard/why-us",
+      "regex": "^/dashboard/why\\-us(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/why\\-us(?:/)?$"
+    },
+    {
+      "page": "/login",
+      "regex": "^/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/login(?:/)?$"
+    },
+    {
+      "page": "/packages",
+      "regex": "^/packages(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/packages(?:/)?$"
+    },
+    {
+      "page": "/portfolio",
+      "regex": "^/portfolio(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/portfolio(?:/)?$"
+    },
+    {
+      "page": "/signup",
+      "regex": "^/signup(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/signup(?:/)?$"
     }
   ],
   "dataRoutes": [],

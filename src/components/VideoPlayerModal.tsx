@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useRef, useState, useCallback } from "react";
 import { motion } from "motion/react";
 import { X, Play, Pause, Volume2, VolumeX, Maximize } from "lucide-react";

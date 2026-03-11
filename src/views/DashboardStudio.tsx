@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useState, type FormEvent } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { api } from "../api";

@@ -1,12 +1,17 @@
-/**
- * Next.js root page (/) – placeholder until PublicSite is migrated in Phase 2.
- * Current app home is still served by Vite via react-router catch-all.
- */
+import type { Metadata } from "next";
+import PublicSite from "@/PublicSite";
+
+export const metadata: Metadata = {
+  title: "ICUBE Media Studio | Premium Media Production – Dubai",
+  description:
+    "Professional media production and podcast studio in Dubai. Create, record, and amplify your content with cinematic quality. Studio booking, video production, branded content.",
+  openGraph: {
+    title: "ICUBE Media Studio | Premium Media Production – Dubai",
+    description:
+      "Professional media production and podcast studio in Dubai. Create, record, and amplify your content.",
+  },
+};
+
 export default function HomePage() {
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-icube-dark text-white font-display">
-      <h1 className="text-2xl font-semibold text-icube-gold">ICUBE Media Studio</h1>
-      <p className="mt-2 text-white/80">Next.js foundation ready. Home page migration in Phase 2.</p>
-    </div>
-  );
+  return <PublicSite />;
 }

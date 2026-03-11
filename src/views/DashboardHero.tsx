@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useRef, useState, type FormEvent, type ChangeEvent } from "react";
 import { api } from "../api";
 import { firebaseStorage } from "../firebase";

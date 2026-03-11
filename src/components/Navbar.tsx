@@ -1,14 +1,16 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Menu, X, LogOut, LayoutDashboard } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useAppNavigate } from "../AppNavigateContext";
 import { useAuth } from "../AuthContext";
 import { useContactModal } from "../ContactModalContext";
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { user, logout, isAdmin = false } = useAuth();
   const { openContact } = useContactModal();
 
@@ -40,7 +42,7 @@ export default function Navbar() {
   async function handleLogout() {
     try {
       await logout();
-      navigate("/", { replace: true });
+      navigate("/", { replace: true } as { replace?: boolean });
     } catch {
       // ignore for now
     }

@@ -1,5 +1,22 @@
 {
   "/_global-error/page": "app/_global-error/page.js",
   "/_not-found/page": "app/_not-found/page.js",
-  "/page": "app/page.js"
+  "/contact/page": "app/contact/page.js",
+  "/dashboard/bookings/page": "app/dashboard/bookings/page.js",
+  "/dashboard/hero/page": "app/dashboard/hero/page.js",
+  "/dashboard/messages/page": "app/dashboard/messages/page.js",
+  "/dashboard/packages/page": "app/dashboard/packages/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/dashboard/portfolio/page": "app/dashboard/portfolio/page.js",
+  "/dashboard/services/page": "app/dashboard/services/page.js",
+  "/dashboard/settings/page": "app/dashboard/settings/page.js",
+  "/dashboard/studio/page": "app/dashboard/studio/page.js",
+  "/dashboard/studios/page": "app/dashboard/studios/page.js",
+  "/dashboard/testimonials/page": "app/dashboard/testimonials/page.js",
+  "/dashboard/why-us/page": "app/dashboard/why-us/page.js",
+  "/login/page": "app/login/page.js",
+  "/packages/page": "app/packages/page.js",
+  "/page": "app/page.js",
+  "/portfolio/page": "app/portfolio/page.js",
+  "/signup/page": "app/signup/page.js"
 }

@@ -162,4 +162,19 @@
 - **Critical rename:** `src/pages` → `src/views` so Next.js does not treat it as Pages Router. All imports in `src/App.tsx` updated to `./views/`.
 - **Fixes:** `VideoPlayerModal.tsx` Window type for Vimeo; `SiteDataContext.tsx` Studio type `images` optional; `@types/react` / `@types/react-dom` added; `allowImportingTsExtensions` kept for Vite compatibility.
 - **Builds:** `npm run build:next` and `npm run build` (Vite) both succeed. Vite entry (`index.html`, `src/main.tsx`, `src/App.tsx`) unchanged.
-- **Remaining:** Phase 2 (public routes), Phase 3 (shared layout/providers), Phase 4 (Firebase env), Phase 5 (dashboard), Phase 6 (cleanup).
+- **Remaining:** Phase 3 (shared layout/providers), Phase 4 (Firebase env), Phase 5 (dashboard), Phase 6 (cleanup).
+
+---
+
+## 7. Phase 2 Completed — Public site migration
+
+- **Providers:** `app/ClientProviders.tsx` wraps AuthProvider, SiteDataProvider, ContactModalProvider, AppNavigateProvider (next/navigation). Root `app/layout.tsx` wraps children with ClientProviders.
+- **Navigation:** `src/AppNavigateContext.tsx` provides `useAppNavigate()`; Next uses `useRouter()` from next/navigation, Vite uses `useNavigate()` from react-router. Navbar uses `useAppNavigate()` for logout (no react-router in Navbar).
+- **Home:** `app/page.tsx` renders `PublicSite` with metadata. `PublicSite` uses `useHash()` instead of `useLocation`; ContactModalProvider removed from PublicSite (layout provides it). Vite catch-all wrapped with ContactModalProvider.
+- **Packages:** `app/packages/page.tsx` → `PackagesPage` view. Metadata for studio booking.
+- **Portfolio:** `app/portfolio/page.tsx` → `PortfolioPage` view. Metadata for portfolio.
+- **Contact:** `app/contact/page.tsx` → new `src/views/ContactPage.tsx` (Navbar + Contact + Footer). Metadata for contact.
+- **Firebase:** `src/firebase.ts` reads from `import.meta.env.VITE_*` or `process.env.NEXT_PUBLIC_*` so Next build works; `.env.example` documents `NEXT_PUBLIC_*` for Next.
+- **"use client":** Added to PublicSite, Navbar, AppNavigateContext, AuthContext, SiteDataContext, ContactModalContext, PackagesPage, PortfolioPage, ContactPage, Booking, Contact, Footer, Portfolio, VideoPlayerModal.
+- **Builds:** `npm run build:next` (routes: /, /packages, /portfolio, /contact) and `npm run build` (Vite) both succeed.
+- **Remaining:** Phase 3–6; internal links still `<a href>` (next/link can be adopted when dropping Vite).

@@ -1,11 +1,19 @@
+"use client";
+
 import { useState, type FormEvent } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "motion/react";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { useAuth } from "../AuthContext";
+import { useAppNavigate } from "../AppNavigateContext";
 import { firebaseAuth } from "../firebase";
 
 const ADMIN_EMAIL = "admin@icube.ae";
+
+function getRedirectFrom(): string {
+  if (typeof window === "undefined") return "/dashboard";
+  const from = new URLSearchParams(window.location.search).get("from");
+  return from || "/dashboard";
+}
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -15,9 +23,8 @@ export default function Login() {
   const [googleSubmitting, setGoogleSubmitting] = useState(false);
 
   const { login } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/dashboard";
+  const navigate = useAppNavigate();
+  const from = getRedirectFrom();
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();

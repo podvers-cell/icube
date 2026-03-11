@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, type FormEvent } from "react";
 import { Heart } from "lucide-react";
 import { useContactModal } from "../ContactModalContext";

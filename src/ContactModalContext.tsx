@@ -1,3 +1,5 @@
+"use client";
+
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X } from "lucide-react";
