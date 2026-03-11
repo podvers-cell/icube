@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -45,8 +45,11 @@ function getYouTubeEmbedUrl(raw: string): string | null {
   return null;
 }
 
-export default function Hero() {
+type HeroProps = { onHeroReady?: () => void };
+
+export default function Hero({ onHeroReady }: HeroProps) {
   const { settings, loading } = useSiteData();
+  const videoRef = useRef<HTMLVideoElement>(null);
   const router = useRouter();
   const pathname = usePathname();
   const phrase1 =
@@ -68,6 +71,31 @@ export default function Hero() {
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
+
+  // Notify parent when hero background is ready (so splash can hide after video loads)
+  useEffect(() => {
+    if (loading || !onHeroReady) return;
+    const isVideo = bgType === "video" && bgVideo;
+    if (!isVideo) {
+      onHeroReady();
+      return;
+    }
+    if (youtubeEmbed) {
+      const t = window.setTimeout(onHeroReady, 3200);
+      return () => window.clearTimeout(t);
+    }
+    const video = videoRef.current;
+    if (!video) return;
+    const done = () => {
+      onHeroReady();
+    };
+    video.addEventListener("canplaythrough", done, { once: true });
+    const fallback = window.setTimeout(done, 10000);
+    return () => {
+      video.removeEventListener("canplaythrough", done);
+      window.clearTimeout(fallback);
+    };
+  }, [loading, bgType, bgVideo, youtubeEmbed, onHeroReady]);
 
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -125,6 +153,7 @@ export default function Hero() {
           ) : (
             <div className="absolute inset-0 overflow-hidden w-full h-full min-h-full">
               <video
+                ref={videoRef}
                 className="absolute top-1/2 left-1/2 min-w-full min-h-full w-[130%] h-[130%] object-cover object-center opacity-35"
                 style={{
                   transform: "translate(-50%, -50%) scale(1.10)",

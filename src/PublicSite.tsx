@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { ArrowUp } from "lucide-react";
 import { motion } from "motion/react";
 import Navbar from "./components/Navbar";
@@ -39,8 +39,11 @@ export default function PublicSite() {
   const hash = useHash();
   const [showSplash, setShowSplash] = useState(true);
   const [progress, setProgress] = useState(0);
+  const [heroReady, setHeroReady] = useState(false);
   const [showWhatsAppBubble, setShowWhatsAppBubble] = useState(true);
   const [showBackToTop, setShowBackToTop] = useState(false);
+
+  const onHeroReady = useCallback(() => setHeroReady(true), []);
 
   // Animate progress bar while data is loading
   useEffect(() => {
@@ -62,14 +65,14 @@ export default function PublicSite() {
     };
   }, [loading, showSplash]);
 
-  // When loading completes, finish bar and hide splash
+  // When data and hero (including video) are ready, finish bar and hide splash
   useEffect(() => {
-    if (!loading) {
+    if (!loading && heroReady) {
       setProgress(100);
-      const timeout = window.setTimeout(() => setShowSplash(false), 300);
+      const timeout = window.setTimeout(() => setShowSplash(false), 400);
       return () => window.clearTimeout(timeout);
     }
-  }, [loading]);
+  }, [loading, heroReady]);
 
   // When coming from another page (e.g. portfolio) and clicking studio: scroll to section after home loads
   useEffect(() => {
@@ -103,33 +106,7 @@ export default function PublicSite() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  if (showSplash) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-icube-dark text-white">
-        <div className="relative flex flex-col items-center gap-6">
-          <div className="absolute inset-0 blur-3xl bg-icube-gold/20 rounded-full scale-125" />
-          <div className="relative flex items-center justify-center rounded-2xl bg-black/40 border border-white/10 p-6">
-            <img
-              src="/icube-logo.svg"
-              alt="ICUBE Media Studio"
-              className="h-20 w-auto"
-            />
-          </div>
-          <div className="relative mt-4 w-48 h-1.5 rounded-full bg-white/10 overflow-hidden">
-            <div
-              className="h-full bg-icube-gold transition-all duration-200"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <p className="relative text-[11px] text-gray-400 uppercase tracking-[0.16em]">
-            Loading experience…
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
+  const mainContent = (
     <div className="min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray to-[#111521] text-white selection:bg-icube-gold selection:text-icube-dark">
       <a
         href="#main-content"
@@ -152,7 +129,7 @@ export default function PublicSite() {
       )}
       <main id="main-content">
         <AnimatedSection>
-          <Hero />
+          <Hero onHeroReady={onHeroReady} />
         </AnimatedSection>
         <SectionDivider />
         <AnimatedSection>
@@ -268,5 +245,38 @@ export default function PublicSite() {
         </div>
       </div>
     </div>
+  );
+
+  return (
+    <>
+      {mainContent}
+      {showSplash && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-icube-dark text-white overflow-hidden">
+          <div className="relative flex flex-col items-center gap-8">
+            <div className="absolute inset-0 blur-3xl bg-icube-gold/15 rounded-full scale-150 pointer-events-none" aria-hidden />
+            <motion.img
+              src="/icube-logo.svg"
+              alt="ICUBE Media Studio"
+              className="relative h-24 w-auto drop-shadow-[0_0_24px_rgba(201,162,39,0.15)]"
+              initial={{ opacity: 0.6 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, repeat: Infinity, repeatType: "reverse", repeatDelay: 0.8 }}
+            />
+            <div className="relative w-56 h-0.5 rounded-full bg-white/5 overflow-hidden">
+              <motion.div
+                className="h-full bg-gradient-to-r from-icube-gold/80 to-icube-gold"
+                initial={{ width: 0 }}
+                animate={{ width: `${progress}%` }}
+                transition={{ duration: 0.2 }}
+                style={{ maxWidth: "100%" }}
+              />
+            </div>
+            <p className="relative text-xs text-gray-500 uppercase tracking-[0.2em] font-medium">
+              {loading ? "Loading…" : "Preparing…"}
+            </p>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
