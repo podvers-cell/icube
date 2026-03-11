@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { api } from "../api";
+import CloudinaryUploadField from "../components/CloudinaryUploadField";
 
 type Testimonial = { id: number; quote: string; author: string; role: string; image_url: string; sort_order: number };
 
@@ -149,11 +150,13 @@ export default function DashboardTestimonials() {
               className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white"
               placeholder="Role"
             />
-            <input
+            <CloudinaryUploadField
+              label="Image URL"
               value={editing.image_url}
-              onChange={(e) => setEditing((x) => (x ? { ...x, image_url: e.target.value } : null))}
-              className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white"
-              placeholder="Image URL"
+              onChange={(url) => setEditing((x) => (x ? { ...x, image_url: url } : null))}
+              type="image"
+              folder="testimonials"
+              placeholder="https://… or click Upload"
             />
             <div className="flex gap-2">
               <button type="submit" className="px-4 py-2 bg-icube-gold text-icube-dark font-semibold rounded-sm">Save</button>

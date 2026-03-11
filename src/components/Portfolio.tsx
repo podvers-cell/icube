@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Play } from "lucide-react";
+import { Play, ChevronLeft, ChevronRight } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { useSiteData } from "../SiteDataContext";
 import { useContactModal } from "../ContactModalContext";
 import { getVideoEmbed } from "../lib/videoEmbed";
@@ -65,42 +66,18 @@ export default function Portfolio({ limit, sectionLabel = "Selected work", title
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {items.map((project, index) => {
-            const hasVideo = project.video_url && getVideoEmbed(project.video_url);
-            return (
-              <AnimatedStaggerItem key={project.id} index={index}>
-              <div
-                role={hasVideo ? "button" : undefined}
-                tabIndex={hasVideo ? 0 : undefined}
-                onClick={() => hasVideo && setPlayingProject(project)}
-                onKeyDown={(e) => hasVideo && (e.key === "Enter" || e.key === " ") && setPlayingProject(project)}
-                className="group relative aspect-[4/3] overflow-hidden rounded-2xl cursor-pointer border border-white/10 bg-white/5 shadow-[0_12px_40px_rgba(0,0,0,0.3)] hover:border-icube-gold/30 hover:shadow-[0_24px_56px_rgba(0,0,0,0.4)] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
-              >
-                <img
-                  src={project.image_url}
-                  alt={project.title}
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
-                  referrerPolicy="no-referrer"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent/80 opacity-85 group-hover:opacity-95 transition-opacity duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]" />
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
-                  <div className="w-20 h-20 rounded-full flex items-center justify-center bg-white/15 border border-white/30 shadow-[0_0_28px_rgba(212,175,55,0.5),0_0_56px_rgba(212,175,55,0.25)]">
-                    <Play size={32} className="text-white ml-1" />
-                  </div>
-                </div>
-                <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8 w-full translate-y-2 group-hover:translate-y-0 transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
-                  <span className="text-icube-gold font-mono text-xs tracking-[0.2em] uppercase mb-2 block">
-                    {project.category}
-                  </span>
-                  <h3 className="text-2xl md:text-3xl font-display font-bold text-white tracking-tight drop-shadow-sm">{project.title}</h3>
-                </div>
-              </div>
-              </AnimatedStaggerItem>
-            );
-          })}
+        {/* Mobile: arrow-controlled carousel, one card at a time */}
+        <div className="md:hidden">
+          <MobilePortfolioCarousel items={items} setPlayingProject={setPlayingProject} />
+        </div>
+
+        {/* Desktop / tablet: original grid */}
+        <div className="hidden md:grid md:grid-cols-2 gap-8">
+          {items.map((project, index) => (
+            <AnimatedStaggerItem key={project.id} index={index}>
+              <PortfolioCard project={project} setPlayingProject={setPlayingProject} />
+            </AnimatedStaggerItem>
+          ))}
         </div>
       </div>
 
@@ -117,5 +94,114 @@ export default function Portfolio({ limit, sectionLabel = "Selected work", title
           );
         })()}
     </section>
+  );
+}
+
+function PortfolioCard({
+  project,
+  setPlayingProject,
+}: {
+  project: Project;
+  setPlayingProject: (p: Project | null) => void;
+}) {
+  const hasVideo = project.video_url && getVideoEmbed(project.video_url);
+  return (
+    <div
+      role={hasVideo ? "button" : undefined}
+      tabIndex={hasVideo ? 0 : undefined}
+      onClick={() => hasVideo && setPlayingProject(project)}
+      onKeyDown={(e) => hasVideo && (e.key === "Enter" || e.key === " ") && setPlayingProject(project)}
+      className="group relative aspect-[4/3] overflow-hidden rounded-2xl cursor-pointer border border-white/10 bg-white/5 shadow-[0_12px_40px_rgba(0,0,0,0.3)] hover:border-icube-gold/30 hover:shadow-[0_24px_56px_rgba(0,0,0,0.4)] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
+    >
+      <img
+        src={project.image_url}
+        alt={project.title}
+        loading="lazy"
+        decoding="async"
+        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
+        referrerPolicy="no-referrer"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent/80 opacity-85 group-hover:opacity-95 transition-opacity duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]" />
+      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
+        <div className="w-20 h-20 rounded-full flex items-center justify-center bg-white/15 border border-white/30 shadow-[0_0_28px_rgba(212,175,55,0.5),0_0_56px_rgba(212,175,55,0.25)]">
+          <Play size={32} className="text-white ml-1" />
+        </div>
+      </div>
+      <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8 w-full translate-y-2 group-hover:translate-y-0 transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
+        <span className="text-icube-gold font-mono text-xs tracking-[0.2em] uppercase mb-2 block">
+          {project.category}
+        </span>
+        <h3 className="text-2xl md:text-3xl font-display font-bold text-white tracking-tight drop-shadow-sm">
+          {project.title}
+        </h3>
+      </div>
+    </div>
+  );
+}
+
+function MobilePortfolioCarousel({
+  items,
+  setPlayingProject,
+}: {
+  items: Project[];
+  setPlayingProject: (p: Project | null) => void;
+}) {
+  const [index, setIndex] = useState(0);
+  if (!items.length) return null;
+  const current = items[index];
+
+  const goPrev = () => setIndex((i) => (i - 1 + items.length) % items.length);
+  const goNext = () => setIndex((i) => (i + 1) % items.length);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between text-xs text-gray-400 px-1">
+        <button
+          type="button"
+          onClick={goPrev}
+          className="inline-flex items-center justify-center px-3 py-1.5 rounded-full border border-white/20 text-gray-200 hover:bg-white/10"
+        >
+          <ChevronLeft size={14} className="mr-1" />
+          Previous
+        </button>
+        <span className="tracking-[0.18em] uppercase text-[11px]">
+          {index + 1} / {items.length}
+        </span>
+        <button
+          type="button"
+          onClick={goNext}
+          className="inline-flex items-center justify-center px-3 py-1.5 rounded-full border border-white/20 text-gray-200 hover:bg-white/10"
+        >
+          Next
+          <ChevronRight size={14} className="ml-1" />
+        </button>
+      </div>
+      <div className="overflow-hidden">
+        <motion.div
+          className="flex"
+          animate={{ x: `-${index * 100}%` }}
+          transition={{ duration: 0.4, ease: [0.25, 0.8, 0.25, 1] }}
+        >
+          {items.map((p) => (
+            <div key={p.id} className="w-full shrink-0">
+              <PortfolioCard project={p} setPlayingProject={setPlayingProject} />
+            </div>
+          ))}
+        </motion.div>
+      </div>
+      <div className="flex justify-center gap-2 pt-1">
+        {items.map((_, i) => (
+          <button
+            key={i}
+            type="button"
+            onClick={() => setIndex(i)}
+            className={`h-1.5 rounded-full transition-all duration-200 ${
+              i === index ? "bg-icube-gold w-4" : "bg-white/20 w-1.5"
+            }`}
+            aria-label={`Go to project ${i + 1}`}
+          />
+        ))}
+      </div>
+    </div>
   );
 }

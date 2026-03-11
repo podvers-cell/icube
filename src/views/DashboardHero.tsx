@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type FormEvent, type ChangeEvent } from "r
 import { api } from "../api";
 import { firebaseStorage } from "../firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { uploadToCloudinaryWithProgress } from "../lib/uploadCloudinary";
 
 type HeroSettings = {
   hero_bg_type?: "image" | "video";
@@ -17,6 +18,8 @@ export default function DashboardHero() {
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [uploadProgressImage, setUploadProgressImage] = useState(0);
+  const [uploadProgressVideo, setUploadProgressVideo] = useState(0);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const videoInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -60,14 +63,31 @@ export default function DashboardHero() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (kind === "image") setUploadingImage(true);
-    if (kind === "video") setUploadingVideo(true);
+    if (kind === "image") {
+      setUploadingImage(true);
+      setUploadProgressImage(0);
+    }
+    if (kind === "video") {
+      setUploadingVideo(true);
+      setUploadProgressVideo(0);
+    }
 
     try {
-      const path = `hero/${kind}-${Date.now()}-${file.name}`;
-      const storageRef = ref(firebaseStorage, path);
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
+      // Prefer Cloudinary (dashboard → website); fallback to Firebase
+      let url: string;
+      const setProgress = kind === "image" ? setUploadProgressImage : setUploadProgressVideo;
+      try {
+        url = await uploadToCloudinaryWithProgress(file, {
+          folder: "hero",
+          type: kind,
+          onProgress: setProgress,
+        });
+      } catch {
+        const path = `hero/${kind}-${Date.now()}-${file.name}`;
+        const storageRef = ref(firebaseStorage, path);
+        await uploadBytes(storageRef, file);
+        url = await getDownloadURL(storageRef);
+      }
 
       if (kind === "image") {
         update("hero_bg_type", "image");
@@ -79,8 +99,14 @@ export default function DashboardHero() {
     } catch (err) {
       alert(err instanceof Error ? err.message : "Upload failed");
     } finally {
-      if (kind === "image") setUploadingImage(false);
-      if (kind === "video") setUploadingVideo(false);
+      if (kind === "image") {
+        setUploadingImage(false);
+        setUploadProgressImage(0);
+      }
+      if (kind === "video") {
+        setUploadingVideo(false);
+        setUploadProgressVideo(0);
+      }
       e.target.value = "";
     }
   }
@@ -94,7 +120,7 @@ export default function DashboardHero() {
       <h1 className="text-3xl font-display font-bold text-white mb-2">Hero section</h1>
       <p className="text-sm text-gray-400 mb-8 max-w-xl">
         Control the background of the homepage hero. You can use a high‑quality image or a looped
-        video, from a URL or by uploading to cloud storage.
+        video, from a URL or by uploading (Cloudinary or Firebase).
       </p>
 
       <form onSubmit={handleSave} className="space-y-6 max-w-2xl">
@@ -142,14 +168,14 @@ export default function DashboardHero() {
             />
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex gap-3 items-center">
             <button
               type="button"
               onClick={() => imageInputRef.current?.click()}
               disabled={uploadingImage}
               className="px-4 py-2 bg-white/5 border border-white/10 rounded-sm text-sm text-gray-200 hover:bg-white/10 disabled:opacity-50"
             >
-              {uploadingImage ? "Uploading image…" : "Upload image to cloud"}
+              {uploadingImage ? `${uploadProgressImage}%` : "Upload image"}
             </button>
             <input
               ref={imageInputRef}
@@ -158,7 +184,22 @@ export default function DashboardHero() {
               className="hidden"
               onChange={(e) => handleUpload(e, "image")}
             />
+            {uploadingImage && (
+              <span className="text-sm text-gray-400">
+                {uploadProgressImage}% uploaded {uploadProgressImage < 100 ? "(sending…)" : "(processing…)"}
+              </span>
+            )}
           </div>
+          {uploadingImage && (
+            <div className="max-w-md">
+              <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-icube-gold rounded-full transition-[width] duration-200"
+                  style={{ width: `${uploadProgressImage}%` }}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="space-y-4">
@@ -175,14 +216,14 @@ export default function DashboardHero() {
             />
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex gap-3 items-center">
             <button
               type="button"
               onClick={() => videoInputRef.current?.click()}
               disabled={uploadingVideo}
               className="px-4 py-2 bg-white/5 border border-white/10 rounded-sm text-sm text-gray-200 hover:bg-white/10 disabled:opacity-50"
             >
-              {uploadingVideo ? "Uploading video…" : "Upload video to cloud"}
+              {uploadingVideo ? `${uploadProgressVideo}%` : "Upload video"}
             </button>
             <input
               ref={videoInputRef}
@@ -191,7 +232,22 @@ export default function DashboardHero() {
               className="hidden"
               onChange={(e) => handleUpload(e, "video")}
             />
+            {uploadingVideo && (
+              <span className="text-sm text-gray-400">
+                {uploadProgressVideo}% uploaded {uploadProgressVideo < 100 ? "(sending…)" : "(processing…)"}
+              </span>
+            )}
           </div>
+          {uploadingVideo && (
+            <div className="max-w-md">
+              <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-icube-gold rounded-full transition-[width] duration-200"
+                  style={{ width: `${uploadProgressVideo}%` }}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="pt-2">

@@ -299,29 +299,29 @@ export function VideoPlayerModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
       onClick={onClose}
     >
       <div
         ref={containerRef}
-        className="relative w-full max-w-4xl bg-transparent rounded-lg overflow-hidden shadow-2xl flex flex-col"
+        className="relative w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl flex flex-col border border-white/10 bg-white/[0.04] backdrop-blur-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header: اسم الفيديو في الأعلى وزر الإغلاق على اليمين (فوق الفيديو وليس عليه) */}
-        <div className="flex items-center justify-between gap-3 px-4 py-3 bg-icube-dark border-b border-white/10 shrink-0">
+        {/* Header – glass */}
+        <div className="flex items-center justify-between gap-3 px-5 py-3.5 border-b border-white/10 bg-white/[0.06] backdrop-blur-md shrink-0">
           <p className="text-white font-semibold text-sm truncate flex-1 min-w-0">{title}</p>
           <button
             type="button"
             onClick={onClose}
-            className="w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-icube-gold hover:text-icube-dark transition-colors shrink-0"
+            className="w-10 h-10 rounded-xl bg-white/10 text-white flex items-center justify-center hover:bg-icube-gold hover:text-icube-dark transition-colors shrink-0 border border-white/5"
             aria-label="Close"
           >
             <X size={20} />
           </button>
         </div>
 
-        {/* Video area – aspect-video هنا فقط */}
-        <div className="relative w-full aspect-video min-h-0 bg-transparent">
+        {/* Video area */}
+        <div className="relative w-full aspect-video min-h-0 bg-black/40 rounded-none overflow-hidden">
           {embed.provider === "youtube" && <div ref={ytDivRef} className="absolute inset-0 w-full h-full" />}
           {embed.provider === "vimeo" && (
             <iframe
@@ -340,17 +340,17 @@ export function VideoPlayerModal({
           />
         </div>
 
-        {/* Custom control bar */}
-        <div className="z-30 flex items-center gap-3 px-3 py-2 bg-black/80 border-t border-white/10">
+        {/* Control bar – glass */}
+        <div className="z-30 flex items-center gap-3 px-4 py-3 border-t border-white/10 bg-white/[0.06] backdrop-blur-md">
           <button
             type="button"
             onClick={handlePlayPause}
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-icube-gold hover:text-icube-dark transition-colors shrink-0"
+            className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 text-white hover:bg-icube-gold hover:text-icube-dark transition-colors shrink-0 border border-white/5"
             aria-label={isPlaying ? "Pause" : "Play"}
           >
             {isPlaying ? <Pause size={20} /> : <Play size={20} className="ml-0.5" />}
           </button>
-          <span className="text-white/90 text-xs tabular-nums shrink-0">{formatTime(currentTime)}</span>
+          <span className="text-white/90 text-xs tabular-nums shrink-0 min-w-[2.5rem]">{formatTime(currentTime)}</span>
           <input
             type="range"
             min={0}
@@ -361,14 +361,14 @@ export function VideoPlayerModal({
               setCurrentTime(t);
               playerRef.current?.seekTo(t);
             }}
-            className="flex-1 h-1.5 rounded-full appearance-none bg-white/20 accent-icube-gold cursor-pointer"
+            className="flex-1 h-1.5 rounded-full appearance-none bg-white/20 accent-icube-gold cursor-pointer min-w-0"
           />
-          <span className="text-white/90 text-xs tabular-nums shrink-0">{formatTime(duration)}</span>
-          <div className="flex items-center gap-1">
+          <span className="text-white/90 text-xs tabular-nums shrink-0 min-w-[2.5rem]">{formatTime(duration)}</span>
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
               type="button"
               onClick={toggleMute}
-              className="w-8 h-8 flex items-center justify-center text-white/90 hover:text-white"
+              className="w-8 h-8 flex items-center justify-center rounded-lg text-white/90 hover:text-white hover:bg-white/5 transition-colors"
               aria-label={isMuted ? "Unmute" : "Mute"}
             >
               {isMuted || volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
@@ -379,13 +379,13 @@ export function VideoPlayerModal({
               max={100}
               value={isMuted ? 0 : volume}
               onChange={handleVolumeChange}
-              className="w-16 h-1 rounded-full appearance-none bg-white/20 accent-icube-gold cursor-pointer"
+              className="w-14 h-1 rounded-full appearance-none bg-white/20 accent-icube-gold cursor-pointer"
             />
           </div>
           <button
             type="button"
             onClick={handleFullscreen}
-            className="w-8 h-8 flex items-center justify-center text-white/90 hover:text-white shrink-0"
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-white/90 hover:text-white hover:bg-white/5 transition-colors shrink-0"
             aria-label="Fullscreen"
           >
             <Maximize size={18} />

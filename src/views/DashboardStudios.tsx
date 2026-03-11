@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ChangeEvent } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { api } from "../api";
+import CloudinaryUploadField from "../components/CloudinaryUploadField";
+import { uploadToCloudinaryWithProgress } from "../lib/uploadCloudinary";
 
 type Studio = {
   id: number;
@@ -47,6 +49,10 @@ export default function DashboardStudios() {
   const [list, setList] = useState<Studio[]>([]);
   const [editing, setEditing] = useState<(Studio & { imagesText: string }) | null>(null);
   const [creating, setCreating] = useState(false);
+  const [uploadingGallery, setUploadingGallery] = useState(false);
+  const [galleryProgress, setGalleryProgress] = useState(0);
+  const [galleryProgressLabel, setGalleryProgressLabel] = useState("");
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   function load() {
     api.get<Studio[]>("/dashboard/studios").then(setList).catch(() => {});
@@ -101,6 +107,38 @@ export default function DashboardStudios() {
       load();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed");
+    }
+  }
+
+  async function handleGalleryUpload(e: ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files?.length || !editing) return;
+    const total = files.length;
+    setUploadingGallery(true);
+    setGalleryProgress(0);
+    setGalleryProgressLabel(`0/${total}`);
+    try {
+      const urls: string[] = [];
+      for (let i = 0; i < total; i++) {
+        setGalleryProgressLabel(`${i + 1}/${total}`);
+        const url = await uploadToCloudinaryWithProgress(files[i], {
+          folder: "studios/gallery",
+          type: "image",
+          onProgress: (p) => setGalleryProgress(Math.round(((i + p / 100) / total) * 100)),
+        });
+        urls.push(url);
+        setGalleryProgress(Math.round(((i + 1) / total) * 100));
+      }
+      const current = editing.imagesText.trim();
+      const newLines = urls.join("\n");
+      setEditing((x) => (x ? { ...x, imagesText: current ? `${current}\n${newLines}` : newLines } : null));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploadingGallery(false);
+      setGalleryProgress(0);
+      setGalleryProgressLabel("");
+      e.target.value = "";
     }
   }
 
@@ -166,15 +204,14 @@ export default function DashboardStudios() {
                   required
                 />
               </div>
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">Cover Image URL</label>
-                <input
-                  value={editing.cover_image_url}
-                  onChange={(e) => setEditing((x) => (x ? { ...x, cover_image_url: e.target.value } : null))}
-                  className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white"
-                  required
-                />
-              </div>
+              <CloudinaryUploadField
+                label="Cover Image URL"
+                value={editing.cover_image_url}
+                onChange={(url) => setEditing((x) => (x ? { ...x, cover_image_url: url } : null))}
+                type="image"
+                folder="studios"
+                placeholder="https://… or click Upload"
+              />
               <div>
                 <label className="block text-sm text-gray-400 mb-1">Before price (AED/hr)</label>
                 <input
@@ -244,12 +281,45 @@ export default function DashboardStudios() {
             </div>
             <div>
               <label className="block text-sm text-gray-400 mb-1">Gallery images (one URL per line)</label>
+              <div className="flex gap-2 mb-2 items-center">
+                <button
+                  type="button"
+                  onClick={() => galleryInputRef.current?.click()}
+                  disabled={uploadingGallery}
+                  className="px-4 py-2 bg-white/10 border border-white/10 rounded-sm text-sm text-gray-200 hover:bg-white/15 disabled:opacity-50"
+                >
+                  {uploadingGallery ? `${galleryProgress}%` : "Upload image(s)"}
+                </button>
+                {uploadingGallery && (
+                  <span className="text-sm text-gray-400">
+                    {galleryProgressLabel} — {galleryProgress}% uploaded
+                  </span>
+                )}
+                <input
+                  ref={galleryInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleGalleryUpload}
+                />
+              </div>
+              {uploadingGallery && (
+                <div className="mb-2">
+                  <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-icube-gold rounded-full transition-[width] duration-200"
+                      style={{ width: `${galleryProgress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
               <textarea
                 value={editing.imagesText}
                 onChange={(e) => setEditing((x) => (x ? { ...x, imagesText: e.target.value } : null))}
                 rows={6}
                 className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white font-mono text-sm"
-                placeholder="https://...\nhttps://..."
+                placeholder="https://...\nhttps://... or use Upload image(s) above"
               />
             </div>
 

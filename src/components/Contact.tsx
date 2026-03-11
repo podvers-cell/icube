@@ -42,23 +42,29 @@ export default function Contact() {
     >
       <div className="absolute -bottom-40 right-0 w-80 h-80 bg-icube-gold/5 rounded-full blur-[100px] pointer-events-none" />
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-          <AnimatedStaggerItem index={0}>
-          <div>
+        {/* Intro block above form: GET IN TOUCH + Let's connect + paragraph */}
+        <AnimatedStaggerItem index={0}>
+          <div className="mb-12 md:mb-16">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-8 h-[2px] bg-icube-gold" />
               <span className="text-icube-gold font-semibold tracking-[0.18em] uppercase text-xs md:text-sm">
                 Get in touch
               </span>
             </div>
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-display font-bold tracking-tight mb-6">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-display font-bold tracking-tight text-white mb-6">
               Let&apos;s connect
             </h2>
-            <p className="text-gray-400 font-light text-lg mb-12 leading-relaxed">
+            <p className="text-gray-400 font-light text-lg max-w-2xl leading-relaxed">
               Ready to elevate your content? Reach out from Dubai or anywhere in the UAE to schedule a tour, discuss a project, or book your next session.
             </p>
+          </div>
+        </AnimatedStaggerItem>
 
-            <div className="space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+          {/* Left on desktop, down a little bit (pt); form first on mobile */}
+          <AnimatedStaggerItem index={1} className="order-2 lg:order-1 lg:pt-16">
+            <div>
+              <div className="space-y-8">
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 bg-icube-gray rounded-sm flex items-center justify-center shrink-0 border border-white/5">
                   <MapPin size={20} className="text-icube-gold" />
@@ -113,62 +119,63 @@ export default function Contact() {
           </div>
           </AnimatedStaggerItem>
 
-          <AnimatedStaggerItem index={1}>
-          <div className="bg-white/5 border border-white/10 p-8 md:p-12 rounded-2xl h-full flex flex-col justify-center shadow-[0_12px_40px_rgba(0,0,0,0.25)]">
-            <h3 className="text-3xl font-display font-bold mb-8">Send a Message</h3>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {submitted && <p className="text-icube-gold text-sm">Message sent. We'll get back to you soon.</p>}
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Name</label>
-                <input
-                  type="text"
-                  required
-                  value={form.name}
-                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                  className="w-full bg-icube-dark border border-white/10 p-4 rounded-sm focus:outline-none focus:border-icube-gold text-white transition-colors"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Email</label>
-                <input
-                  type="email"
-                  required
-                  value={form.email}
-                  onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                  className="w-full bg-icube-dark border border-white/10 p-4 rounded-sm focus:outline-none focus:border-icube-gold text-white transition-colors"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Subject</label>
-                <select
-                  value={form.subject}
-                  onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
-                  className="w-full bg-icube-dark border border-white/10 p-4 rounded-sm focus:outline-none focus:border-icube-gold text-white transition-colors appearance-none"
+          {/* Form: right on desktop, first on mobile */}
+          <AnimatedStaggerItem index={2} className="order-1 lg:order-2">
+            <div className="bg-white/5 border border-white/10 p-8 md:p-12 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.25)]">
+              <h3 className="text-3xl font-display font-bold mb-8">Send a Message</h3>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {submitted && <p className="text-icube-gold text-sm">Message sent. We'll get back to you soon.</p>}
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={form.name}
+                    onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                    className="w-full bg-icube-dark border border-white/10 p-4 rounded-sm focus:outline-none focus:border-icube-gold text-white transition-colors"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Email</label>
+                  <input
+                    type="email"
+                    required
+                    value={form.email}
+                    onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                    className="w-full bg-icube-dark border border-white/10 p-4 rounded-sm focus:outline-none focus:border-icube-gold text-white transition-colors"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Subject</label>
+                  <select
+                    value={form.subject}
+                    onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
+                    className="w-full bg-icube-dark border border-white/10 p-4 rounded-sm focus:outline-none focus:border-icube-gold text-white transition-colors appearance-none"
+                  >
+                    <option>Studio Booking</option>
+                    <option>Video Production</option>
+                    <option>General Inquiry</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Message</label>
+                  <textarea
+                    rows={5}
+                    required
+                    value={form.message}
+                    onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
+                    className="w-full bg-icube-dark border border-white/10 p-4 rounded-sm focus:outline-none focus:border-icube-gold text-white transition-colors resize-none"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={sending}
+                  className="w-full py-4 bg-icube-gold text-icube-dark font-semibold uppercase tracking-wider rounded-lg hover:bg-icube-gold-light transition-colors disabled:opacity-50 focus:outline-none"
                 >
-                  <option>Studio Booking</option>
-                  <option>Video Production</option>
-                  <option>General Inquiry</option>
-                </select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Message</label>
-                <textarea
-                  rows={5}
-                  required
-                  value={form.message}
-                  onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
-                  className="w-full bg-icube-dark border border-white/10 p-4 rounded-sm focus:outline-none focus:border-icube-gold text-white transition-colors resize-none"
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={sending}
-                className="w-full py-4 bg-icube-gold text-icube-dark font-semibold uppercase tracking-wider rounded-lg hover:bg-icube-gold-light transition-colors disabled:opacity-50 focus:outline-none"
-              >
-                {sending ? "Sending…" : "Send Message"}
-              </button>
-            </form>
-          </div>
+                  {sending ? "Sending…" : "Send Message"}
+                </button>
+              </form>
+            </div>
           </AnimatedStaggerItem>
         </div>
       </div>

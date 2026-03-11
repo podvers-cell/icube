@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Play, ArrowRight } from "lucide-react";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { useSiteData } from "../SiteDataContext";
 
 function getYouTubeEmbedUrl(raw: string): string | null {
@@ -90,7 +90,7 @@ export default function Hero() {
   return (
     <section
       id="home"
-      className="relative min-h-[85dvh] h-[85dvh] md:h-screen md:min-h-[100dvh] w-full flex items-center justify-center overflow-hidden pt-20 pb-24 md:pt-0 md:pb-0"
+      className="relative h-[100svh] min-h-[100svh] md:h-screen md:min-h-[100dvh] w-full flex items-center justify-center overflow-hidden pt-20 pb-24 md:pt-0 md:pb-0"
     >
       <div className="absolute inset-0 z-0 w-full h-full min-h-full">
         <div
@@ -155,13 +155,23 @@ export default function Hero() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, delay: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
       >
-        <div className="min-h-[3.5rem] sm:min-h-[4rem] md:mb-4 md:min-h-[7rem] flex items-center justify-center">
+        <div className="min-h-[3.5rem] sm:min-h-[4rem] md:mb-4 md:min-h-[7rem] flex items-center justify-center overflow-hidden">
           <h1
-            key={activeIndex}
-            className="text-4xl md:text-7xl lg:text-9xl font-display font-extrabold tracking-tight text-white leading-tight px-1"
+            className="text-4xl md:text-7xl lg:text-9xl font-display font-extrabold tracking-tight text-white leading-tight px-1 relative"
             style={{ textShadow: "0 0 32px rgba(212,175,55,0.65)" }}
           >
-            {phrases[activeIndex]}
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.span
+                key={activeIndex}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+                className="block"
+              >
+                {phrases[activeIndex]}
+              </motion.span>
+            </AnimatePresence>
           </h1>
         </div>
 
@@ -170,36 +180,39 @@ export default function Hero() {
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 w-full sm:w-auto mt-8 sm:mt-10 md:mt-1">
-          <Link
-            href="/#studio"
-            onClick={(e) => {
-              const hash = "studio";
-              if (pathname === "/") {
+          <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }} className="w-full sm:w-auto">
+            <Link
+              href="/#studio"
+              onClick={(e) => {
+                const hash = "studio";
+                if (pathname === "/") {
+                  e.preventDefault();
+                  const el = document.getElementById(hash);
+                  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                  else router.push("/#studio");
+                  return;
+                }
                 e.preventDefault();
-                const el = document.getElementById(hash);
-                if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-                else router.push("/#studio");
-                return;
-              }
-              // If somehow rendered on another route, go home then scroll.
-              e.preventDefault();
-              sessionStorage.setItem("scrollToSection", hash);
-              router.push("/");
-            }}
-            className="group relative w-full sm:w-auto text-center px-6 py-3.5 sm:px-8 sm:py-4 bg-icube-gold text-icube-dark font-semibold uppercase tracking-wider rounded-lg overflow-hidden flex items-center justify-center gap-2 hover:bg-icube-gold-light transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shadow-[0_4px_20px_rgba(212,175,55,0.35)]"
-          >
-            <span className="relative z-10">Book Studio</span>
-            <ArrowRight size={18} className="relative z-10 group-hover:translate-x-1 transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]" />
-          </Link>
-          <Link
-            href="/portfolio"
-            className="group flex items-center justify-center gap-3 sm:gap-4 text-white hover:text-icube-gold transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] py-2"
-          >
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border border-white/30 flex items-center justify-center group-hover:border-icube-gold transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shrink-0">
-              <Play size={20} className="ml-1" />
-            </div>
-            <span className="font-semibold uppercase tracking-wider text-sm">View Portfolio</span>
-          </Link>
+                sessionStorage.setItem("scrollToSection", hash);
+                router.push("/");
+              }}
+              className="group relative w-full sm:w-auto text-center px-6 py-3.5 sm:px-8 sm:py-4 bg-icube-gold text-icube-dark font-semibold uppercase tracking-wider rounded-xl overflow-hidden flex items-center justify-center gap-2 hover:bg-icube-gold-light transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shadow-[0_4px_20px_rgba(212,175,55,0.35)] hover:shadow-[0_6px_28px_rgba(212,175,55,0.45)]"
+            >
+              <span className="relative z-10">Book Studio</span>
+              <ArrowRight size={18} className="relative z-10 group-hover:translate-x-1 transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]" />
+            </Link>
+          </motion.div>
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }} className="w-full sm:w-auto flex justify-center">
+            <Link
+              href="/portfolio"
+              className="group flex items-center justify-center gap-3 sm:gap-4 text-white hover:text-icube-gold transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] py-2"
+            >
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border border-white/30 flex items-center justify-center group-hover:border-icube-gold group-hover:scale-110 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] shrink-0">
+                <Play size={20} className="ml-1" />
+              </div>
+              <span className="font-semibold uppercase tracking-wider text-sm">View Portfolio</span>
+            </Link>
+          </motion.div>
         </div>
       </motion.div>
 

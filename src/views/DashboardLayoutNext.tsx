@@ -13,6 +13,7 @@ import {
   Package,
   PlusCircle,
   Calendar,
+  ClipboardList,
   Mail,
   Sparkles,
   Video,
@@ -20,10 +21,18 @@ import {
   Home,
   Building2,
 } from "lucide-react";
-import { getSiteSettings } from "../api";
+import { api, getSiteSettings } from "../api";
 import UserProfile from "../components/UserProfile";
 
-const nav = [
+type NavItem = {
+  href: string;
+  end: boolean;
+  label: string;
+  icon: typeof LayoutGrid;
+  countKey?: "bookings" | "package-bookings" | "messages";
+};
+
+const nav: NavItem[] = [
   { href: "/dashboard", end: true, label: "Overview", icon: LayoutGrid },
   { href: "/dashboard/settings", end: false, label: "Site Settings", icon: Settings },
   { href: "/dashboard/hero", end: false, label: "Hero", icon: Image },
@@ -32,18 +41,27 @@ const nav = [
   { href: "/dashboard/testimonials", end: false, label: "Testimonials", icon: MessageSquare },
   { href: "/dashboard/packages", end: false, label: "Booking Packages", icon: Package },
   { href: "/dashboard/addons", end: false, label: "Add-ons", icon: PlusCircle },
-  { href: "/dashboard/bookings", end: false, label: "Bookings", icon: Calendar },
-  { href: "/dashboard/messages", end: false, label: "Contact Messages", icon: Mail },
+  { href: "/dashboard/bookings", end: false, label: "Bookings", icon: Calendar, countKey: "bookings" },
+  { href: "/dashboard/package-bookings", end: false, label: "Package Bookings", icon: ClipboardList, countKey: "package-bookings" },
+  { href: "/dashboard/messages", end: false, label: "Contact Messages", icon: Mail, countKey: "messages" },
   { href: "/dashboard/why-us", end: false, label: "Why Us", icon: Sparkles },
   { href: "/dashboard/studios", end: false, label: "Studios", icon: Building2 },
   { href: "/dashboard/studio", end: false, label: "Studio Equipment", icon: Video },
 ];
+
+type BookingRow = { id: string; status?: string; package_id?: string | null };
+type MessageRow = { id: string; read_at?: string | null };
 
 export default function DashboardLayoutNext({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [cloudStatus, setCloudStatus] = useState<"checking" | "online" | "offline">("checking");
+  const [notificationCounts, setNotificationCounts] = useState({
+    bookings: 0,
+    "package-bookings": 0,
+    messages: 0,
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -59,6 +77,33 @@ export default function DashboardLayoutNext({ children }: { children: React.Reac
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [bookings, messages] = await Promise.all([
+          api.get<BookingRow[]>("/dashboard/bookings"),
+          api.get<MessageRow[]>("/dashboard/messages"),
+        ]);
+        if (cancelled) return;
+        const pendingBookings = Array.isArray(bookings) ? bookings.filter((b) => b.status === "pending") : [];
+        const pendingPackageBookings = pendingBookings.filter((b) => b.package_id);
+        const studioOrOtherPending = pendingBookings.filter((b) => !b.package_id);
+        const unreadMessages = Array.isArray(messages) ? messages.filter((m) => !m.read_at) : [];
+        setNotificationCounts({
+          bookings: studioOrOtherPending.length,
+          "package-bookings": pendingPackageBookings.length,
+          messages: unreadMessages.length,
+        });
+      } catch {
+        // ignore
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
 
   async function handleLogout() {
     await logout();
@@ -83,8 +128,9 @@ export default function DashboardLayoutNext({ children }: { children: React.Reac
             </div>
           </div>
           <nav className="px-3 py-3 flex-1 overflow-y-auto space-y-1">
-            {nav.map(({ href, end, label, icon: Icon }) => {
+            {nav.map(({ href, end, label, icon: Icon, countKey }) => {
               const isActive = end ? pathname === href : pathname.startsWith(href + "/") || pathname === href;
+              const count = countKey != null ? notificationCounts[countKey] : 0;
               return (
                 <Link
                   key={href}
@@ -96,7 +142,15 @@ export default function DashboardLayoutNext({ children }: { children: React.Reac
                   }`}
                 >
                   <Icon size={18} className="shrink-0" />
-                  <span className="truncate">{label}</span>
+                  <span className="truncate flex-1 min-w-0">{label}</span>
+                  {count > 0 && (
+                    <span
+                      className="shrink-0 min-w-[1.25rem] h-5 px-1.5 flex items-center justify-center rounded-full bg-icube-gold text-icube-dark text-xs font-bold"
+                      aria-label={`${count} new`}
+                    >
+                      {count > 99 ? "99+" : count}
+                    </span>
+                  )}
                 </Link>
               );
             })}

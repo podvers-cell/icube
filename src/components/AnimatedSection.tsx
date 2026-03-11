@@ -17,19 +17,19 @@ type AnimatedSectionProps = {
 };
 
 /**
- * غلاف يطبّق أنيميشن ظهور بسيط وراقٍ عند دخول القسم في الشاشة (fade + slide up).
+ * غلاف يطبّق أنيميشن ظهور بسيط وراقٍ عند دخول القسم في الشاشة (fade + slide up + subtle scale).
  */
 export default function AnimatedSection({
   children,
   className = "",
   delay = 0,
-  y = 20,
+  y = 28,
 }: AnimatedSectionProps) {
   return (
     <motion.div
-      initial={{ opacity: 0, y }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.12 }}
+      initial={{ opacity: 0, y, scale: 0.98 }}
+      whileInView={{ opacity: 1, y: 0, scale: 1 }}
+      viewport={{ once: true, amount: 0.1 }}
       transition={{
         ...defaultTransition,
         delay,

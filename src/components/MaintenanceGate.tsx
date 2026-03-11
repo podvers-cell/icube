@@ -32,28 +32,49 @@ export default function MaintenanceGate({ children }: { children: React.ReactNod
   if (!enabled || allow) return children;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-icube-dark via-icube-gray to-[#111521] text-white flex items-center justify-center px-5">
-      <div className="max-w-xl w-full text-center bg-white/5 border border-white/10 rounded-2xl p-8 shadow-[0_20px_60px_rgba(0,0,0,0.6)]">
-        <div className="w-16 h-16 rounded-full bg-icube-gold/15 border border-icube-gold/40 flex items-center justify-center mx-auto mb-5">
-          <Wrench className="text-icube-gold" size={28} />
-        </div>
-        <h1 className="text-3xl font-display font-bold">Website under maintenance</h1>
-        <p className="text-gray-400 mt-3">{message}</p>
-        <div className="mt-8 flex items-center justify-center gap-3">
-          <Link
-            href="/maintenance"
-            className="px-5 py-3 rounded-xl bg-icube-gold text-icube-dark font-semibold hover:bg-icube-gold-light transition-colors"
-          >
-            View status page
-          </Link>
-          <Link
-            href="/login?from=/dashboard"
-            className="px-5 py-3 rounded-xl border border-white/15 text-gray-200 hover:bg-white/10 transition-colors"
-          >
-            Admin login
-          </Link>
-        </div>
+    <div className="min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray/90 to-icube-dark text-white flex flex-col items-center justify-center px-6 py-12 relative overflow-hidden">
+      <style>{`
+        @keyframes move-left-to-right {
+          0%, 100% { transform: translateX(0); }
+          50% { transform: translateX(180px); }
+        }
+        @keyframes move-right-to-left {
+          0%, 100% { transform: translateX(0); }
+          50% { transform: translateX(-180px); }
+        }
+        .bg-ball-1 { animation: move-left-to-right 24s ease-in-out infinite; }
+        .bg-ball-2 { animation: move-right-to-left 22s ease-in-out infinite; }
+      `}</style>
+
+      {/* Two yellow balls moving inside the screen, under the glass */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[35%] left-[20%] w-40 h-40 md:w-52 md:h-52 rounded-full bg-icube-gold/35 blur-3xl bg-ball-1" aria-hidden />
+        <div className="absolute top-[55%] right-[22%] w-32 h-32 md:w-44 md:h-44 rounded-full bg-icube-gold/30 blur-3xl bg-ball-2" aria-hidden />
       </div>
+
+      {/* Glass overlay - frosted layer so balls look behind glass */}
+      <div className="absolute inset-0 bg-white/[0.03] backdrop-blur-[2px] pointer-events-none" aria-hidden />
+
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_20%,rgba(212,175,55,0.06),transparent_50%)] pointer-events-none" />
+
+      <div className="relative w-full max-w-lg flex flex-col items-center text-center z-10">
+        <div className="w-20 h-20 rounded-full bg-icube-gold/15 border border-icube-gold/30 flex items-center justify-center mb-8 shadow-[0_0_32px_rgba(212,175,55,0.2)]">
+          <Wrench className="text-icube-gold" size={36} strokeWidth={1.8} aria-hidden />
+        </div>
+        <h1 className="text-3xl md:text-4xl font-display font-bold tracking-tight text-white mb-3">
+          Website under maintenance
+        </h1>
+        <p className="text-gray-400 text-base md:text-lg max-w-md mx-auto leading-relaxed">
+          {message}
+        </p>
+      </div>
+
+      <Link
+        href="/login?from=/dashboard"
+        className="fixed bottom-6 right-6 inline-flex items-center justify-center px-5 py-3 rounded-full bg-white/10 border border-white/20 text-gray-100 text-sm font-medium backdrop-blur-md hover:bg-white/15 hover:border-icube-gold/50 hover:text-icube-gold transition-colors shadow-[0_10px_30px_rgba(0,0,0,0.5)]"
+      >
+        Admin login
+      </Link>
     </div>
   );
 }

@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { Calendar, Clock, CheckCircle2, Sparkles, ArrowRight } from "lucide-react";
 import { useSiteData } from "../SiteDataContext";
 import { submitBooking } from "../api";
+import { useBooking } from "@/BookingContext";
 
 function parseFeatures(s: string): string[] {
   try {
@@ -15,13 +17,34 @@ function parseFeatures(s: string): string[] {
 }
 
 export default function Booking() {
+  const router = useRouter();
   const { packages: pkgs } = useSiteData();
+  const {
+    setSelectedPackage,
+    setSelectedStudio,
+    setSelectedDurationHours,
+    setSelectedDate,
+    setSelectedTimeSlot,
+    setSelectedAddOns,
+  } = useBooking();
   const [submitted, setSubmitted] = useState(false);
   const [customSubmitting, setCustomSubmitting] = useState(false);
   const [customForm, setCustomForm] = useState({ first_name: "", last_name: "", email: "", phone: "", project_details: "" });
 
-  function handlePackageSelect() {
-    document.getElementById("custom-booking-form")?.scrollIntoView({ behavior: "smooth" });
+  function handlePackageSelect(pkg: (typeof pkgs)[number]) {
+    // Reset any previous booking draft and start a fresh package flow
+    setSelectedStudio(null);
+    setSelectedDurationHours(null);
+    setSelectedDate(null);
+    setSelectedTimeSlot(null);
+    setSelectedAddOns([]);
+    setSelectedPackage({
+      id: String(pkg.id),
+      name: pkg.name,
+      price_aed: pkg.price_aed,
+      duration: pkg.duration,
+    });
+    router.push("/packages/checkout");
   }
 
   async function handleCustomSubmit(e: FormEvent) {
@@ -117,7 +140,7 @@ export default function Booking() {
                   {/* CTA */}
                 <button
                   type="button"
-                  onClick={() => handlePackageSelect()}
+                  onClick={() => handlePackageSelect(pkg)}
                     className={`mt-auto w-full inline-flex items-center justify-center gap-2 py-4 font-semibold uppercase tracking-wider rounded-xl transition-all duration-300 ${
                       isPopular
                         ? "bg-icube-gold text-icube-dark hover:bg-icube-gold-light shadow-[0_4px_20px_rgba(212,175,55,0.35)] hover:shadow-[0_6px_28px_rgba(212,175,55,0.4)]"

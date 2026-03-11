@@ -15,7 +15,7 @@ type AnimatedStaggerItemProps = {
 };
 
 /**
- * عنصر يظهر بتأثير fade + slide up مع تأخير حسب الترتيب (للقوائم والبطاقات).
+ * عنصر يظهر بتأثير fade + slide up مع تأخير حسب الترتيب (للقوائم والبطاقات). Hover: subtle lift.
  */
 export default function AnimatedStaggerItem({
   children,
@@ -26,15 +26,16 @@ export default function AnimatedStaggerItem({
 }: AnimatedStaggerItemProps) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.15 }}
+      whileHover={{ y: -4 }}
+      viewport={{ once: true, amount: 0.12 }}
       transition={{
         duration: 0.5,
         delay: delay + index * staggerDelay,
         ease,
       }}
-      className={className}
+      className={`transition-shadow duration-300 ${className}`}
     >
       {children}
     </motion.div>

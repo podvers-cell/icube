@@ -25,23 +25,24 @@ export default function BookingCheckoutPage() {
   const [success, setSuccess] = useState(false);
   const [successSummary, setSuccessSummary] = useState<{
     packageName: string;
-    bookingDate: string;
-    timeSlot: string;
+    bookingDate?: string;
+    timeSlot?: string;
   } | null>(null);
 
   useEffect(() => {
     if (success) return;
-    if (!selectedPackage || !selectedDate || !selectedTimeSlot) {
+    if (!selectedPackage) {
       router.replace("/packages");
       return;
     }
-  }, [selectedPackage, selectedDate, selectedTimeSlot, router, success]);
+  }, [selectedPackage, router, success]);
 
   const totalAmount = selectedPackage ? selectedPackage.price_aed + totalAddonsAmount : 0;
+  const isDirectCheckout = !selectedDate && !selectedTimeSlot;
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!selectedPackage || !selectedDate || !selectedTimeSlot) return;
+    if (!selectedPackage) return;
     setSubmitting(true);
     try {
       await submitBooking({
@@ -52,15 +53,14 @@ export default function BookingCheckoutPage() {
         package_id: selectedPackage.id,
         studio_id: selectedStudio?.id,
         studio_name: selectedStudio?.name,
-        booking_date: selectedDate,
-        time_slot: selectedTimeSlot,
-        addon_ids: selectedAddOns.map((a) => a.id),
-        addons_total_aed: totalAddonsAmount,
+        ...(selectedDate && { booking_date: selectedDate }),
+        ...(selectedTimeSlot && { time_slot: selectedTimeSlot }),
+        ...(selectedAddOns.length > 0 && { addon_ids: selectedAddOns.map((a) => a.id), addons_total_aed: totalAddonsAmount }),
       });
       setSuccessSummary({
         packageName: selectedPackage.name,
-        bookingDate: selectedDate,
-        timeSlot: selectedTimeSlot,
+        ...(selectedDate && { bookingDate: selectedDate }),
+        ...(selectedTimeSlot && { timeSlot: selectedTimeSlot }),
       });
       setSuccess(true);
       clearBooking();
@@ -83,7 +83,10 @@ export default function BookingCheckoutPage() {
             </div>
             <h1 className="text-3xl font-display font-bold text-white mb-3">Booking made successfully</h1>
             <p className="text-gray-400 font-light mb-4">
-              Thank you for choosing us. We’ve received your request for {successSummary.packageName} on {successSummary.bookingDate} at {successSummary.timeSlot}.
+              Thank you for choosing us. We’ve received your request for {successSummary.packageName}
+              {successSummary.bookingDate && successSummary.timeSlot
+                ? ` on ${successSummary.bookingDate} at ${successSummary.timeSlot}`
+                : "."}
             </p>
             <p className="text-gray-500 text-sm mb-8">
               We’ll confirm availability and get back to you shortly.
@@ -101,7 +104,7 @@ export default function BookingCheckoutPage() {
     );
   }
 
-  if (!selectedPackage || !selectedDate || !selectedTimeSlot) return null;
+  if (!selectedPackage) return null;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray to-[#111521] text-white selection:bg-icube-gold selection:text-icube-dark">
@@ -109,11 +112,11 @@ export default function BookingCheckoutPage() {
       <main className="relative py-24 md:py-28">
         <div className="max-w-2xl mx-auto px-5 sm:px-6 md:px-12">
           <Link
-            href="/packages/add-ons"
+            href={isDirectCheckout ? "/packages" : "/packages/add-ons"}
             className="inline-flex items-center gap-2 text-gray-400 hover:text-icube-gold text-sm font-medium mb-8 transition-colors"
           >
             <ChevronLeft size={18} />
-            Back to add-ons
+            {isDirectCheckout ? "Back to packages" : "Back to add-ons"}
           </Link>
 
           <h1 className="text-3xl md:text-4xl font-display font-bold tracking-tight text-white mb-2">
@@ -137,9 +140,11 @@ export default function BookingCheckoutPage() {
                 <span className="text-gray-300">{selectedPackage.name}</span>
                 <span className="text-white">{selectedPackage.price_aed} AED</span>
               </div>
-              <div className="flex justify-between text-sm text-gray-500">
-                <span>{selectedDate} · {selectedTimeSlot}</span>
-              </div>
+              {selectedDate && selectedTimeSlot && (
+                <div className="flex justify-between text-sm text-gray-500">
+                  <span>{selectedDate} · {selectedTimeSlot}</span>
+                </div>
+              )}
               {selectedAddOns.length > 0 && (
                 <>
                   {selectedAddOns.map((a) => (
