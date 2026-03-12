@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import { ClientProviders } from "./ClientProviders";
-
+import Script from "next/script";
+const GA_ID = "G-71ZDWR0H40";
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
@@ -64,6 +65,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} ${outfit.variable}`} suppressHydrationWarning>
+      
       <body>
         <script
           type="application/ld+json"
@@ -75,6 +77,19 @@ export default function RootLayout({
           }}
         />
         <ClientProviders>{children}</ClientProviders>
+        <Script
+  src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+  strategy="afterInteractive"
+/>
+
+<Script id="google-analytics" strategy="afterInteractive">
+  {`
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', '${GA_ID}');
+  `}
+</Script>
       </body>
     </html>
   );
