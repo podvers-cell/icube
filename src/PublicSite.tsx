@@ -18,7 +18,7 @@ import AnimatedSection from "./components/AnimatedSection";
 import ScrollReveal from "./components/ScrollReveal";
 import { useSiteData } from "./SiteDataContext";
 
-const WHATSAPP_URL = "https://wa.me/971548886318";
+const WHATSAPP_URL = "https://wa.me/971589965005";
 
 /** Hash from URL (works in both Vite and Next.js; no react-router dependency). */
 function useHash() {
