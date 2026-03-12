@@ -27,6 +27,8 @@ type Package = {
   features: string;
   is_popular: number;
   sort_order: number;
+  description?: string;
+  best_for_label?: string;
 };
 type Why = { id: number; icon: string; title: string; description: string; sort_order: number };
 type Equipment = { id: number; label: string; description: string; sort_order: number };

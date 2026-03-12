@@ -18,9 +18,11 @@ type ScrollRevealProps = {
   amount?: number;
 };
 
+type MotionState = { opacity?: number; x?: number; y?: number; scale?: number };
+
 const variants: Record<
   ScrollRevealVariant,
-  { initial: Record<string, unknown>; animate: Record<string, unknown>; transition?: { duration?: number; delay?: number; ease?: readonly number[] } }
+  { initial: MotionState; animate: MotionState; transition?: { duration?: number; delay?: number; ease?: readonly number[] } }
 > = {
   fadeUp: {
     initial: { opacity: 0, y: 48 },
@@ -64,10 +66,11 @@ export default function ScrollReveal({
 }: ScrollRevealProps) {
   const reduceMotion = useReducedMotion();
   const config = variants[variant];
+  const baseTransition = config.transition;
   const transition = {
-    ...config.transition,
-    delay: delay + (config.transition?.delay ?? 0),
-    duration: duration ?? config.transition?.duration ?? 0.65,
+    delay: delay + (baseTransition?.delay ?? 0),
+    duration: duration ?? baseTransition?.duration ?? 0.65,
+    ease: baseTransition?.ease ? [...baseTransition.ease] : undefined,
   };
 
   const initial = reduceMotion ? { opacity: 1, y: 0, x: 0, scale: 1 } : config.initial;
@@ -78,7 +81,7 @@ export default function ScrollReveal({
       initial={initial}
       whileInView={animate}
       viewport={{ once: true, amount }}
-      transition={transition}
+      transition={transition as React.ComponentProps<typeof motion.div>["transition"]}
       className={className}
     >
       {children}
