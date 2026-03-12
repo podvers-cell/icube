@@ -25,6 +25,9 @@ const HOURLY_SLOTS: { value: string; label: string }[] = (() => {
 
 const DURATION_OPTIONS = [1, 2, 3, 4, 5, 6, 8];
 
+// Must stay in sync with MAX_SLOT_HOUR in api.ts
+const MAX_SLOT_HOUR = 22;
+
 export default function StudioBookingDateTimePage() {
   const router = useRouter();
   const {
@@ -153,7 +156,7 @@ export default function StudioBookingDateTimePage() {
               Start time
             </h2>
             <p className="text-gray-500 text-sm mb-3">
-              Available from 8:00 AM to 10:00 PM (Dubai time). Past times and booked slots are unavailable.
+              Available from 8:00 AM to 10:00 PM (Dubai time). Past times and overlapping bookings are unavailable based on your selected duration.
             </p>
             {loadingSlots && selectedDate && (
               <p className="text-gray-500 text-xs mb-2">Checking availability…</p>
@@ -161,9 +164,39 @@ export default function StudioBookingDateTimePage() {
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
               {HOURLY_SLOTS.map(({ value, label }) => {
                 const isPast = selectedDate ? isSlotPastInRegion(selectedDate, value) : false;
-                const isBooked = bookedSlots.includes(value);
-                const disabled = !selectedDate || isPast || isBooked;
-                const reason = !selectedDate ? "" : isPast ? "Past" : isBooked ? "Booked" : "";
+
+                // Determine if this start time conflicts with existing bookings or studio hours
+                const duration = selectedDurationHours ?? 1;
+                const [hourStr] = value.split(":");
+                const startHour = parseInt(hourStr, 10);
+
+                let overlapsExisting = false;
+                let exceedsClosing = false;
+                if (!Number.isNaN(startHour)) {
+                  for (let i = 0; i < duration; i++) {
+                    const hour = startHour + i;
+                    if (hour > MAX_SLOT_HOUR) {
+                      exceedsClosing = true;
+                      break;
+                    }
+                    const slotKey = `${String(hour).padStart(2, "0")}:00`;
+                    if (bookedSlots.includes(slotKey)) {
+                      overlapsExisting = true;
+                      break;
+                    }
+                  }
+                }
+
+                const disabled = !selectedDate || isPast || overlapsExisting || exceedsClosing;
+                const reason = !selectedDate
+                  ? ""
+                  : isPast
+                    ? "Past"
+                    : overlapsExisting
+                      ? "Overlaps another booking"
+                      : exceedsClosing
+                        ? "Outside studio hours"
+                        : "";
                 return (
                   <button
                     key={value}
