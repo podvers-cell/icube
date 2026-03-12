@@ -4,6 +4,15 @@ import BookingCheckoutPage from "@/views/BookingCheckoutPage";
 export const metadata: Metadata = {
   title: "Checkout | Book Studio | ICUBE Media Studio",
   description: "Complete your studio booking request.",
+  alternates: { canonical: "/packages/checkout" },
+  openGraph: {
+    url: "/packages/checkout",
+    siteName: "ICUBE Media Studio",
+    title: "Checkout | Book Studio | ICUBE Media Studio",
+    description: "Complete your studio booking request.",
+    locale: "en_AE",
+  },
+  twitter: { card: "summary_large_image", title: "Checkout | Book Studio | ICUBE Media Studio", description: "Complete your studio booking request." },
 };
 
 export default function CheckoutRoute() {

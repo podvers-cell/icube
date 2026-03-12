@@ -157,9 +157,7 @@ export default function DashboardLayoutNext({ children }: { children: React.Reac
           onClick={() => mobileNavOpen && setMobileNavOpen(false)}
         >
           <div className="px-4 py-4 border-b border-white/10 flex items-center gap-3">
-            <div className="h-9 w-9 rounded-lg bg-icube-gold flex items-center justify-center">
-              <img src="/icube-logo.svg" alt="ICUBE" className="h-6 w-auto" />
-            </div>
+            <img src="/icube-logo.svg" alt="ICUBE" className="h-8 w-auto shrink-0" />
             <div className="flex flex-col">
               <span className="font-display font-bold text-sm tracking-[0.2em] uppercase text-gray-200">
                 ICUBE
@@ -185,14 +183,14 @@ export default function DashboardLayoutNext({ children }: { children: React.Reac
                 >
                   <Icon size={18} className="shrink-0" />
                   <span className="truncate flex-1 min-w-0">{label}</span>
-                  {count > 0 && (
+                  {count > 0 ? (
                     <span
                       className="shrink-0 min-w-[1.25rem] h-5 px-1.5 flex items-center justify-center rounded-full bg-icube-gold text-icube-dark text-xs font-bold"
                       aria-label={`${count} new`}
                     >
                       {count > 99 ? "99+" : count}
                     </span>
-                  )}
+                  ) : null}
                 </Link>
               );
             })}

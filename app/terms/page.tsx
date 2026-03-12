@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray to-[#111521] text-white">
+    <div className="site-wrapper min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray to-[#111521] text-white transition-colors duration-300">
       <div className="max-w-3xl mx-auto px-6 md:px-12 py-16 md:py-24">
         <Link
           href="/"

@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Menu, X, LogOut, LayoutDashboard } from "lucide-react";
+import { LogOut, LayoutDashboard } from "lucide-react";
+import ThemeToggleSwitch from "./ThemeToggleSwitch";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "../AuthContext";
+import { useTheme } from "../ThemeContext";
 import { AnimatePresence, motion } from "motion/react";
 
 export default function Navbar() {
@@ -13,12 +15,13 @@ export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const { user, logout, isAdmin = false } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   /** On nav link click: if on home, scroll to section; if on another page, go to home with hash then home scrolls to section */
   function handleNavLinkClick(e: React.MouseEvent<HTMLAnchorElement>, href: string) {
     setIsMobileMenuOpen(false);
     const hash = href.includes("#") ? href.split("#")[1] : null;
-    const isHomeSection = href === "/" || hash === "home" || (hash && ["services", "studio", "why-us", "portfolio", "testimonials", "videos", "benefits"].includes(hash));
+    const isHomeSection = href === "/" || hash === "home" || (hash && ["services", "studio", "portfolio", "testimonials", "videos", "benefits"].includes(hash));
 
     if (pathname === "/") {
       if (href === "/" || hash === "home") {
@@ -64,11 +67,16 @@ export default function Navbar() {
 
   const navLinks = [
     { name: "Home", href: "/" },
-    { name: "Studio", href: "/#studio" },
     { name: "Portfolio", href: "/portfolio" },
     { name: "Packages", href: "/packages" },
     { name: "Contact", href: "/contact" },
   ];
+
+  /** Active when pathname matches link path (ignore hash for page-level active state). */
+  const isActiveLink = (href: string) => {
+    const path = href.split("#")[0] || "/";
+    return pathname === path || (path === "/" && pathname === "/");
+  };
 
   const displayName =
     user?.name && user.name.trim().length > 0
@@ -86,8 +94,12 @@ export default function Navbar() {
     }
   }
 
+  const isHome = pathname === "/";
+
   return (
     <nav
+      data-scrolled={isScrolled ? "true" : undefined}
+      data-home={isHome ? "true" : "false"}
       className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
         isScrolled
           ? "bg-black/35 border-b border-white/10 backdrop-blur-2xl shadow-lg"
@@ -107,20 +119,28 @@ export default function Navbar() {
         {/* Desktop Nav – flex-1 so it shifts left when right section grows; scrolls if needed */}
         <div className="hidden md:flex flex-1 min-w-0 justify-center overflow-x-auto overflow-y-visible py-1">
           <nav className="flex items-center gap-5 lg:gap-7 shrink-0 h-full">
-            {navLinks.map((link) => (
-                <Link
-                  key={link.name}
-                  href={(link as { href: string }).href}
-                  onClick={(e) => handleNavLinkClick(e, (link as { href: string }).href)}
-                  className="relative inline-block py-2 pb-2.5 whitespace-nowrap text-[11px] font-medium text-gray-200/80 hover:text-white tracking-[0.18em] uppercase transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-full after:bg-icube-gold after:scale-x-0 after:origin-left after:transition-transform after:duration-300 after:[transition-timing-function:cubic-bezier(0.4,0,0.2,1)] hover:after:scale-x-100"
-                >
-                  {link.name}
-                </Link>
-              ))}
+            {navLinks.map((link) => {
+                const href = (link as { href: string }).href;
+                const active = isActiveLink(href);
+                return (
+                  <motion.span key={link.name} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }} transition={{ type: "tween", duration: 0.2 }}>
+                    <Link
+                      href={href}
+                      onClick={(e) => handleNavLinkClick(e, href)}
+                      className={`nav-menu-link relative inline-block py-2 pb-2.5 whitespace-nowrap text-[11px] font-medium tracking-[0.18em] uppercase transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-full after:bg-icube-gold after:origin-left after:transition-transform after:duration-300 after:[transition-timing-function:cubic-bezier(0.4,0,0.2,1)] hover:after:scale-x-100 ${
+                        active ? "text-white after:scale-x-100" : "text-gray-200/80 hover:text-white after:scale-x-0"
+                      }`}
+                      aria-current={active ? "page" : undefined}
+                    >
+                      {link.name}
+                    </Link>
+                  </motion.span>
+                );
+              })}
           </nav>
         </div>
 
-        {/* Desktop auth / CTA – right, never shrinks */}
+        {/* Desktop auth / CTA + Theme toggle at far right */}
         <div className="hidden md:flex items-center gap-2 lg:gap-3 shrink-0">
           {user ? (
             <>
@@ -130,7 +150,7 @@ export default function Navbar() {
               {isAdmin && (
                 <Link
                   href="/dashboard"
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-icube-gold/20 border border-icube-gold/50 text-[11px] font-semibold uppercase tracking-[0.18em] text-icube-gold hover:bg-icube-gold hover:text-icube-dark transition-colors active:scale-[0.98]"
+                  className="nav-cta-link inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-icube-gold/20 border border-icube-gold/50 text-[11px] font-semibold uppercase tracking-[0.18em] text-icube-gold hover:bg-icube-gold hover:text-icube-dark transition-colors active:scale-[0.98]"
                 >
                   <LayoutDashboard size={14} className="shrink-0" />
                   Dashboard
@@ -139,7 +159,7 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/5 border border-white/20 text-gray-200 hover:bg-white/15 hover:text-icube-gold transition-colors"
+                className="nav-logout-btn inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/5 border border-white/20 text-gray-200 hover:bg-white/15 hover:text-icube-gold transition-colors"
                 aria-label="Log out"
               >
                 <LogOut size={14} />
@@ -147,7 +167,7 @@ export default function Navbar() {
               <Link
                 href="/#studio"
                 onClick={(e) => handleNavLinkClick(e, "/#studio")}
-                className="px-4 py-1.5 rounded-full border border-icube-gold/70 text-[11px] font-semibold uppercase tracking-[0.22em] text-icube-gold hover:bg-icube-gold hover:text-icube-dark transition-colors active:scale-[0.98]"
+                className="nav-cta-link px-4 py-1.5 rounded-full border border-icube-gold/70 text-[11px] font-semibold uppercase tracking-[0.22em] text-icube-gold hover:bg-icube-gold hover:text-icube-dark transition-colors active:scale-[0.98]"
               >
                 Book Studio
               </Link>
@@ -169,17 +189,18 @@ export default function Navbar() {
               <Link
                 href="/#studio"
                 onClick={(e) => handleNavLinkClick(e, "/#studio")}
-                className="px-4 py-1.5 rounded-full border border-icube-gold/70 text-[11px] font-semibold uppercase tracking-[0.22em] text-icube-gold hover:bg-icube-gold hover:text-icube-dark transition-colors active:scale-[0.98]"
+                className="nav-cta-link px-4 py-1.5 rounded-full border border-icube-gold/70 text-[11px] font-semibold uppercase tracking-[0.22em] text-icube-gold hover:bg-icube-gold hover:text-icube-dark transition-colors active:scale-[0.98]"
               >
                 Book Studio
               </Link>
             </>
           )}
+          <ThemeToggleSwitch theme={theme} onToggle={toggleTheme} size="sm" className="shrink-0 ml-0" />
         </div>
 
-        {/* Mobile Menu Toggle */}
+        {/* Mobile Menu Toggle – min 44px touch target */}
         <button
-          className="md:hidden z-50 text-white"
+          className="md:hidden z-50 text-white p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-icube-gold focus-visible:ring-offset-2 focus-visible:ring-offset-icube-dark"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           aria-label={isMobileMenuOpen ? "Close navigation" : "Open navigation"}
         >
@@ -210,20 +231,36 @@ export default function Navbar() {
             className="fixed top-0 left-0 right-0 bottom-0 z-40 bg-icube-dark/95 backdrop-blur-2xl flex flex-col items-center justify-center px-8 min-h-[100dvh] min-h-[100vh] md:hidden"
           >
             <div className="w-full max-w-sm bg-black/40 border border-white/10 rounded-3xl px-6 py-8 shadow-[0_30px_80px_rgba(0,0,0,0.85)] flex flex-col items-center gap-6">
-              <nav className="w-full space-y-3">
-                {navLinks.map((link) => (
-                  <Link
-                    key={link.name}
-                    href={(link as { href: string }).href}
-                    onClick={(e) => {
-                      handleNavLinkClick(e, (link as { href: string }).href);
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className="relative block text-center text-sm font-display font-medium text-gray-200 hover:text-white tracking-[0.24em] uppercase py-2 transition-colors after:absolute after:left-1/2 after:-bottom-1 after:h-[2px] after:w-10 after:-translate-x-1/2 after:bg-icube-gold after:scale-x-0 hover:after:scale-x-100 after:origin-center after:transition-transform after:duration-300"
-                  >
-                    {link.name}
-                  </Link>
-                ))}
+              <ThemeToggleSwitch
+                theme={theme}
+                onToggle={() => {
+                  toggleTheme();
+                  setIsMobileMenuOpen(false);
+                }}
+                size="md"
+                className="shrink-0"
+              />
+              <nav className="w-full space-y-1">
+                {navLinks.map((link) => {
+                  const href = (link as { href: string }).href;
+                  const active = isActiveLink(href);
+                  return (
+                    <Link
+                      key={link.name}
+                      href={href}
+                      onClick={(e) => {
+                        handleNavLinkClick(e, href);
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className={`relative block text-center text-sm font-display font-medium tracking-[0.24em] uppercase py-3.5 px-4 rounded-lg transition-colors after:absolute after:left-1/2 after:-bottom-0.5 after:h-[2px] after:w-10 after:-translate-x-1/2 after:bg-icube-gold after:origin-center after:transition-transform after:duration-300 min-h-[44px] flex items-center justify-center ${
+                        active ? "text-white after:scale-x-100 bg-white/5" : "text-gray-200 hover:text-white hover:bg-white/5 after:scale-x-0 hover:after:scale-x-100"
+                      }`}
+                      aria-current={active ? "page" : undefined}
+                    >
+                      {link.name}
+                    </Link>
+                  );
+                })}
               </nav>
 
               <div className="w-full h-px bg-white/10" />
@@ -249,7 +286,7 @@ export default function Navbar() {
                       await handleLogout();
                       setIsMobileMenuOpen(false);
                     }}
-                    className="inline-flex mt-1 h-9 w-9 items-center justify-center rounded-full bg-white/5 border border-white/20 text-gray-200 hover:bg-white/15 hover:text-icube-gold transition-colors"
+                    className="nav-logout-btn inline-flex mt-1 h-9 w-9 items-center justify-center rounded-full bg-white/5 border border-white/20 text-gray-200 hover:bg-white/15 hover:text-icube-gold transition-colors"
                     aria-label="Log out"
                   >
                     <LogOut size={16} />

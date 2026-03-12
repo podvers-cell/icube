@@ -3,7 +3,7 @@
 import { motion } from "motion/react";
 
 /**
- * Thin gold divider between sections – draws in when it enters view.
+ * Thin gold divider between sections – draws in when it enters view, with subtle shimmer.
  */
 export default function SectionDivider() {
   return (
@@ -12,11 +12,11 @@ export default function SectionDivider() {
       initial={{ scaleX: 0 }}
       whileInView={{ scaleX: 1 }}
       viewport={{ once: true, amount: 0.2 }}
-      transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+      transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
       style={{ originX: 0 }}
       aria-hidden
     >
-      <div className="h-px min-h-px w-full bg-icube-gold/40" />
+      <div className="section-divider-line h-px min-h-px w-full bg-icube-gold/40" />
     </motion.div>
   );
 }

@@ -17,7 +17,17 @@ type Project = {
   show_in_selected_work?: boolean;
 };
 type Testimonial = { id: number; quote: string; author: string; role: string; image_url: string; sort_order: number };
-type Package = { id: number; name: string; price_aed: number; duration: string; features: string; is_popular: number; sort_order: number };
+type Package = {
+  id: number;
+  name: string;
+  price_before_aed?: number;
+  price_aed: number;
+  price_after?: string;
+  duration: string;
+  features: string;
+  is_popular: number;
+  sort_order: number;
+};
 type Why = { id: number; icon: string; title: string; description: string; sort_order: number };
 type Equipment = { id: number; label: string; description: string; sort_order: number };
 type Studio = {
@@ -240,16 +250,17 @@ function withFallbackArray<T>(items: T[], fallback: T[]): T[] {
 export function SiteDataProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<SiteData>({
     ...defaultData,
-    loading: false,
+    loading: true,
     error: null,
-    settings: FALLBACK_SETTINGS,
-    services: FALLBACK_SERVICES,
-    portfolio: FALLBACK_PORTFOLIO,
-    testimonials: FALLBACK_TESTIMONIALS,
-    packages: FALLBACK_PACKAGES,
-    whyUs: FALLBACK_WHY_US,
-    studios: FALLBACK_STUDIOS,
-    videos: FALLBACK_VIDEOS,
+    settings: {},
+    services: [],
+    portfolio: [],
+    testimonials: [],
+    packages: [],
+    whyUs: [],
+    studioEquipment: [],
+    studios: [],
+    videos: [],
   });
 
   const refresh = useCallback(async () => {
@@ -287,7 +298,14 @@ export function SiteDataProvider({ children }: { children: ReactNode }) {
         loading: false,
         error: message,
         refresh,
-        settings: { ...FALLBACK_SETTINGS, ...d.settings },
+        settings: Object.keys(d.settings).length ? d.settings : FALLBACK_SETTINGS,
+        services: d.services.length ? d.services : FALLBACK_SERVICES,
+        portfolio: d.portfolio.length ? d.portfolio : FALLBACK_PORTFOLIO,
+        testimonials: d.testimonials.length ? d.testimonials : FALLBACK_TESTIMONIALS,
+        packages: d.packages.length ? d.packages : FALLBACK_PACKAGES,
+        whyUs: d.whyUs.length ? d.whyUs : FALLBACK_WHY_US,
+        studios: d.studios.length ? d.studios : FALLBACK_STUDIOS,
+        videos: d.videos.length ? d.videos : FALLBACK_VIDEOS,
       }));
     }
   }, []);

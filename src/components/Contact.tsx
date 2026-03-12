@@ -2,13 +2,17 @@
 
 import { useState, type FormEvent } from "react";
 import { Mail, Phone, MapPin, Instagram, Youtube, Twitter } from "lucide-react";
+import { motion } from "motion/react";
 import { useSiteData } from "../SiteDataContext";
+import { useToast } from "../ToastContext";
 import { submitContact, sendContactEmailNotification } from "../api";
 import { CONTACT_EMAIL, CONTACT_SUBJECT_OPTIONS } from "../constants/contact";
 import AnimatedStaggerItem from "./AnimatedStaggerItem";
+import { AnimatedSectionHeader } from "./ScrollReveal";
 
 export default function Contact() {
   const { settings } = useSiteData();
+  const { showToast } = useToast();
   const [form, setForm] = useState<{ name: string; email: string; subject: string; message: string }>({
     name: "",
     email: "",
@@ -17,6 +21,7 @@ export default function Contact() {
   });
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{ name?: string; email?: string; message?: string }>({});
 
   const address = settings.contact_address || "Dubai Media City, Building 1\nDubai, United Arab Emirates";
   const email = settings.contact_email || CONTACT_EMAIL;
@@ -27,9 +32,21 @@ export default function Contact() {
   const youtube = settings.social_youtube || "#";
   const twitter = settings.social_twitter || "#";
 
+  function validate(): boolean {
+    const err: { name?: string; email?: string; message?: string } = {};
+    if (!form.name.trim()) err.name = "Name is required";
+    if (!form.email.trim()) err.email = "Email is required";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) err.email = "Enter a valid email address";
+    if (!form.message.trim()) err.message = "Message is required";
+    setFieldErrors(err);
+    return Object.keys(err).length === 0;
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (!validate()) return;
     setSending(true);
+    setFieldErrors({});
     const data = { name: form.name, email: form.email, subject: form.subject, message: form.message };
     try {
       await submitContact(data);
@@ -40,8 +57,9 @@ export default function Contact() {
       }
       setSubmitted(true);
       setForm({ name: "", email: "", subject: CONTACT_SUBJECT_OPTIONS[0], message: "" });
+      showToast("Message sent. We'll get back to you soon.", "success");
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to send. Try again.");
+      showToast(err instanceof Error ? err.message : "Failed to send. Try again.", "error");
     } finally {
       setSending(false);
     }
@@ -55,22 +73,17 @@ export default function Contact() {
       <div className="absolute -bottom-40 right-0 w-80 h-80 bg-icube-gold/5 rounded-full blur-[100px] pointer-events-none" />
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
         {/* Intro block above form: GET IN TOUCH + Let's connect + paragraph */}
-        <AnimatedStaggerItem index={0}>
-          <div className="mb-12 md:mb-16">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-8 h-[2px] bg-icube-gold" />
-              <span className="text-icube-gold font-semibold tracking-[0.18em] uppercase text-xs md:text-sm">
-                Get in touch
-              </span>
-            </div>
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-display font-bold tracking-tight text-white mb-6">
-              Let&apos;s connect
-            </h2>
-            <p className="text-gray-400 font-light text-lg max-w-2xl leading-relaxed">
-              Ready to elevate your content? Reach out from Dubai or anywhere in the UAE to schedule a tour, discuss a project, or book your next session.
-            </p>
+        <AnimatedSectionHeader className="mb-12 md:mb-16" amount={0.25}>
+          <div className="section-label-row section-label-row--left">
+            <div className="section-label-line" aria-hidden />
+            <span className="section-label">Get in touch</span>
+            <div className="section-label-line" aria-hidden />
           </div>
-        </AnimatedStaggerItem>
+          <h2 className="section-title mb-6">Let&apos;s connect</h2>
+          <p className="text-gray-400 font-light text-lg max-w-2xl leading-relaxed">
+            Ready to elevate your content? Reach out from Dubai or anywhere in the UAE to schedule a tour, discuss a project, or book your next session.
+          </p>
+        </AnimatedSectionHeader>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
           {/* Left on desktop, down a little bit (pt); form first on mobile */}
@@ -78,7 +91,7 @@ export default function Contact() {
             <div>
               <div className="space-y-8">
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-icube-gray rounded-sm flex items-center justify-center shrink-0 border border-white/5">
+                <div className="flex items-center justify-center shrink-0">
                   <MapPin size={20} className="text-icube-gold" />
                 </div>
                 <div>
@@ -87,7 +100,7 @@ export default function Contact() {
                 </div>
               </div>
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-icube-gray rounded-sm flex items-center justify-center shrink-0 border border-white/5">
+                <div className="flex items-center justify-center shrink-0">
                   <Mail size={20} className="text-icube-gold" />
                 </div>
                 <div>
@@ -100,7 +113,7 @@ export default function Contact() {
                 </div>
               </div>
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-icube-gray rounded-sm flex items-center justify-center shrink-0 border border-white/5">
+                <div className="flex items-center justify-center shrink-0">
                   <Phone size={20} className="text-icube-gold" />
                 </div>
                 <div>
@@ -117,13 +130,13 @@ export default function Contact() {
             <div className="mt-12 pt-12 border-t border-white/10">
               <h4 className="font-display font-semibold text-lg mb-6 tracking-tight uppercase">Follow Our Work</h4>
               <div className="flex gap-4">
-                <a href={instagram} target="_blank" rel="noreferrer" className="w-12 h-12 bg-icube-gray border border-white/5 rounded-sm flex items-center justify-center hover:border-icube-gold hover:text-icube-gold transition-all duration-300">
+                <a href={instagram} target="_blank" rel="noreferrer" className="flex items-center justify-center text-gray-400 hover:text-icube-gold transition-all duration-300" aria-label="Instagram">
                   <Instagram size={20} />
                 </a>
-                <a href={youtube} target="_blank" rel="noreferrer" className="w-12 h-12 bg-icube-gray border border-white/5 rounded-sm flex items-center justify-center hover:border-icube-gold hover:text-icube-gold transition-all duration-300">
+                <a href={youtube} target="_blank" rel="noreferrer" className="flex items-center justify-center text-gray-400 hover:text-icube-gold transition-all duration-300" aria-label="YouTube">
                   <Youtube size={20} />
                 </a>
-                <a href={twitter} target="_blank" rel="noreferrer" className="w-12 h-12 bg-icube-gray border border-white/5 rounded-sm flex items-center justify-center hover:border-icube-gold hover:text-icube-gold transition-all duration-300">
+                <a href={twitter} target="_blank" rel="noreferrer" className="flex items-center justify-center text-gray-400 hover:text-icube-gold transition-all duration-300" aria-label="Twitter">
                   <Twitter size={20} />
                 </a>
               </div>
@@ -138,28 +151,43 @@ export default function Contact() {
               <form onSubmit={handleSubmit} className="space-y-6">
                 {submitted && <p className="text-icube-gold text-sm">Message sent. We'll get back to you soon.</p>}
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Name</label>
+                  <label htmlFor="contact-name" className="text-sm font-semibold text-gray-400 uppercase tracking-wider block">
+                    Name
+                  </label>
                   <input
+                    id="contact-name"
                     type="text"
                     required
                     value={form.name}
-                    onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                    className="w-full bg-icube-dark border border-white/10 p-4 rounded-sm focus:outline-none focus:border-icube-gold text-white transition-colors"
+                    onChange={(e) => { setForm((f) => ({ ...f, name: e.target.value })); setFieldErrors((e2) => ({ ...e2, name: undefined })); }}
+                    className={`w-full bg-icube-dark border p-4 rounded-sm focus:outline-none focus:border-icube-gold text-white transition-colors ${fieldErrors.name ? "border-red-400/80" : "border-white/10"}`}
+                    aria-invalid={!!fieldErrors.name}
+                    aria-describedby={fieldErrors.name ? "contact-name-error" : undefined}
                   />
+                  {fieldErrors.name && <p id="contact-name-error" className="text-red-400 text-sm" role="alert">{fieldErrors.name}</p>}
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Email</label>
+                  <label htmlFor="contact-email" className="text-sm font-semibold text-gray-400 uppercase tracking-wider block">
+                    Email
+                  </label>
                   <input
+                    id="contact-email"
                     type="email"
                     required
                     value={form.email}
-                    onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                    className="w-full bg-icube-dark border border-white/10 p-4 rounded-sm focus:outline-none focus:border-icube-gold text-white transition-colors"
+                    onChange={(e) => { setForm((f) => ({ ...f, email: e.target.value })); setFieldErrors((e2) => ({ ...e2, email: undefined })); }}
+                    className={`w-full bg-icube-dark border p-4 rounded-sm focus:outline-none focus:border-icube-gold text-white transition-colors ${fieldErrors.email ? "border-red-400/80" : "border-white/10"}`}
+                    aria-invalid={!!fieldErrors.email}
+                    aria-describedby={fieldErrors.email ? "contact-email-error" : undefined}
                   />
+                  {fieldErrors.email && <p id="contact-email-error" className="text-red-400 text-sm" role="alert">{fieldErrors.email}</p>}
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Subject</label>
+                  <label htmlFor="contact-subject" className="text-sm font-semibold text-gray-400 uppercase tracking-wider block">
+                    Subject
+                  </label>
                   <select
+                    id="contact-subject"
                     value={form.subject}
                     onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
                     className="w-full bg-icube-dark border border-white/10 p-4 rounded-sm focus:outline-none focus:border-icube-gold text-white transition-colors appearance-none"
@@ -172,22 +200,31 @@ export default function Contact() {
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Message</label>
+                  <label htmlFor="contact-message" className="text-sm font-semibold text-gray-400 uppercase tracking-wider block">
+                    Message
+                  </label>
                   <textarea
+                    id="contact-message"
                     rows={5}
                     required
                     value={form.message}
-                    onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
-                    className="w-full bg-icube-dark border border-white/10 p-4 rounded-sm focus:outline-none focus:border-icube-gold text-white transition-colors resize-none"
+                    onChange={(e) => { setForm((f) => ({ ...f, message: e.target.value })); setFieldErrors((e2) => ({ ...e2, message: undefined })); }}
+                    className={`w-full bg-icube-dark border p-4 rounded-sm focus:outline-none focus:border-icube-gold text-white transition-colors resize-none ${fieldErrors.message ? "border-red-400/80" : "border-white/10"}`}
+                    aria-invalid={!!fieldErrors.message}
+                    aria-describedby={fieldErrors.message ? "contact-message-error" : undefined}
                   />
+                  {fieldErrors.message && <p id="contact-message-error" className="text-red-400 text-sm" role="alert">{fieldErrors.message}</p>}
                 </div>
-                <button
+                <motion.button
                   type="submit"
                   disabled={sending}
-                  className="w-full py-4 bg-icube-gold text-icube-dark font-semibold uppercase tracking-wider rounded-lg hover:bg-icube-gold-light transition-colors disabled:opacity-50 focus:outline-none"
+                  className="w-full min-h-[44px] py-4 bg-icube-gold text-icube-dark font-semibold uppercase tracking-wider rounded-lg hover:bg-icube-gold-light transition-colors disabled:opacity-50 focus:outline-none"
+                  whileHover={sending ? undefined : { scale: 1.02 }}
+                  whileTap={sending ? undefined : { scale: 0.98 }}
+                  transition={{ type: "tween", duration: 0.2 }}
                 >
                   {sending ? "Sending…" : "Send Message"}
-                </button>
+                </motion.button>
               </form>
             </div>
           </AnimatedStaggerItem>

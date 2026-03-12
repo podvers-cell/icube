@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { Play, ArrowRight } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useSiteData } from "../SiteDataContext";
 
 function getYouTubeEmbedUrl(raw: string): string | null {
@@ -52,6 +52,7 @@ export default function Hero({ onHeroReady }: HeroProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const router = useRouter();
   const pathname = usePathname();
+  const reduceMotion = useReducedMotion();
   const phrase1 =
     settings.hero_title_1 || "Premium media & podcast studio crafting cinematic stories for modern brands.";
   const phrase2 =
@@ -186,6 +187,11 @@ export default function Hero({ onHeroReady }: HeroProps) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, delay: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
       >
+        <motion.div
+          className="flex flex-col items-center gap-6 sm:gap-7 md:gap-8 w-full"
+          animate={reduceMotion ? { y: 0 } : { y: [0, 5, 0] }}
+          transition={reduceMotion ? {} : { duration: 5, repeat: Infinity, ease: "easeInOut" }}
+        >
         <div className="min-h-[3.5rem] sm:min-h-[4rem] md:mb-4 md:min-h-[7rem] flex items-center justify-center overflow-hidden">
           <h1
             className="text-4xl md:text-7xl lg:text-9xl font-display font-extrabold tracking-tight text-white leading-tight px-1 relative"
@@ -245,10 +251,14 @@ export default function Hero({ onHeroReady }: HeroProps) {
             </Link>
           </motion.div>
         </div>
+        </motion.div>
       </motion.div>
 
-      <motion.div
-        className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-20"
+      <motion.button
+        type="button"
+        onClick={() => document.getElementById("services")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+        className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-20 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-icube-gold focus-visible:ring-offset-2 focus-visible:ring-offset-transparent rounded p-2 min-h-[44px] min-w-[44px] justify-end"
+        aria-label="Scroll to next section"
         animate={{ y: [0, 6, 0] }}
         transition={{
           duration: 2,
@@ -256,8 +266,8 @@ export default function Hero({ onHeroReady }: HeroProps) {
           ease: "easeInOut",
         }}
       >
-        <span className="text-xs text-gray-500 uppercase tracking-widest rotate-90 mb-8">Scroll</span>
-        <div className="w-[1px] h-16 bg-white/20 relative overflow-hidden rounded-full">
+        <span className="text-xs text-gray-400 uppercase tracking-widest">Scroll</span>
+        <div className="w-[1px] h-12 bg-white/25 relative overflow-hidden rounded-full">
           <motion.div
             className="absolute top-0 left-0 w-full bg-icube-gold rounded-full"
             initial={{ height: "0%" }}
@@ -267,7 +277,7 @@ export default function Hero({ onHeroReady }: HeroProps) {
           />
           <motion.div
             className="absolute left-0 top-0 w-full h-4 bg-icube-gold rounded-full"
-            animate={{ y: [0, 48, 0] }}
+            animate={{ y: [0, 32, 0] }}
             transition={{
               duration: 2.2,
               repeat: Infinity,
@@ -276,7 +286,7 @@ export default function Hero({ onHeroReady }: HeroProps) {
             style={{ willChange: "transform" }}
           />
         </div>
-      </motion.div>
+      </motion.button>
     </section>
   );
 }

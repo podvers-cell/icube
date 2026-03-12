@@ -6,6 +6,7 @@ import { useSiteData } from "../SiteDataContext";
 import { getVideoEmbed } from "../lib/videoEmbed";
 import { VideoPlayerModal } from "./VideoPlayerModal";
 import AnimatedStaggerItem from "./AnimatedStaggerItem";
+import { AnimatedSectionHeader } from "./ScrollReveal";
 
 type Video = { id: string; title: string; url: string; sort_order: number };
 
@@ -22,19 +23,15 @@ export default function Videos() {
     >
       <div className="absolute top-1/3 -left-24 w-72 h-72 bg-icube-gold/5 rounded-full blur-[100px] pointer-events-none" />
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
-        <div className="mb-16 flex flex-col items-center text-center gap-4">
-          <div className="flex items-center justify-center gap-3 mb-1">
-            <div className="w-8 h-[2px] bg-icube-gold" />
-            <span className="text-icube-gold font-semibold tracking-[0.18em] uppercase text-xs md:text-sm">
-              Videos
-            </span>
-            <div className="w-8 h-[2px] bg-icube-gold" />
+        <AnimatedSectionHeader className="section-header" amount={0.25}>
+          <div className="section-label-row">
+            <div className="section-label-line" aria-hidden />
+            <span className="section-label">Videos</span>
+            <div className="section-label-line" aria-hidden />
           </div>
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-display font-bold tracking-tight">
-            Videos
-          </h2>
+          <h2 className="section-title">Videos</h2>
           <div className="section-header-accent" aria-hidden />
-        </div>
+        </AnimatedSectionHeader>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {videos.map((video, index) => {

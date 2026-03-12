@@ -6,6 +6,7 @@ import { Quote, ChevronLeft, ChevronRight } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useSiteData } from "../SiteDataContext";
 import AnimatedStaggerItem from "./AnimatedStaggerItem";
+import { AnimatedSectionHeader } from "./ScrollReveal";
 
 export default function Testimonials() {
   const { testimonials } = useSiteData();
@@ -17,19 +18,19 @@ export default function Testimonials() {
     >
       <div className="absolute -bottom-32 left-1/2 -translate-x-1/2 w-96 h-96 bg-icube-gold/5 rounded-full blur-[120px] pointer-events-none" />
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
-        <div className="mb-16 text-center">
-          <div className="flex items-center justify-center gap-3 mb-3">
-            <div className="w-8 h-[2px] bg-icube-gold" />
-            <span className="text-icube-gold font-semibold tracking-[0.18em] uppercase text-xs md:text-sm">
-              Client stories
-            </span>
-            <div className="w-8 h-[2px] bg-icube-gold" />
+        <AnimatedSectionHeader className="section-header" amount={0.25}>
+          <div className="section-label-row">
+            <div className="section-label-line" aria-hidden />
+            <span className="section-label">Client stories</span>
+            <div className="section-label-line" aria-hidden />
           </div>
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-display font-bold tracking-tight">
-            What our clients say
+          <h2 className="section-title testimonials-section-heading">
+            <span className="testimonials-title-gradient bg-gradient-to-r from-white via-white to-icube-gold/90 bg-clip-text text-transparent">
+              What our clients say
+            </span>
           </h2>
           <div className="section-header-accent" aria-hidden />
-        </div>
+        </AnimatedSectionHeader>
 
         {/* Mobile: arrow-controlled carousel */}
         <div className="md:hidden">
@@ -56,13 +57,19 @@ function TestimonialCard({
 }) {
   return (
     <div className="card-flip-wrap h-full">
-      <div className="card-flip group relative flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-sm p-8 transition-[border-color,box-shadow] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:border-icube-gold/40 hover:shadow-[0_24px_56px_rgba(0,0,0,0.35),0_0_0_1px_rgba(212,175,55,0.08)]">
+      <motion.div
+        className="card-flip group relative flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-sm p-8 transition-[border-color,box-shadow] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:border-icube-gold/40 hover:shadow-[0_24px_56px_rgba(0,0,0,0.35),0_0_0_1px_rgba(212,175,55,0.08)]"
+        whileHover={{ y: -4 }}
+        whileTap={{ scale: 0.99 }}
+        transition={{ type: "tween", duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
+      >
         <div className="absolute left-0 top-0 bottom-0 w-1 bg-icube-gold/0 group-hover:bg-icube-gold/50 transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] rounded-r" />
         <Quote
-          size={44}
-          className="text-white/[0.06] absolute top-6 right-6 group-hover:text-icube-gold/15 transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
+          size={40}
+          className="text-white/[0.06] absolute top-5 right-5 group-hover:text-icube-gold/15 transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] pointer-events-none"
+          aria-hidden
         />
-        <p className="text-gray-300 font-light leading-relaxed mb-8 relative z-10 pl-2 text-[15px] flex-1 min-h-[7rem]">
+        <p className="text-gray-300 font-light leading-relaxed mb-8 relative z-10 pl-2 pr-14 pt-1 text-[15px] flex-1 min-h-[7rem]">
           "{t.quote}"
         </p>
         <div className="flex items-center gap-4 pl-2 shrink-0">
@@ -85,7 +92,7 @@ function TestimonialCard({
             <p className="text-icube-gold/90 text-xs uppercase tracking-wider">{t.role}</p>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

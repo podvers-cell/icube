@@ -38,6 +38,29 @@ html {
   scroll-behavior: smooth;
 }
 
+/* تدريجي عند التبديل بين الدارك واللايت مود */
+html,
+body,
+.site-wrapper,
+.site-wrapper main,
+.site-wrapper section,
+.site-wrapper nav,
+.site-wrapper footer,
+.site-wrapper .rounded-2xl,
+.site-wrapper .rounded-xl,
+.site-wrapper [class*="rounded-2xl"],
+.site-wrapper [class*="rounded-xl"],
+.site-wrapper button,
+.site-wrapper a {
+  transition:
+    background-color 0.45s ease,
+    color 0.45s ease,
+    border-color 0.45s ease,
+    box-shadow 0.45s ease,
+    background 0.45s ease;
+}
+
+/* احترام تفضيل تقليل الحركة (إمكانية وصول) */
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -77,6 +100,15 @@ button:focus-visible,
 a:focus-visible {
   border-radius: 0.25rem;
 }
+/* Focus ring follows rounded buttons/links */
+.site-wrapper a.rounded-full:focus-visible,
+.site-wrapper button.rounded-full:focus-visible {
+  border-radius: 9999px;
+}
+.site-wrapper a.rounded-lg:focus-visible,
+.site-wrapper button.rounded-lg:focus-visible {
+  border-radius: 0.5rem;
+}
 
 .card-flip-wrap {
   perspective: 1000px;
@@ -114,8 +146,496 @@ a:focus-visible {
   margin: 0.75rem auto 0;
 }
 
+/* Shared section header styles (all sections except #home hero) */
+.section-header {
+  margin-bottom: 4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1rem;
+}
+.section-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+.section-label-row--left {
+  justify-content: flex-start;
+}
+.section-label {
+  color: var(--color-icube-gold);
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+@media (min-width: 768px) {
+  .section-label { font-size: 0.875rem; }
+}
+.section-label-line {
+  width: 2rem;
+  height: 2px;
+  background-color: var(--color-icube-gold);
+}
+.section-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  font-size: 1.875rem;
+  line-height: 1.2;
+}
+@media (min-width: 768px) {
+  .section-title { font-size: 2.25rem; }
+}
+@media (min-width: 1024px) {
+  .section-title { font-size: 3rem; }
+}
+[data-theme="light"] .site-wrapper .section-title {
+  color: #1c1917 !important;
+}
+.site-wrapper section:not(#home) .section-title {
+  color: #ffffff;
+}
+
+/* Subtle shimmer on section divider line */
+@keyframes section-divider-shimmer {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 1; }
+}
+.section-divider-line {
+  animation: section-divider-shimmer 3s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .section-divider-line { animation: none; }
+}
+
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {
   border-radius: 0.125rem;
+}
+
+/* Light mode – creamy palette; Hero (#home) only stays dark */
+[data-theme="light"] body {
+  background: #ebe8e2;
+  color: #1c1917;
+}
+[data-theme="light"] .site-wrapper {
+  background: transparent;
+  color: #1c1917;
+}
+/* Hero section: always dark in all cases (light and dark theme) */
+.site-wrapper #home,
+.site-wrapper section#home {
+  background: var(--color-icube-dark) !important;
+  color: #ffffff !important;
+}
+.site-wrapper #home *,
+.site-wrapper section#home * {
+  color: inherit;
+}
+/* Light mode: Hero stays dark; text and buttons unchanged (same as dark mode) */
+[data-theme="light"] .site-wrapper #home,
+[data-theme="light"] .site-wrapper section#home {
+  background: var(--color-icube-dark) !important;
+  color: #ffffff !important;
+}
+[data-theme="light"] .site-wrapper #home *,
+[data-theme="light"] .site-wrapper section#home * {
+  color: inherit !important;
+}
+[data-theme="light"] .site-wrapper #home .text-white,
+[data-theme="light"] .site-wrapper #home .text-gray-200,
+[data-theme="light"] .site-wrapper #home .text-gray-300,
+[data-theme="light"] .site-wrapper #home .text-gray-400,
+[data-theme="light"] .site-wrapper #home .text-gray-500,
+[data-theme="light"] .site-wrapper section#home .text-white,
+[data-theme="light"] .site-wrapper section#home .text-gray-200,
+[data-theme="light"] .site-wrapper section#home .text-gray-300,
+[data-theme="light"] .site-wrapper section#home .text-gray-400,
+[data-theme="light"] .site-wrapper section#home .text-gray-500 {
+  color: inherit !important;
+}
+[data-theme="light"] .site-wrapper #home h1,
+[data-theme="light"] .site-wrapper #home h2,
+[data-theme="light"] .site-wrapper #home p,
+[data-theme="light"] .site-wrapper #home a,
+[data-theme="light"] .site-wrapper #home button,
+[data-theme="light"] .site-wrapper #home svg,
+[data-theme="light"] .site-wrapper #home span,
+[data-theme="light"] .site-wrapper section#home h1,
+[data-theme="light"] .site-wrapper section#home h2,
+[data-theme="light"] .site-wrapper section#home p,
+[data-theme="light"] .site-wrapper section#home a,
+[data-theme="light"] .site-wrapper section#home button,
+[data-theme="light"] .site-wrapper section#home svg,
+[data-theme="light"] .site-wrapper section#home span {
+  color: inherit !important;
+}
+/* Hero buttons/links: keep original styles (no light-mode overrides) */
+[data-theme="light"] .site-wrapper #home a.bg-icube-gold,
+[data-theme="light"] .site-wrapper section#home a.bg-icube-gold {
+  background: var(--color-icube-gold) !important;
+  color: var(--color-icube-dark) !important;
+}
+[data-theme="light"] .site-wrapper #home a:not(.bg-icube-gold),
+[data-theme="light"] .site-wrapper section#home a:not(.bg-icube-gold) {
+  color: #ffffff !important;
+}
+[data-theme="light"] .site-wrapper #home a:not(.bg-icube-gold):hover,
+[data-theme="light"] .site-wrapper section#home a:not(.bg-icube-gold):hover {
+  color: var(--color-icube-gold) !important;
+}
+
+/* Light mode: navbar transparent at top, dark when scrolled */
+[data-theme="light"] .site-wrapper nav[class*="fixed"] {
+  color: #e5e5e5 !important;
+}
+/* Home only: transparent at top, frosted when scrolled */
+[data-theme="light"] .site-wrapper nav[class*="fixed"][data-home="true"]:not([data-scrolled="true"]) {
+  background: transparent !important;
+  border-color: transparent !important;
+}
+[data-theme="light"] .site-wrapper nav[class*="fixed"][data-home="true"][data-scrolled="true"] {
+  background: rgba(0, 0, 0, 0.35) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(24px);
+}
+/* Non-home pages: always black navbar in light mode */
+[data-theme="light"] .site-wrapper nav[class*="fixed"][data-home="false"] {
+  background: #000000 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(24px);
+}
+[data-theme="light"] .site-wrapper nav[class*="fixed"] a,
+[data-theme="light"] .site-wrapper nav[class*="fixed"] button,
+[data-theme="light"] .site-wrapper nav[class*="fixed"] span {
+  color: #ffffff !important;
+}
+/* Menu links: always white (light + dark mode) */
+.site-wrapper nav .nav-menu-link,
+[data-theme="light"] .site-wrapper nav[class*="fixed"] .nav-menu-link {
+  color: #ffffff !important;
+}
+.site-wrapper nav .nav-menu-link:hover,
+[data-theme="light"] .site-wrapper nav[class*="fixed"] .nav-menu-link:hover {
+  color: #ffffff !important;
+}
+/* استثناء .nav-cta-link حتى لا يصير النص ذهبياً = لون الزر فيختفي */
+[data-theme="light"] .site-wrapper nav[class*="fixed"] a:hover:not(.nav-menu-link):not(.nav-cta-link),
+[data-theme="light"] .site-wrapper nav[class*="fixed"] button.theme-toggle-nav:hover {
+  color: var(--color-icube-gold) !important;
+}
+[data-theme="light"] .site-wrapper nav[class*="fixed"] button.theme-toggle-nav {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  color: rgba(229, 229, 229, 0.9) !important;
+}
+/* Logout button: subtle contrast in light mode (nav is dark) */
+[data-theme="light"] .site-wrapper nav .nav-logout-btn {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+[data-theme="light"] .site-wrapper nav .nav-logout-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.28) !important;
+  color: var(--color-icube-gold) !important;
+}
+[data-theme="light"] .site-wrapper nav .nav-logout-btn svg {
+  color: inherit !important;
+}
+/* Gold only for Welcome name etc. – exclude .nav-menu-link (they use after:bg-icube-gold) */
+[data-theme="light"] .site-wrapper nav[class*="fixed"] a[class*="icube-gold"]:not(.nav-menu-link),
+[data-theme="light"] .site-wrapper nav[class*="fixed"] span[class*="icube-gold"] {
+  color: var(--color-icube-gold) !important;
+}
+/* Dashboard & Book Studio: النص والأيقونة دائماً واضحان (لا يختفيان) */
+.site-wrapper nav .nav-cta-link,
+.site-wrapper nav .nav-cta-link span {
+  color: var(--color-icube-gold);
+}
+.site-wrapper nav .nav-cta-link svg {
+  color: inherit;
+}
+[data-theme="light"] .site-wrapper nav .nav-cta-link,
+[data-theme="light"] .site-wrapper nav .nav-cta-link span {
+  color: var(--color-icube-gold) !important;
+}
+/* عند الـ hover الزر يصير ذهبي → النص والأيقونة أسود (خصوصية عالية تفوز على قواعد الناف) */
+.site-wrapper nav .nav-cta-link:hover,
+.site-wrapper nav .nav-cta-link:hover span,
+.site-wrapper nav .nav-cta-link:hover svg {
+  color: var(--color-icube-dark) !important;
+}
+[data-theme="light"] .site-wrapper nav[class*="fixed"] a.nav-cta-link:hover,
+[data-theme="light"] .site-wrapper nav[class*="fixed"] a.nav-cta-link:hover span,
+[data-theme="light"] .site-wrapper nav[class*="fixed"] a.nav-cta-link:hover svg {
+  color: var(--color-icube-dark) !important;
+}
+
+/* Sections: alternating cream shades for contrast (except #home) */
+[data-theme="light"] .site-wrapper section:not(#home) {
+  color: #1c1917;
+}
+[data-theme="light"] .site-wrapper section:not(#home):nth-of-type(odd) {
+  background: #f2f0eb !important;
+}
+[data-theme="light"] .site-wrapper section:not(#home):nth-of-type(even) {
+  background: #e8e5df !important;
+}
+[data-theme="light"] .site-wrapper section:not(#home) .text-white,
+[data-theme="light"] .site-wrapper section:not(#home) [class*="text-white"],
+[data-theme="light"] .site-wrapper section:not(#home) .text-gray-200,
+[data-theme="light"] .site-wrapper section:not(#home) .text-gray-300,
+[data-theme="light"] .site-wrapper section:not(#home) .text-gray-400,
+[data-theme="light"] .site-wrapper section:not(#home) .text-gray-500 {
+  color: #44403c !important;
+}
+[data-theme="light"] .site-wrapper section:not(#home) h1,
+[data-theme="light"] .site-wrapper section:not(#home) h2,
+[data-theme="light"] .site-wrapper section:not(#home) h3 {
+  color: #1c1917 !important;
+}
+[data-theme="light"] .site-wrapper section:not(#home) p,
+[data-theme="light"] .site-wrapper section:not(#home) label {
+  color: #44403c !important;
+}
+[data-theme="light"] .site-wrapper section:not(#home) svg {
+  color: #1c1917 !important;
+}
+[data-theme="light"] .site-wrapper section:not(#home) button:not([class*="bg-icube-gold"]) {
+  color: #1c1917 !important;
+  border-width: 0.5px !important;
+  border-color: rgba(28, 25, 23, 0.25) !important;
+  background: #fffefb !important;
+}
+/* Light mode: selected option (duration / time) – واضح أنه مختار */
+[data-theme="light"] .site-wrapper main button[class*="border-icube-gold"]:not(.btn-link-style),
+[data-theme="light"] .site-wrapper main button[class*="bg-icube-gold/"]:not(.btn-link-style),
+[data-theme="light"] .site-wrapper section:not(#home) button[class*="border-icube-gold"]:not(.btn-link-style),
+[data-theme="light"] .site-wrapper section:not(#home) button[class*="bg-icube-gold/"]:not(.btn-link-style) {
+  background: rgba(212, 175, 55, 0.22) !important;
+  border-width: 0.5px !important;
+  border-color: var(--color-icube-gold) !important;
+  color: #1c1917 !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+}
+[data-theme="light"] .site-wrapper main section button:active,
+[data-theme="light"] .site-wrapper main button.rounded-xl:active {
+  transform: scale(0.98);
+}
+/* Studio / cards: dark buttons (e.g. Book now) → gold CTA in light mode for contrast */
+[data-theme="light"] .site-wrapper section:not(#home) button[class*="bg-icube-dark"] {
+  background: var(--color-icube-gold) !important;
+  color: var(--color-icube-dark) !important;
+  border-color: var(--color-icube-gold) !important;
+}
+[data-theme="light"] .site-wrapper section:not(#home) button[class*="bg-icube-dark"]:hover {
+  background: var(--color-icube-gold-light) !important;
+  color: var(--color-icube-dark) !important;
+}
+/* Price / gold text on cards: darker so readable on white in light mode */
+[data-theme="light"] .site-wrapper section:not(#home) [class*="text-icube-gold"],
+[data-theme="light"] .site-wrapper section:not(#home) span.text-icube-gold {
+  color: #924f0a !important;
+}
+[data-theme="light"] .site-wrapper section:not(#home) a:not([class*="bg-icube-gold"]) {
+  color: #1c1917 !important;
+}
+/* Main content (pages without sections) – dark text */
+[data-theme="light"] .site-wrapper main {
+  color: #1c1917;
+}
+[data-theme="light"] .site-wrapper main .text-white,
+[data-theme="light"] .site-wrapper main .text-gray-200,
+[data-theme="light"] .site-wrapper main .text-gray-300,
+[data-theme="light"] .site-wrapper main .text-gray-400,
+[data-theme="light"] .site-wrapper main .text-gray-500 {
+  color: #44403c !important;
+}
+[data-theme="light"] .site-wrapper main h1,
+[data-theme="light"] .site-wrapper main h2,
+[data-theme="light"] .site-wrapper main h3 {
+  color: #1c1917 !important;
+}
+[data-theme="light"] .site-wrapper main a:not([class*="bg-icube-gold"]) {
+  color: #1c1917 !important;
+}
+[data-theme="light"] .site-wrapper main svg {
+  color: #1c1917 !important;
+}
+/* Cards – creamy surface so they stand out on cream bg */
+[data-theme="light"] .site-wrapper .rounded-2xl.border,
+[data-theme="light"] .site-wrapper [class*="rounded-2xl"][class*="border"],
+[data-theme="light"] .site-wrapper .rounded-xl.border {
+  background: #fffefb !important;
+  border-width: 0.5px !important;
+  border-color: rgba(28, 25, 23, 0.12) !important;
+  box-shadow: 0 1px 2px rgba(28, 25, 23, 0.04);
+}
+[data-theme="light"] .site-wrapper .bg-white\/\[0\.04\],
+[data-theme="light"] .site-wrapper [class*="bg-white/"] {
+  background: #fffefb !important;
+  border-width: 0.5px !important;
+  border-color: rgba(28, 25, 23, 0.1) !important;
+  box-shadow: 0 1px 2px rgba(28, 25, 23, 0.03);
+}
+[data-theme="light"] .site-wrapper .glass-card {
+  background: rgba(255, 254, 251, 0.65) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+}
+[data-theme="light"] .site-wrapper .studio-card {
+  border: none !important;
+  box-shadow: 0 1px 2px rgba(28, 25, 23, 0.04);
+}
+[data-theme="light"] .site-wrapper #studio .studio-card .studio-card-divider,
+[data-theme="light"] .site-wrapper .studio-card .studio-card-divider {
+  border-top: none !important;
+  position: relative;
+  padding-top: 1rem;
+}
+[data-theme="light"] .site-wrapper #studio .studio-card .studio-card-divider::before,
+[data-theme="light"] .site-wrapper .studio-card .studio-card-divider::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(68, 64, 60, 0.45);
+}
+[data-theme="light"] .site-wrapper .studio-card button:not([class*="bg-icube-dark"]) {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+[data-theme="light"] .site-wrapper #portfolio .portfolio-card-overlay,
+[data-theme="light"] .site-wrapper #portfolio .portfolio-card-overlay span,
+[data-theme="light"] .site-wrapper #portfolio .portfolio-card-overlay h3 {
+  color: #ffffff !important;
+}
+.site-wrapper .portfolio-card-overlay {
+  z-index: 10;
+}
+/* Portfolio row separator: visible in light mode (dark line on light bg) */
+[data-theme="light"] .site-wrapper .portfolio-row-separator {
+  border-bottom-color: rgba(28, 25, 23, 0.18) !important;
+}
+
+/* Portfolio section title: readable in light mode (dark-to-gold gradient instead of white) */
+[data-theme="light"] .site-wrapper #portfolio .portfolio-title-gradient {
+  background: linear-gradient(to right, #1c1917 0%, #1c1917 45%, var(--color-icube-gold)) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  color: transparent !important;
+}
+[data-theme="light"] .site-wrapper #portfolio .portfolio-section-heading:not(.portfolio-title-gradient) {
+  color: #1c1917 !important;
+}
+
+/* Testimonials section title: same gradient treatment as Portfolio (white → gold; dark → gold in light mode) */
+[data-theme="light"] .site-wrapper #testimonials .testimonials-title-gradient {
+  background: linear-gradient(to right, #1c1917 0%, #1c1917 75%, var(--color-icube-gold)) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  color: transparent !important;
+}
+
+/* Why Us section title: same gradient treatment (white → gold; dark → gold in light mode) */
+[data-theme="light"] .site-wrapper #why-us .whyus-title-gradient {
+  background: linear-gradient(to right, #1c1917 0%, #1c1917 80%, var(--color-icube-gold)) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  color: transparent !important;
+}
+
+/* Studio section title: same gradient treatment */
+[data-theme="light"] .site-wrapper #studio .studio-title-gradient {
+  background: linear-gradient(to right, #1c1917 0%, #1c1917 70%, var(--color-icube-gold)) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  color: transparent !important;
+}
+
+/* Services section title: same gradient treatment */
+[data-theme="light"] .site-wrapper #services .services-title-gradient {
+  background: linear-gradient(to right, #1c1917 0%, #1c1917 75%, var(--color-icube-gold)) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  color: transparent !important;
+}
+
+.site-wrapper #portfolio .portfolio-card-overlay span,
+.site-wrapper #portfolio .portfolio-card-overlay h3 {
+  color: #ffffff !important;
+}
+[data-theme="light"] .site-wrapper .section-top-line {
+  background: linear-gradient(90deg, transparent, rgba(28, 25, 23, 0.08), transparent);
+}
+[data-theme="light"] .site-wrapper .section-bottom-line {
+  background: linear-gradient(90deg, transparent, rgba(28, 25, 23, 0.06), transparent);
+}
+[data-theme="light"] .site-wrapper ::-webkit-scrollbar-track {
+  background: #ebe8e3;
+}
+[data-theme="light"] .site-wrapper ::-webkit-scrollbar-thumb {
+  background: #c4bfb5;
+  border-radius: 4px;
+}
+[data-theme="light"] .site-wrapper ::-webkit-scrollbar-thumb:hover {
+  background: var(--color-icube-gold);
+}
+
+/* Footer always dark (black) in both modes */
+[data-theme="light"] .site-wrapper footer {
+  background: #0f0f0f !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+}
+[data-theme="light"] .site-wrapper footer a,
+[data-theme="light"] .site-wrapper footer p,
+[data-theme="light"] .site-wrapper footer h3 {
+  color: #e5e5e5 !important;
+}
+[data-theme="light"] .site-wrapper footer a:hover {
+  color: var(--color-icube-gold) !important;
+}
+[data-theme="light"] .site-wrapper footer svg {
+  color: #e5e5e5 !important;
+}
+
+/* Calendar: اليوم المحدد واضح دائماً (خلفية ذهبية + نص أسود + حلقة) */
+.booking-calendar-day-selected,
+.booking-calendar-day-selected:hover {
+  background: var(--color-icube-gold) !important;
+  color: var(--color-icube-dark) !important;
+  font-weight: 600 !important;
+  box-shadow: 0 0 0 2px var(--color-icube-gold) !important;
+}
+[data-theme="light"] .booking-calendar-day-selected,
+[data-theme="light"] .booking-calendar-day-selected:hover {
+  background: var(--color-icube-gold) !important;
+  color: var(--color-icube-dark) !important;
+  border-color: var(--color-icube-gold) !important;
+}
+
+/* Form inputs in light mode – readable on cream */
+[data-theme="light"] .site-wrapper input:not([type="submit"]):not([type="button"]),
+[data-theme="light"] .site-wrapper textarea,
+[data-theme="light"] .site-wrapper select {
+  background: #fffefb !important;
+  border-color: rgba(28, 25, 23, 0.15) !important;
+  color: #1c1917 !important;
+}
+[data-theme="light"] .site-wrapper input::placeholder,
+[data-theme="light"] .site-wrapper textarea::placeholder {
+  color: #78716c !important;
 }

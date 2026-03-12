@@ -70,17 +70,18 @@ export default function ContactPageContent() {
       <div className="pointer-events-none absolute bottom-1/4 left-0 w-[400px] h-[400px] bg-icube-gold/5 rounded-full blur-[100px] -translate-x-1/2" aria-hidden />
 
       <div className="relative max-w-6xl mx-auto px-5 sm:px-6 md:px-12 py-16 md:py-24 lg:py-28">
-        {/* Hero header */}
-        <header className="text-center mb-20 md:mb-28">
-          <div className="mb-5">
-            <span className="text-icube-gold font-semibold tracking-[0.2em] uppercase text-xs md:text-sm">
-              Contact
-            </span>
+        {/* Hero header – same style as expert section (label + lines, title, accent, description) */}
+        <header className="section-header mb-20 md:mb-28">
+          <div className="section-label-row">
+            <div className="section-label-line" aria-hidden />
+            <span className="section-label">Contact</span>
+            <div className="section-label-line" aria-hidden />
           </div>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold tracking-tight text-white mb-5">
+          <h1 className="section-title">
             We&apos;d love to hear from you
           </h1>
-          <p className="text-gray-400 font-light text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
+          <div className="section-header-accent" aria-hidden />
+          <p className="text-gray-400 font-light text-lg md:text-xl max-w-2xl mx-auto leading-relaxed mt-4">
             Studio location, contact details, and a form to send your message. We’re here to help.
           </p>
         </header>
@@ -131,10 +132,10 @@ export default function ContactPageContent() {
               ].map((item) => (
                 <div
                   key={item.title}
-                  className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-sm p-6 transition-all duration-300 hover:border-icube-gold/30 hover:bg-white/[0.06] hover:shadow-[0_12px_40px_rgba(0,0,0,0.2),0_0_0_1px_rgba(212,175,55,0.08)]"
+                  className="glass-card group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-md p-6 transition-all duration-300 hover:border-icube-gold/30 hover:bg-white/[0.08] hover:shadow-[0_12px_40px_rgba(0,0,0,0.2),0_0_0_1px_rgba(212,175,55,0.08)]"
                 >
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-icube-gold/10 border border-icube-gold/20 flex items-center justify-center shrink-0 group-hover:bg-icube-gold/15 group-hover:border-icube-gold/40 transition-colors duration-300">
+                    <div className="flex items-center justify-center shrink-0">
                       <item.icon size={22} className="text-icube-gold" />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -175,7 +176,7 @@ export default function ContactPageContent() {
                     href={href}
                     target="_blank"
                     rel="noreferrer"
-                    className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:border-icube-gold/50 hover:text-icube-gold hover:bg-icube-gold/10 transition-all duration-300 hover:scale-105"
+                    className="flex items-center justify-center text-gray-400 hover:text-icube-gold transition-all duration-300 hover:scale-105"
                     aria-label={label}
                   >
                     <Icon size={20} />
@@ -187,7 +188,7 @@ export default function ContactPageContent() {
 
           {/* Right: Send message form */}
           <div className="lg:col-span-7">
-            <div className="rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-sm p-8 md:p-10 lg:p-12 shadow-[0_24px_64px_rgba(0,0,0,0.2)]">
+            <div className="glass-card rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-md p-8 md:p-10 lg:p-12 shadow-[0_24px_64px_rgba(0,0,0,0.2)]">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 rounded-xl bg-icube-gold/10 border border-icube-gold/30 flex items-center justify-center">
                   <MessageSquare size={20} className="text-icube-gold" />

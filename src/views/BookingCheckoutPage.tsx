@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ChevronLeft, Loader2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import BookingProgress from "@/components/BookingProgress";
 import { useBooking } from "@/BookingContext";
 import { submitBooking, sendBookingConfirmationEmail } from "@/api";
 
@@ -80,7 +81,7 @@ export default function BookingCheckoutPage() {
   if (success) {
     if (!successSummary) return null;
     return (
-      <div className="min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray to-[#111521] text-white selection:bg-icube-gold selection:text-icube-dark">
+      <div className="site-wrapper min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray to-[#111521] text-white selection:bg-icube-gold selection:text-icube-dark transition-colors duration-300">
         <Navbar />
         <main className="relative py-24 md:py-28 flex flex-col items-center justify-center min-h-[60vh]">
           <div className="max-w-lg mx-auto px-5 text-center">
@@ -113,10 +114,11 @@ export default function BookingCheckoutPage() {
   if (!selectedPackage) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray to-[#111521] text-white selection:bg-icube-gold selection:text-icube-dark">
+    <div className="site-wrapper min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray to-[#111521] text-white selection:bg-icube-gold selection:text-icube-dark transition-colors duration-300">
       <Navbar />
       <main className="relative py-24 md:py-28">
         <div className="max-w-2xl mx-auto px-5 sm:px-6 md:px-12">
+          <BookingProgress currentStep={3} steps={["Date & time", "Add-ons", "Checkout"]} />
           <Link
             href={isDirectCheckout ? "/packages" : "/packages/add-ons"}
             className="inline-flex items-center gap-2 text-gray-400 hover:text-icube-gold text-sm font-medium mb-8 transition-colors"

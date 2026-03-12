@@ -1,90 +1,91 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
-import { CheckCircle2, XCircle, X } from "lucide-react";
+import { createContext, useCallback, useContext, useState, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { motion, AnimatePresence } from "motion/react";
+import { CheckCircle2, XCircle } from "lucide-react";
 
-export type ToastType = "success" | "error";
+type ToastType = "success" | "error";
 
-type Toast = {
-  id: string;
+type ToastState = {
   message: string;
   type: ToastType;
+  id: number;
 };
 
 type ToastContextValue = {
-  toasts: Toast[];
-  addToast: (message: string, type?: ToastType) => void;
-  removeToast: (id: string) => void;
+  showToast: (message: string, type?: ToastType) => void;
 };
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
-const TOAST_DURATION_MS = 4500;
+export function useToast() {
+  const ctx = useContext(ToastContext);
+  if (!ctx) return { showToast: () => {} };
+  return ctx;
+}
 
-export function ToastProvider({ children }: { children: ReactNode }) {
-  const [toasts, setToasts] = useState<Toast[]>([]);
+export function ToastProvider({ children }: { children: React.ReactNode }) {
+  const [toasts, setToasts] = useState<ToastState[]>([]);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
-  const removeToast = useCallback((id: string) => {
+  const showToast = useCallback((message: string, type: ToastType = "success") => {
+    const id = Date.now();
+    setToasts((prev) => [...prev, { message, type, id }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 4000);
+  }, []);
+
+  const remove = useCallback((id: number) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  const addToast = useCallback((message: string, type: ToastType = "success") => {
-    const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-    setToasts((prev) => [...prev, { id, message, type }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, TOAST_DURATION_MS);
-  }, []);
-
   return (
-    <ToastContext.Provider value={{ toasts, addToast, removeToast }}>
+    <ToastContext.Provider value={{ showToast }}>
       {children}
-      <ToastContainer toasts={toasts} onDismiss={removeToast} />
+      {mounted &&
+        typeof document !== "undefined" &&
+        document.body &&
+        createPortal(
+          <div
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[110] flex flex-col gap-2 max-w-[calc(100vw-2rem)] pointer-events-none"
+            aria-live="polite"
+            aria-atomic="true"
+            role="region"
+            aria-label="Notifications"
+          >
+            <AnimatePresence mode="popLayout">
+              {toasts.map((t) => (
+                <motion.div
+                  key={t.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.25 }}
+                  className="pointer-events-auto flex items-center gap-3 rounded-xl border px-4 py-3 shadow-lg min-w-[280px] max-w-md border-white/10 bg-icube-dark/95 backdrop-blur-xl"
+                >
+                  {t.type === "success" ? (
+                    <CheckCircle2 size={20} className="shrink-0 text-icube-gold" aria-hidden />
+                  ) : (
+                    <XCircle size={20} className="shrink-0 text-red-400" aria-hidden />
+                  )}
+                  <p className="text-sm font-medium text-white flex-1">{t.message}</p>
+                  <button
+                    type="button"
+                    onClick={() => remove(t.id)}
+                    className="shrink-0 p-1 rounded text-gray-400 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-icube-gold"
+                    aria-label="Dismiss"
+                  >
+                    ×
+                  </button>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>,
+          document.body
+        )}
     </ToastContext.Provider>
   );
-}
-
-function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: string) => void }) {
-  if (toasts.length === 0) return null;
-
-  return (
-    <div
-      className="fixed bottom-6 right-6 z-[200] flex flex-col gap-3 max-w-[360px] w-full sm:max-w-sm pointer-events-none"
-      aria-live="polite"
-    >
-      {toasts.map((t) => (
-        <div
-          key={t.id}
-          className={`pointer-events-auto rounded-xl border shadow-lg overflow-hidden flex items-start gap-3 p-4 ${
-            t.type === "success"
-              ? "bg-icube-gray border-icube-gold/40 shadow-icube-gold/10"
-              : "bg-icube-gray border-red-500/40 shadow-red-500/10"
-          }`}
-        >
-          <span className="shrink-0 mt-0.5">
-            {t.type === "success" ? (
-              <CheckCircle2 size={22} className="text-icube-gold" />
-            ) : (
-              <XCircle size={22} className="text-red-400" />
-            )}
-          </span>
-          <p className="text-sm font-medium text-white flex-1 min-w-0">{t.message}</p>
-          <button
-            type="button"
-            onClick={() => onDismiss(t.id)}
-            className="shrink-0 p-1 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
-            aria-label="Dismiss"
-          >
-            <X size={16} />
-          </button>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-export function useToast() {
-  const ctx = useContext(ToastContext);
-  if (!ctx) throw new Error("useToast must be used within ToastProvider");
-  return ctx;
 }

@@ -1,7 +1,8 @@
 "use client";
 
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useState, useRef, type ReactNode } from "react";
 import Link from "next/link";
+import { useFocusTrap } from "./hooks/useFocusTrap";
 import { X } from "lucide-react";
 import { useSiteData } from "./SiteDataContext";
 import { submitContact, sendContactEmailNotification } from "./api";
@@ -223,6 +224,8 @@ function ContactModalInner() {
 
 export function ContactModalProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(modalRef, isOpen);
 
   const value: ContactModalContextValue = {
     openContact: () => setIsOpen(true),
@@ -237,7 +240,7 @@ export function ContactModalProvider({ children }: { children: ReactNode }) {
             className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
             onClick={() => setIsOpen(false)}
           >
-            <div onClick={(e) => e.stopPropagation()}>
+            <div ref={modalRef} onClick={(e) => e.stopPropagation()}>
               <ContactModalInner />
             </div>
           </div>

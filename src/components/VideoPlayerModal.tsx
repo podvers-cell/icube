@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { X, Play, Pause, Volume2, VolumeX, Maximize } from "lucide-react";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 import type { VideoEmbedResult } from "../lib/videoEmbed";
 
 interface VimeoPlayer {
@@ -81,6 +82,7 @@ export function VideoPlayerModal({
   onClose: () => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(containerRef, true);
   const ytDivRef = useRef<HTMLDivElement>(null);
   const vimeoIframeRef = useRef<HTMLIFrameElement>(null);
   const playerRef = useRef<PlayerApi | null>(null);

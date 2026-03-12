@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import DashboardLayoutClient from "@/views/DashboardLayoutClient";
+import DashboardLayoutWrapper from "@/components/DashboardLayoutWrapper";
 
 export const metadata: Metadata = {
   title: "Dashboard | ICUBE Media Studio",
@@ -8,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  return <DashboardLayoutClient>{children}</DashboardLayoutClient>;
+  return <DashboardLayoutWrapper>{children}</DashboardLayoutWrapper>;
 }

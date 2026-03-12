@@ -58,13 +58,13 @@ async function getSettingsDoc() {
 async function listCollection<T>(name: string) {
   const q = query(collection(requireFirestore(), name), orderBy("sort_order", "asc"));
   const snaps = await getDocs(q);
-  return snaps.docs.map((d) => ({ id: d.id, ...(d.data() as T) })) as IdDoc<T>[];
+  return snaps.docs.map((d) => ({ ...(d.data() as T), id: d.id })) as IdDoc<T>[];
 }
 
 async function listByCreatedAtDesc<T>(name: string, max = 500) {
   const q = query(collection(requireFirestore(), name), orderBy("created_at", "desc"), limit(max));
   const snaps = await getDocs(q);
-  return snaps.docs.map((d) => ({ id: d.id, ...(d.data() as T) })) as IdDoc<T>[];
+  return snaps.docs.map((d) => ({ ...(d.data() as T), id: d.id })) as IdDoc<T>[];
 }
 
 // A compatibility layer so existing dashboard code can keep calling api.get("/dashboard/...").

@@ -23,8 +23,12 @@ export default function ProtectedRouteNext({ children }: { children: ReactNode }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-icube-dark flex items-center justify-center">
-        <div className="text-gray-400">Loading…</div>
+      <div className="min-h-screen bg-icube-dark flex flex-col items-center justify-center gap-6" aria-busy="true" aria-live="polite" aria-labelledby="dashboard-loading-label">
+        <img src="/icube-logo.svg" alt="" className="h-12 w-auto opacity-90" aria-hidden />
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 rounded-full border-2 border-icube-gold/30 border-t-icube-gold animate-spin" aria-hidden />
+          <p className="text-gray-400 text-sm" id="dashboard-loading-label">Loading…</p>
+        </div>
       </div>
     );
   }

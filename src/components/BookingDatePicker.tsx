@@ -219,20 +219,22 @@ export default function BookingDatePicker({ value, onChange, min, max }: Props) 
           </div>
 
           {/* Calendar grid */}
-          <div className="grid grid-cols-7 p-3 gap-1">
+          <div className="grid grid-cols-7 p-3 gap-1" role="grid" aria-label="Calendar">
             {calendarDays.map((day, i) => (
               <button
                 key={i}
                 type="button"
                 disabled={day.disabled}
                 onClick={() => handleSelect(day.date)}
+                aria-pressed={day.isSelected}
+                aria-label={day.isSelected ? `Selected: ${day.date.getDate()}` : `${day.date.getDate()}`}
                 className={`
                   aspect-square rounded-xl text-sm font-medium transition-all duration-200
                   disabled:opacity-30 disabled:cursor-not-allowed
                   ${!day.isCurrentMonth ? "text-gray-500" : "text-white"}
                   ${day.disabled ? "hover:bg-transparent" : "hover:bg-white/10"}
                   ${day.isToday && !day.isSelected ? "ring-2 ring-icube-gold/60 ring-inset" : ""}
-                  ${day.isSelected ? "bg-icube-gold text-icube-dark hover:bg-icube-gold-light" : ""}
+                  ${day.isSelected ? "booking-calendar-day-selected bg-icube-gold text-icube-dark hover:bg-icube-gold-light ring-2 ring-icube-gold ring-offset-2 ring-offset-transparent" : ""}
                   ${!day.isSelected && day.isCurrentMonth && !day.isToday ? "hover:bg-white/10" : ""}
                 `}
               >

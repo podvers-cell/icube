@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useSiteData } from "../SiteDataContext";
 import { getIcon } from "../lib/icons";
 import AnimatedStaggerItem from "./AnimatedStaggerItem";
+import { AnimatedSectionHeader } from "./ScrollReveal";
 
 const colors = ["from-red-500/20 to-transparent", "from-orange-500/20 to-transparent", "from-blue-500/20 to-transparent", "from-purple-500/20 to-transparent", "from-emerald-500/20 to-transparent"];
 
@@ -19,7 +20,12 @@ function ServiceCard({
 }) {
   const Icon = getIcon(service.icon);
   return (
-    <div className="card-flip group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-sm p-8 transition-[border-color,box-shadow] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:border-icube-gold/50 hover:shadow-[0_24px_56px_rgba(0,0,0,0.4),0_0_0_1px_rgba(212,175,55,0.1)]">
+    <motion.div
+      className="card-flip group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-sm p-8 transition-[border-color,box-shadow] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:border-icube-gold/50 hover:shadow-[0_24px_56px_rgba(0,0,0,0.4),0_0_0_1px_rgba(212,175,55,0.1)]"
+      whileHover={{ y: -6 }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ type: "tween", duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
+    >
       <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-icube-gold/0 to-transparent group-hover:via-icube-gold/80 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]" />
       <div className={`absolute inset-0 bg-gradient-to-br ${colorClass} opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]`} />
       <div className="relative z-10">
@@ -34,7 +40,7 @@ function ServiceCard({
           Learn More <span className="group-hover:translate-x-1 transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">→</span>
         </Link>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -115,22 +121,22 @@ export default function Services() {
       <div className="absolute -top-40 -right-40 w-96 h-96 bg-icube-gold/5 rounded-full blur-[100px] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
-        <div className="mb-16 flex flex-col items-center text-center gap-4">
-          <div className="flex items-center justify-center gap-3 mb-1">
-            <div className="w-8 h-[2px] bg-icube-gold" />
-            <span className="text-icube-gold font-semibold tracking-[0.18em] uppercase text-xs md:text-sm">
-              Our Expertise
-            </span>
-            <div className="w-8 h-[2px] bg-icube-gold" />
+        <AnimatedSectionHeader className="section-header" amount={0.25}>
+          <div className="section-label-row">
+            <div className="section-label-line" aria-hidden />
+            <span className="section-label">Our Expertise</span>
+            <div className="section-label-line" aria-hidden />
           </div>
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-display font-bold tracking-tight">
-            Premium production services
+          <h2 className="section-title services-section-heading">
+            <span className="services-title-gradient bg-gradient-to-r from-white via-white to-icube-gold/90 bg-clip-text text-transparent">
+              Premium production services
+            </span>
           </h2>
           <div className="section-header-accent" aria-hidden />
           <p className="text-gray-400 max-w-2xl font-light mt-4">
             End-to-end media solutions in Dubai for brands and creators across the UAE and beyond.
           </p>
-        </div>
+        </AnimatedSectionHeader>
 
         {/* Mobile carousel with arrows and dots */}
         <div className="md:hidden">

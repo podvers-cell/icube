@@ -23,7 +23,7 @@ const keys = [
 ];
 
 export default function DashboardSettings() {
-  const toast = useToast();
+  const { showToast } = useToast();
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
@@ -38,9 +38,9 @@ export default function DashboardSettings() {
     setSaving(true);
     try {
       await api.put("/dashboard/settings", settings);
-      toast.addToast("Settings saved.", "success");
+      showToast("Settings saved.", "success");
     } catch (err) {
-      toast.addToast(err instanceof Error ? err.message : "Failed to save", "error");
+      showToast(err instanceof Error ? err.message : "Failed to save", "error");
     } finally {
       setSaving(false);
     }

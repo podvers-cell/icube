@@ -7,6 +7,7 @@ import { Calendar, Clock, ChevronLeft, ArrowRight, Timer } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import BookingDatePicker from "@/components/BookingDatePicker";
+import BookingProgress from "@/components/BookingProgress";
 import { useBooking } from "@/BookingContext";
 import { getBookedSlots } from "@/api";
 import { getTodayInRegion, getDateInputMax, isSlotPastInRegion } from "@/utils/bookingTimezone";
@@ -75,10 +76,11 @@ export default function StudioBookingDateTimePage() {
   if (!selectedStudio) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray to-[#111521] text-white selection:bg-icube-gold selection:text-icube-dark">
+    <div className="site-wrapper min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray to-[#111521] text-white selection:bg-icube-gold selection:text-icube-dark transition-colors duration-300">
       <Navbar />
       <main className="relative py-24 md:py-28">
         <div className="max-w-4xl mx-auto px-5 sm:px-6 md:px-12">
+          <BookingProgress currentStep={1} steps={["Date & time", "Add-ons", "Checkout"]} />
           <Link
             href="/#studio"
             className="inline-flex items-center gap-2 text-gray-400 hover:text-icube-gold text-sm font-medium mb-8 transition-colors"

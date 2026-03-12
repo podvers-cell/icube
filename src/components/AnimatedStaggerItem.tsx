@@ -1,8 +1,8 @@
 "use client";
 
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 
-const ease = [0.25, 0.46, 0.45, 0.94] as const;
+const ease = [0.16, 1, 0.3, 1] as const;
 
 type AnimatedStaggerItemProps = {
   children: React.ReactNode;
@@ -24,14 +24,15 @@ export default function AnimatedStaggerItem({
   delay = 0,
   staggerDelay = 0.08,
 }: AnimatedStaggerItemProps) {
+  const reduceMotion = useReducedMotion();
   return (
     <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -4 }}
+      initial={reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
+      whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+      whileHover={reduceMotion ? undefined : { y: -4 }}
       viewport={{ once: true, amount: 0.12 }}
       transition={{
-        duration: 0.5,
+        duration: 0.65,
         delay: delay + index * staggerDelay,
         ease,
       }}

@@ -1,12 +1,25 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { X, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
+import { useFocusTrap } from "../hooks/useFocusTrap";
 import { useSiteData } from "../SiteDataContext";
 import { useBooking } from "../BookingContext";
 import AnimatedStaggerItem from "./AnimatedStaggerItem";
+import { AnimatedSectionHeader } from "./ScrollReveal";
+
+const OPTIMIZED_IMAGE_HOSTS = ["images.unsplash.com", "res.cloudinary.com"];
+function isOptimizedImageUrl(url: string): boolean {
+  try {
+    const host = new URL(url).hostname;
+    return OPTIMIZED_IMAGE_HOSTS.some((h) => host === h);
+  } catch {
+    return false;
+  }
+}
 
 export default function Studio() {
   const router = useRouter();
@@ -23,10 +36,20 @@ export default function Studio() {
       ? [{ image_url: selected.cover_image_url, caption: null, sort_order: 0 }]
       : [];
 
+  const [modalImageLoaded, setModalImageLoaded] = useState(false);
+  const studioModalRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(studioModalRef, !!selected);
+
   useEffect(() => {
     if (!selected) return;
     setActiveImage(0);
+    setModalImageLoaded(false);
   }, [selected?.id]);
+
+  useEffect(() => {
+    setModalImageLoaded(false);
+  }, [activeImage]);
+
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -47,6 +70,7 @@ export default function Studio() {
     setSelectedPackage,
     setOpenId,
     router,
+    isPriority = false,
   }: {
     studio: (typeof studios)[number];
     expandedId: string | null;
@@ -55,23 +79,38 @@ export default function Studio() {
     setSelectedPackage: (p: null) => void;
     setOpenId: (id: string | null) => void;
     router: ReturnType<typeof useRouter>;
+    isPriority?: boolean;
   }) {
     const s = studio;
+    const useNextImage = isOptimizedImageUrl(s.cover_image_url);
     return (
-      <article className="flex flex-col rounded-2xl bg-white/[0.06] overflow-hidden shadow-[0_12px_40px_rgba(0,0,0,0.25)] transition-all duration-300">
+      <article className="studio-card flex flex-col rounded-2xl bg-white/[0.06] overflow-hidden shadow-[0_12px_40px_rgba(0,0,0,0.25)] transition-all duration-300">
         <button
           type="button"
           onClick={() => setOpenId(s.id)}
           className="relative block w-full aspect-[4/3] overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-icube-gold focus-visible:ring-offset-2 focus-visible:ring-offset-icube-dark"
         >
-          <img
-            src={s.cover_image_url}
-            alt={s.name}
-            className="w-full h-full object-cover hover:scale-105 transition-transform duration-500 ease-out"
-            referrerPolicy="no-referrer"
-            loading="lazy"
-            decoding="async"
-          />
+          {useNextImage ? (
+            <Image
+              src={s.cover_image_url}
+              alt={s.name}
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className="object-cover hover:scale-105 transition-transform duration-500 ease-out"
+              priority={isPriority}
+              loading={isPriority ? undefined : "lazy"}
+            />
+          ) : (
+            <img
+              src={s.cover_image_url}
+              alt={s.name}
+              className="w-full h-full object-cover hover:scale-105 transition-transform duration-500 ease-out"
+              referrerPolicy="no-referrer"
+              loading={isPriority ? "eager" : "lazy"}
+              decoding="async"
+              fetchPriority={isPriority ? "high" : undefined}
+            />
+          )}
         </button>
         <div className="flex flex-col flex-1 p-6">
           <h3 className="text-xl font-display font-bold text-white mb-1">{s.name}</h3>
@@ -83,7 +122,7 @@ export default function Studio() {
           </div>
           <p className="text-gray-400 text-sm leading-relaxed mb-4 flex-1">{s.short_description}</p>
 
-          <div className="border-t border-white/10 pt-4">
+          <div className="studio-card-divider border-t border-white/10 pt-4 mt-1">
             <button
               type="button"
               onClick={() => setExpandedId(expandedId === s.id ? null : s.id)}
@@ -179,7 +218,7 @@ export default function Studio() {
             animate={{ x: `-${index * 100}%` }}
             transition={{ duration: 0.4, ease: [0.25, 0.8, 0.25, 1] }}
           >
-            {studios.map((s) => (
+            {studios.map((s, i) => (
               <div key={s.id} className="w-full shrink-0">
                 <StudioCard
                   studio={s}
@@ -189,6 +228,7 @@ export default function Studio() {
                   setSelectedPackage={setSelectedPackage}
                   setOpenId={setOpenId}
                   router={router}
+                  isPriority={i === 0}
                 />
               </div>
             ))}
@@ -219,22 +259,22 @@ export default function Studio() {
       <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-icube-gold/5 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
-        <div className="mb-16 flex flex-col items-center text-center gap-4">
-          <div className="flex items-center justify-center gap-3 mb-1">
-            <div className="w-8 h-[2px] bg-icube-gold" />
-            <span className="text-icube-gold font-semibold tracking-[0.18em] uppercase text-xs md:text-sm">
-              Studio spaces
-            </span>
-            <div className="w-8 h-[2px] bg-icube-gold" />
+        <AnimatedSectionHeader className="section-header" amount={0.25}>
+          <div className="section-label-row">
+            <div className="section-label-line" aria-hidden />
+            <span className="section-label">Studio spaces</span>
+            <div className="section-label-line" aria-hidden />
           </div>
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-display font-bold tracking-tight text-white">
-            Explore our studios
+          <h2 className="section-title studio-section-heading">
+            <span className="studio-title-gradient bg-gradient-to-r from-white via-white to-icube-gold/90 bg-clip-text text-transparent">
+              Explore our studios
+            </span>
           </h2>
           <div className="section-header-accent" aria-hidden />
           <p className="text-gray-400 max-w-2xl font-light mt-4">
             Professional spaces for podcasts, video, and branded content. Choose your studio and book your slot.
           </p>
-        </div>
+        </AnimatedSectionHeader>
 
         {/* Mobile carousel with arrows */}
         <div className="md:hidden">
@@ -261,6 +301,7 @@ export default function Studio() {
                 setSelectedPackage={setSelectedPackage}
                 setOpenId={setOpenId}
                 router={router}
+                isPriority={index === 0}
               />
             </AnimatedStaggerItem>
           ))}
@@ -273,6 +314,7 @@ export default function Studio() {
             onClick={() => setOpenId(null)}
           >
             <div
+              ref={studioModalRef}
               className="w-full max-w-6xl bg-white/[0.04] border border-white/10 rounded-2xl overflow-hidden max-h-[90vh] flex flex-col shadow-2xl backdrop-blur-xl"
               onClick={(e) => e.stopPropagation()}
             >
@@ -292,12 +334,37 @@ export default function Studio() {
 
               <div className="grid grid-cols-1 lg:grid-cols-[7fr_3fr] flex-1 min-h-0 overflow-auto">
                 <div className="relative bg-black min-h-[320px]">
-                  <img
-                    src={images[activeImage]?.image_url}
-                    alt={selected.name}
-                    className="w-full h-[380px] md:h-[560px] object-contain"
-                    referrerPolicy="no-referrer"
-                  />
+                  {images[activeImage]?.image_url && !modalImageLoaded && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-icube-gray/50 min-h-[320px]">
+                      <div className="h-12 w-12 animate-pulse rounded-full border-2 border-icube-gold/30 border-t-icube-gold" aria-hidden />
+                    </div>
+                  )}
+                  {images[activeImage]?.image_url && (() => {
+                    const url = images[activeImage].image_url;
+                    const useNextImage = isOptimizedImageUrl(url);
+                    return useNextImage ? (
+                      <div className="relative w-full h-[380px] md:h-[560px]">
+                        <Image
+                          src={url}
+                          alt={selected.name}
+                          fill
+                          sizes="(max-width: 1024px) 100vw, 70vw"
+                          className="object-contain"
+                          onLoad={() => setModalImageLoaded(true)}
+                        />
+                      </div>
+                    ) : (
+                      <img
+                        src={url}
+                        alt={selected.name}
+                        className="w-full h-[380px] md:h-[560px] object-contain"
+                        referrerPolicy="no-referrer"
+                        loading="lazy"
+                        decoding="async"
+                        onLoad={() => setModalImageLoaded(true)}
+                      />
+                    );
+                  })()}
                   {images.length > 1 && (
                     <>
                       <button
@@ -323,12 +390,30 @@ export default function Studio() {
                           <button
                             key={`${img.image_url}-${i}`}
                             onClick={() => setActiveImage(i)}
-                            className={`shrink-0 w-20 h-14 rounded-sm overflow-hidden border ${
+                            className={`shrink-0 w-20 h-14 rounded-sm overflow-hidden border relative ${
                               i === activeImage ? "border-icube-gold" : "border-white/10"
                             }`}
                             aria-label={`Thumbnail ${i + 1}`}
                           >
-                            <img src={img.image_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                            {isOptimizedImageUrl(img.image_url) ? (
+                              <Image
+                                src={img.image_url}
+                                alt=""
+                                fill
+                                sizes="80px"
+                                className="object-cover"
+                                loading="lazy"
+                              />
+                            ) : (
+                              <img
+                                src={img.image_url}
+                                alt=""
+                                className="w-full h-full object-cover"
+                                referrerPolicy="no-referrer"
+                                loading="lazy"
+                                decoding="async"
+                              />
+                            )}
                           </button>
                         ))}
                       </div>

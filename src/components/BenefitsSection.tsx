@@ -1,6 +1,7 @@
 "use client";
 
 import AnimatedStaggerItem from "./AnimatedStaggerItem";
+import { AnimatedSectionHeader } from "./ScrollReveal";
 
 export default function BenefitsSection() {
   return (
@@ -14,20 +15,19 @@ export default function BenefitsSection() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
           {/* Content block – title, intro, separator, columns */}
           <AnimatedStaggerItem index={0} className="lg:col-span-7 xl:col-span-8 space-y-10">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-8 h-[2px] bg-icube-gold" />
-              <span className="text-icube-gold font-semibold tracking-[0.18em] uppercase text-xs md:text-sm">
-                Why work with us
-              </span>
-              <div className="w-8 h-[2px] bg-icube-gold" />
-            </div>
-            <h2 className="text-3xl md:text-4xl lg:text-[2.75rem] font-display font-bold text-white leading-tight tracking-tight">
-              The benefits of working with a media & podcast studio
-            </h2>
-
-            <p className="text-gray-300 font-light leading-relaxed max-w-2xl text-base md:text-lg">
-              At <span className="text-icube-gold font-medium">ICUBE</span>, we bring years of experience in premium production and podcasting in Dubai. From concept to final cut, we help brands and creators tell stories that resonate—with the right gear, the right space, and a team that cares about quality.
-            </p>
+            <AnimatedSectionHeader className="space-y-10" amount={0.25}>
+              <div className="section-label-row section-label-row--left">
+                <div className="section-label-line" aria-hidden />
+                <span className="section-label">Why work with us</span>
+                <div className="section-label-line" aria-hidden />
+              </div>
+              <h2 className="section-title">
+                The benefits of working with a media & podcast studio
+              </h2>
+              <p className="text-gray-300 font-light leading-relaxed max-w-2xl text-base md:text-lg">
+                At <span className="text-icube-gold font-medium">ICUBE</span>, we bring years of experience in premium production and podcasting in Dubai. From concept to final cut, we help brands and creators tell stories that resonate—with the right gear, the right space, and a team that cares about quality.
+              </p>
+            </AnimatedSectionHeader>
 
             <div
               className="h-px w-full max-w-2xl bg-gradient-to-r from-transparent via-icube-gold/50 to-transparent"
