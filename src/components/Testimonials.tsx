@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
-import { Quote, ChevronLeft, ChevronRight } from "lucide-react";
+import { Quote } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useSiteData } from "../SiteDataContext";
+import { useSwipeCarousel } from "../hooks/useSwipeCarousel";
 import AnimatedStaggerItem from "./AnimatedStaggerItem";
 import { AnimatedSectionHeader } from "./ScrollReveal";
 
@@ -102,46 +103,53 @@ function MobileTestimonialsCarousel({
 }: {
   testimonials: ReturnType<typeof useSiteData>["testimonials"];
 }) {
+  const len = testimonials.length;
   const [index, setIndex] = useState(0);
-  if (!testimonials.length) return null;
-  const current = testimonials[index];
+  const [noTransition, setNoTransition] = useState(false);
+  const displayItems = len ? [...testimonials, ...testimonials] : [];
 
-  const goPrev = () => setIndex((i) => (i - 1 + testimonials.length) % testimonials.length);
-  const goNext = () => setIndex((i) => (i + 1) % testimonials.length);
+  useEffect(() => {
+    if (!noTransition) return;
+    const id = requestAnimationFrame(() => setNoTransition(false));
+    return () => cancelAnimationFrame(id);
+  }, [noTransition, index]);
+
+  const goPrev = () => {
+    if (index === 0) {
+      setNoTransition(true);
+      setIndex(2 * len - 1);
+    } else setIndex((i) => i - 1);
+  };
+  const goNext = () => {
+    if (index === 2 * len - 1) {
+      setNoTransition(true);
+      setIndex(0);
+    } else setIndex((i) => i + 1);
+  };
+  const swipe = useSwipeCarousel(goPrev, goNext);
+  const logicalIndex = len ? index % len : 0;
+
+  if (!len) return null;
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between text-xs text-gray-400 px-1">
-        <button
-          type="button"
-          onClick={goPrev}
-          className="inline-flex items-center justify-center px-3 py-1.5 rounded-full border border-white/20 text-gray-200 hover:bg-white/10"
-          aria-label="Previous testimonial"
-        >
-          <ChevronLeft size={14} className="mr-1" />
-          Previous
-        </button>
+      <div className="flex justify-center text-xs text-gray-400 px-1">
         <span className="tracking-[0.18em] uppercase text-[11px]">
-          {index + 1} / {testimonials.length}
+          {logicalIndex + 1} / {len}
         </span>
-        <button
-          type="button"
-          onClick={goNext}
-          className="inline-flex items-center justify-center px-3 py-1.5 rounded-full border border-white/20 text-gray-200 hover:bg-white/10"
-          aria-label="Next testimonial"
-        >
-          Next
-          <ChevronRight size={14} className="ml-1" />
-        </button>
       </div>
-      <div className="overflow-hidden">
+      <div
+        className="overflow-hidden touch-pan-y select-none"
+        onTouchStart={swipe.onTouchStart}
+        onTouchEnd={swipe.onTouchEnd}
+      >
         <motion.div
           className="flex"
           animate={{ x: `-${index * 100}%` }}
-          transition={{ duration: 0.4, ease: [0.25, 0.8, 0.25, 1] }}
+          transition={noTransition ? { duration: 0 } : { duration: 0.4, ease: [0.25, 0.8, 0.25, 1] }}
         >
-          {testimonials.map((t) => (
-            <div key={t.id} className="w-full shrink-0">
+          {displayItems.map((t, i) => (
+            <div key={`${t.id}-${i}`} className="w-full shrink-0">
               <TestimonialCard testimonial={t} />
             </div>
           ))}
@@ -152,9 +160,11 @@ function MobileTestimonialsCarousel({
           <button
             key={i}
             type="button"
-            onClick={() => setIndex(i)}
+            onClick={() => {
+              if (i !== logicalIndex) setIndex(i);
+            }}
             className={`h-1.5 rounded-full transition-all duration-200 ${
-              i === index ? "bg-icube-gold w-4" : "bg-white/20 w-1.5"
+              i === logicalIndex ? "bg-icube-gold w-4" : "bg-white/20 w-1.5"
             }`}
             aria-label={`Go to testimonial ${i + 1}`}
           />

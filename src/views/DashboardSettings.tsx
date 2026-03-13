@@ -16,10 +16,13 @@ const keys = [
   "contact_email",
   "contact_email_bookings",
   "contact_phone",
+  "contact_phone_2",
   "contact_hours",
   "social_instagram",
   "social_youtube",
   "social_twitter",
+  "social_tiktok",
+  "social_linkedin",
 ];
 
 export default function DashboardSettings() {
@@ -57,11 +60,14 @@ export default function DashboardSettings() {
     contact_address: "Address (Dubai)",
     contact_email: "Email (general)",
     contact_email_bookings: "Email (bookings)",
-    contact_phone: "Phone (+971…)",
+    contact_phone: "Phone 1 (+971…)",
+    contact_phone_2: "Phone 2 (+971…)",
     contact_hours: "Working hours",
     social_instagram: "Instagram URL",
     social_youtube: "YouTube URL",
-    social_twitter: "Twitter URL",
+    social_twitter: "X (Twitter) URL",
+    social_tiktok: "TikTok URL",
+    social_linkedin: "LinkedIn URL",
   };
 
   return (

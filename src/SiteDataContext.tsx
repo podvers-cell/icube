@@ -93,6 +93,7 @@ const FALLBACK_SETTINGS: Record<string, string> = {
   contact_email: CONTACT_EMAIL,
   contact_email_bookings: CONTACT_EMAIL,
   contact_phone: "+971 4 123 4567",
+  contact_phone_2: "",
   contact_hours: "Sun–Thu, 9am – 6pm GST",
 };
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { Mail, Phone, MapPin, Instagram, Youtube, Twitter } from "lucide-react";
+import { Mail, Phone, MapPin, Instagram, Youtube, Linkedin } from "lucide-react";
 import { motion } from "motion/react";
 import { useSiteData } from "../SiteDataContext";
 import { useToast } from "../ToastContext";
@@ -9,6 +9,22 @@ import { submitContact, sendContactEmailNotification } from "../api";
 import { CONTACT_EMAIL, CONTACT_SUBJECT_OPTIONS } from "../constants/contact";
 import AnimatedStaggerItem from "./AnimatedStaggerItem";
 import { AnimatedSectionHeader } from "./ScrollReveal";
+
+function TikTokIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className="size-5">
+      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" />
+    </svg>
+  );
+}
+
+function XIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className="size-5">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  );
+}
 
 export default function Contact() {
   const { settings } = useSiteData();
@@ -27,10 +43,13 @@ export default function Contact() {
   const email = settings.contact_email || CONTACT_EMAIL;
   const emailBookings = settings.contact_email_bookings || "bookings@icube.ae";
   const phone = settings.contact_phone || "+971 4 123 4567";
+  const phone2 = settings.contact_phone_2 || "";
   const hours = settings.contact_hours || "Sun–Thu, 9am – 6pm GST";
   const instagram = settings.social_instagram || "#";
   const youtube = settings.social_youtube || "#";
   const twitter = settings.social_twitter || "#";
+  const tiktok = settings.social_tiktok || "#";
+  const linkedin = settings.social_linkedin || "#";
 
   function validate(): boolean {
     const err: { name?: string; email?: string; message?: string } = {};
@@ -120,6 +139,12 @@ export default function Contact() {
                   <h4 className="font-display font-semibold text-xl mb-1">Call Us</h4>
                   <p className="text-gray-400 font-light">
                     {phone}
+                    {phone2 ? (
+                      <>
+                        <br />
+                        {phone2}
+                      </>
+                    ) : null}
                     <br />
                     {hours}
                   </p>
@@ -130,14 +155,20 @@ export default function Contact() {
             <div className="mt-12 pt-12 border-t border-white/10">
               <h4 className="font-display font-semibold text-lg mb-6 tracking-tight uppercase">Follow Our Work</h4>
               <div className="flex gap-4">
-                <a href={instagram} target="_blank" rel="noreferrer" className="flex items-center justify-center text-gray-400 hover:text-icube-gold transition-all duration-300" aria-label="Instagram">
+                <a href={instagram} target="_blank" rel="noreferrer" className="flex items-center justify-center text-gray-400 hover:text-[#E4405F] transition-all duration-300" aria-label="Instagram">
                   <Instagram size={20} />
                 </a>
-                <a href={youtube} target="_blank" rel="noreferrer" className="flex items-center justify-center text-gray-400 hover:text-icube-gold transition-all duration-300" aria-label="YouTube">
+                <a href={youtube} target="_blank" rel="noreferrer" className="flex items-center justify-center text-gray-400 hover:text-[#FF0000] transition-all duration-300" aria-label="YouTube">
                   <Youtube size={20} />
                 </a>
-                <a href={twitter} target="_blank" rel="noreferrer" className="flex items-center justify-center text-gray-400 hover:text-icube-gold transition-all duration-300" aria-label="Twitter">
-                  <Twitter size={20} />
+                <a href={twitter} target="_blank" rel="noreferrer" className="flex items-center justify-center text-gray-400 hover:text-white transition-all duration-300 [&_svg]:size-5" aria-label="X (Twitter)">
+                  <XIcon />
+                </a>
+                <a href={tiktok} target="_blank" rel="noreferrer" className="flex items-center justify-center text-gray-400 hover:text-[#00f2ea] transition-all duration-300 [&_svg]:size-5" aria-label="TikTok">
+                  <TikTokIcon />
+                </a>
+                <a href={linkedin} target="_blank" rel="noreferrer" className="flex items-center justify-center text-gray-400 hover:text-[#0A66C2] transition-all duration-300" aria-label="LinkedIn">
+                  <Linkedin size={20} />
                 </a>
               </div>
             </div>

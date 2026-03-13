@@ -4,8 +4,9 @@ import { useEffect, useMemo, useState, useRef } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { X, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
+import { X, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { useFocusTrap } from "../hooks/useFocusTrap";
+import { useSwipeCarousel } from "../hooks/useSwipeCarousel";
 import { useSiteData } from "../SiteDataContext";
 import { useBooking } from "../BookingContext";
 import AnimatedStaggerItem from "./AnimatedStaggerItem";
@@ -180,46 +181,53 @@ export default function Studio() {
     router: ReturnType<typeof useRouter>;
   }) {
     const { studios, expandedId, setExpandedId, setSelectedStudio, setSelectedPackage, setOpenId, router } = props;
+    const len = studios.length;
     const [index, setIndex] = useState(0);
-    if (!studios.length) return null;
-    const current = studios[index];
+    const [noTransition, setNoTransition] = useState(false);
+    const displayItems = len ? [...studios, ...studios] : [];
 
-    const goPrev = () => setIndex((i) => (i - 1 + studios.length) % studios.length);
-    const goNext = () => setIndex((i) => (i + 1) % studios.length);
+    useEffect(() => {
+      if (!noTransition) return;
+      const id = requestAnimationFrame(() => setNoTransition(false));
+      return () => cancelAnimationFrame(id);
+    }, [noTransition, index]);
+
+    const goPrev = () => {
+      if (index === 0) {
+        setNoTransition(true);
+        setIndex(2 * len - 1);
+      } else setIndex((i) => i - 1);
+    };
+    const goNext = () => {
+      if (index === 2 * len - 1) {
+        setNoTransition(true);
+        setIndex(0);
+      } else setIndex((i) => i + 1);
+    };
+    const swipe = useSwipeCarousel(goPrev, goNext);
+    const logicalIndex = len ? index % len : 0;
+
+    if (!len) return null;
 
     return (
       <div className="space-y-4">
-        <div className="flex items-center justify-between text-xs text-gray-400 px-1">
-          <button
-            type="button"
-            onClick={goPrev}
-            className="inline-flex items-center justify-center px-3 py-1.5 rounded-full border border-white/20 text-gray-200 hover:bg-white/10"
-            aria-label="Previous studio"
-          >
-            <ChevronLeft size={14} className="mr-1" />
-            Previous
-          </button>
+        <div className="flex justify-center text-xs text-gray-400 px-1">
           <span className="tracking-[0.18em] uppercase text-[11px]">
-            {index + 1} / {studios.length}
+            {logicalIndex + 1} / {len}
           </span>
-          <button
-            type="button"
-            onClick={goNext}
-            className="inline-flex items-center justify-center px-3 py-1.5 rounded-full border border-white/20 text-gray-200 hover:bg-white/10"
-            aria-label="Next studio"
-          >
-            Next
-            <ChevronRight size={14} className="ml-1" />
-          </button>
         </div>
-        <div className="overflow-hidden">
+        <div
+          className="overflow-hidden touch-pan-y select-none"
+          onTouchStart={swipe.onTouchStart}
+          onTouchEnd={swipe.onTouchEnd}
+        >
           <motion.div
             className="flex"
             animate={{ x: `-${index * 100}%` }}
-            transition={{ duration: 0.4, ease: [0.25, 0.8, 0.25, 1] }}
+            transition={noTransition ? { duration: 0 } : { duration: 0.4, ease: [0.25, 0.8, 0.25, 1] }}
           >
-            {studios.map((s, i) => (
-              <div key={s.id} className="w-full shrink-0">
+            {displayItems.map((s, i) => (
+              <div key={`${s.id}-${i}`} className="w-full shrink-0">
                 <StudioCard
                   studio={s}
                   expandedId={expandedId}
@@ -239,10 +247,12 @@ export default function Studio() {
             <button
               key={i}
               type="button"
-            onClick={() => setIndex(i)}
-            className={`h-1.5 rounded-full transition-all duration-200 ${
-              i === index ? "bg-icube-gold w-4" : "bg-white/20 w-1.5"
-            }`}
+              onClick={() => {
+                if (i !== logicalIndex) setIndex(i);
+              }}
+              className={`h-1.5 rounded-full transition-all duration-200 ${
+                i === logicalIndex ? "bg-icube-gold w-4" : "bg-white/20 w-1.5"
+              }`}
               aria-label={`Go to studio ${i + 1}`}
             />
           ))}
