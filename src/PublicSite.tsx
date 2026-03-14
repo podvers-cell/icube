@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { ArrowUp } from "lucide-react";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
 import Services from "./components/Services";
@@ -292,35 +292,110 @@ export default function PublicSite() {
   return (
     <>
       {mainContent}
-      {showSplash && (
-        <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-icube-dark text-white overflow-hidden">
-          <div className="relative flex flex-col items-center gap-10 w-full max-w-sm px-8">
-            <div className="absolute inset-0 blur-3xl bg-icube-gold/15 rounded-full scale-150 pointer-events-none" aria-hidden />
-            <motion.img
-              src="/icube-logo.svg"
-              alt="ICUBE Media Studio"
-              className="relative h-28 w-auto drop-shadow-[0_0_24px_rgba(201,162,39,0.2)]"
-              initial={{ opacity: 0.7 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, repeat: Infinity, repeatType: "reverse", repeatDelay: 0.8 }}
+      <AnimatePresence mode="wait">
+        {showSplash && (
+          <motion.div
+            key="splash"
+          className="fixed inset-0 z-[200] flex flex-col items-center justify-center text-white overflow-hidden"
+          initial={false}
+          exit={{ opacity: 0, transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] } }}
+        >
+          {/* Dark gradient background with subtle vignette */}
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0c] via-icube-dark to-[#050506]" aria-hidden />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,rgba(212,175,55,0.08)_0%,transparent_50%)]" aria-hidden />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_100%_100%_at_50%_100%,rgba(0,0,0,0.6)_0%,transparent_50%)]" aria-hidden />
+
+          {/* Animated gold orbs */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
+            <motion.div
+              className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-icube-gold/10 blur-[80px]"
+              animate={{ x: [0, 30, 0], y: [0, -20, 0] }}
+              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
             />
+            <motion.div
+              className="absolute bottom-1/3 right-1/4 w-48 h-48 rounded-full bg-icube-gold/8 blur-[60px]"
+              animate={{ x: [0, -25, 0], y: [0, 15, 0] }}
+              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+            />
+          </div>
+
+          {/* Content */}
+          <div className="relative flex flex-col items-center gap-12 w-full max-w-md px-8">
+            {/* Logo with cinematic reveal */}
+            <motion.div
+              className="relative"
+              initial={{ opacity: 0, scale: 0.92, filter: "blur(8px)" }}
+              animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+              transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
+            >
+              <motion.img
+                src="/icube-logo.svg"
+                alt="ICUBE Media Studio"
+                className="relative h-32 w-auto drop-shadow-[0_0_40px_rgba(212,175,55,0.25)]"
+                animate={{
+                  filter: [
+                    "drop-shadow(0 0 40px rgba(212,175,55,0.25))",
+                    "drop-shadow(0 0 56px rgba(212,175,55,0.35))",
+                    "drop-shadow(0 0 40px rgba(212,175,55,0.25))",
+                  ],
+                }}
+                transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+              />
+              <div className="absolute -inset-4 bg-icube-gold/5 rounded-full blur-2xl -z-10" aria-hidden />
+            </motion.div>
+
+            {/* Tagline */}
+            <motion.p
+              className="relative text-xs uppercase tracking-[0.35em] text-gray-500 font-medium"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+            >
+              Premium Media & Production
+            </motion.p>
+
+            {/* Creative progress: line that "draws" with glow */}
             <div className="relative w-full max-w-xs">
-              <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
-                <motion.div
-                  className="h-full rounded-full bg-gradient-to-r from-icube-gold/90 to-icube-gold"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${progress}%` }}
-                  transition={{ duration: 0.25 }}
-                  style={{ maxWidth: "100%" }}
-                />
-              </div>
-              <p className="mt-2 text-center text-xs text-gray-400 uppercase tracking-widest font-medium" aria-live="polite">
-                {loading ? "Loading…" : heroReady ? "Ready" : "Preparing…"} {Math.round(progress)}%
+              <div className="h-px w-full rounded-full bg-white/5 overflow-visible" aria-hidden />
+              <motion.div
+                className="absolute left-0 top-0 h-[2px] rounded-full bg-gradient-to-r from-icube-gold/70 via-icube-gold to-icube-gold/70 shadow-[0_0_12px_rgba(212,175,55,0.5)]"
+                initial={{ width: 0 }}
+                animate={{ width: `${progress}%` }}
+                transition={{ duration: 0.2 }}
+                style={{ maxWidth: "100%", boxShadow: "0 0 20px rgba(212,175,55,0.4)" }}
+              />
+              <motion.div
+                className="absolute top-1/2 -translate-y-1/2 h-1.5 w-1.5 rounded-full bg-icube-gold shadow-[0_0_8px_rgba(212,175,55,0.8)]"
+                style={{ left: `${Math.min(progress, 100)}%`, marginLeft: -3 }}
+                animate={{ opacity: [0.9, 1, 0.9] }}
+                transition={{ duration: 0.5, repeat: Infinity }}
+              />
+              <p className="mt-4 text-center text-[11px] text-gray-500 uppercase tracking-[0.2em] font-medium" aria-live="polite">
+                {loading ? "Loading experience…" : heroReady ? "Ready" : "Preparing…"} <span className="text-icube-gold/90">{Math.round(progress)}%</span>
               </p>
             </div>
+
+            {/* Minimal film strip accent */}
+            <motion.div
+              className="absolute bottom-8 left-0 right-0 flex justify-center gap-1 opacity-30"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.3 }}
+              transition={{ delay: 0.6 }}
+              aria-hidden
+            >
+              {[1, 2, 3, 4, 5].map((i) => (
+                <motion.div
+                  key={i}
+                  className="w-1 h-8 rounded-sm bg-icube-gold/40"
+                  animate={{ opacity: [0.3, 0.6, 0.3] }}
+                  transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.15 }}
+                />
+              ))}
+            </motion.div>
           </div>
-        </div>
-      )}
+        </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }
