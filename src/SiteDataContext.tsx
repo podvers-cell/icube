@@ -260,6 +260,46 @@ function withFallbackArray<T>(items: T[], fallback: T[]): T[] {
   return items && items.length > 0 ? items : fallback;
 }
 
+const DATA_LOAD_TIMEOUT_MS = 10000; // على الموبايل/شبكة بطيئة: نعرض الصفحة بعد 10s ببيانات افتراضية ثم نحدّث في الخلفية
+
+function applyFetchResult(
+  setData: React.Dispatch<React.SetStateAction<SiteData>>,
+  result: Awaited<ReturnType<typeof fetchAllSiteData>>,
+  loading: boolean,
+  error: string | null,
+  refresh: () => void
+) {
+  const [settings, services, portfolio, testimonials, packages, whyUs, studioEquipment, studios, videos] = result;
+  setData({
+    settings: Object.keys(settings || {}).length ? settings : FALLBACK_SETTINGS,
+    services: withFallbackArray(services, FALLBACK_SERVICES),
+    portfolio: withFallbackArray(portfolio, FALLBACK_PORTFOLIO),
+    testimonials: withFallbackArray(testimonials, FALLBACK_TESTIMONIALS),
+    packages: withFallbackArray(packages, FALLBACK_PACKAGES),
+    whyUs: withFallbackArray(whyUs, FALLBACK_WHY_US),
+    studioEquipment: studioEquipment ?? [],
+    studios: withFallbackArray(studios, FALLBACK_STUDIOS),
+    videos: withFallbackArray(videos, FALLBACK_VIDEOS),
+    loading,
+    error,
+    refresh,
+  });
+}
+
+async function fetchAllSiteData() {
+  return Promise.all([
+    api.getSiteSettings(),
+    api.getServices(),
+    api.getPortfolio(),
+    api.getTestimonials(),
+    api.getBookingPackages(),
+    api.getWhyUs(),
+    api.getStudioEquipment(),
+    api.getStudios(),
+    api.getVideos(),
+  ]);
+}
+
 export function SiteDataProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<SiteData>({
     ...defaultData,
@@ -276,34 +316,44 @@ export function SiteDataProvider({ children }: { children: ReactNode }) {
     videos: [],
   });
 
-  const refresh = useCallback(async () => {
-    setData((d) => ({ ...d, loading: true, error: null }));
-    try {
-      const [settings, services, portfolio, testimonials, packages, whyUs, studioEquipment, studios, videos] = await Promise.all([
-        api.getSiteSettings(),
-        api.getServices(),
-        api.getPortfolio(),
-        api.getTestimonials(),
-        api.getBookingPackages(),
-        api.getWhyUs(),
-        api.getStudioEquipment(),
-        api.getStudios(),
-        api.getVideos(),
-      ]);
-      setData({
-        settings: Object.keys(settings || {}).length ? settings : FALLBACK_SETTINGS,
-        services: withFallbackArray(services, FALLBACK_SERVICES),
-        portfolio: withFallbackArray(portfolio, FALLBACK_PORTFOLIO),
-        testimonials: withFallbackArray(testimonials, FALLBACK_TESTIMONIALS),
-        packages: withFallbackArray(packages, FALLBACK_PACKAGES),
-        whyUs: withFallbackArray(whyUs, FALLBACK_WHY_US),
-        studioEquipment,
-        studios: withFallbackArray(studios, FALLBACK_STUDIOS),
-        videos: withFallbackArray(videos, FALLBACK_VIDEOS),
+  const refresh = useCallback(async (opts?: { background?: boolean }) => {
+    const background = opts?.background === true;
+    if (!background) {
+      setData((d) => ({ ...d, loading: true, error: null }));
+    }
+    const setResult = (result: Awaited<ReturnType<typeof fetchAllSiteData>>) =>
+      applyFetchResult(setData, result, false, null, refresh);
+    const setFallback = () =>
+      setData((d) => ({
+        ...d,
         loading: false,
         error: null,
+        settings: Object.keys(d.settings).length ? d.settings : FALLBACK_SETTINGS,
+        services: d.services.length ? d.services : FALLBACK_SERVICES,
+        portfolio: d.portfolio.length ? d.portfolio : FALLBACK_PORTFOLIO,
+        testimonials: d.testimonials.length ? d.testimonials : FALLBACK_TESTIMONIALS,
+        packages: d.packages.length ? d.packages : FALLBACK_PACKAGES,
+        whyUs: d.whyUs.length ? d.whyUs : FALLBACK_WHY_US,
+        studios: d.studios.length ? d.studios : FALLBACK_STUDIOS,
+        videos: d.videos.length ? d.videos : FALLBACK_VIDEOS,
         refresh,
-      });
+      }));
+    try {
+      const timeoutPromise = new Promise<"timeout">((resolve) =>
+        setTimeout(() => resolve("timeout"), DATA_LOAD_TIMEOUT_MS)
+      );
+      const dataPromise = fetchAllSiteData();
+      const winner = await Promise.race([
+        dataPromise.then((r) => ({ ok: true as const, data: r })),
+        timeoutPromise.then(() => ({ ok: false as const })),
+      ]);
+      if (winner.ok) {
+        setResult(winner.data);
+        return;
+      }
+      setFallback();
+      const real = await dataPromise;
+      setResult(real);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to load content";
       setData((d) => ({

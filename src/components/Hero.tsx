@@ -69,13 +69,28 @@ export default function Hero({ onHeroReady }: HeroProps) {
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
 
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 768px)");
+    setIsMobile(mq.matches);
+    const fn = () => setIsMobile(mq.matches);
+    mq.addEventListener("change", fn);
+    return () => mq.removeEventListener("change", fn);
+  }, []);
+
+  // على الموبايل: صورة ثابتة فقط (أداء أفضل) ولا نربط إخفاء الشاشة الأولى بتحميل الفيديو
+  const useHeavyBackground = !isMobile && ((bgType === "video" && bgVideo) || (bgType === "gif" && bgGif));
   const hasVideoOrGif = (bgType === "video" && bgVideo) || (bgType === "gif" && bgGif);
-  const displayImageUrl = bgImage || (bgType === "gif" && bgGif ? bgGif : "");
+  const displayImageUrl = isMobile ? bgImage : (bgImage || (bgType === "gif" && bgGif ? bgGif : ""));
 
-  // Notify parent when hero background is ready (so splash can hide after video loads)
+  // Notify parent when hero background is ready (so splash can hide)
   useEffect(() => {
     if (loading || !onHeroReady) return;
+    if (isMobile) {
+      const t = window.setTimeout(onHeroReady, 1500);
+      return () => window.clearTimeout(t);
+    }
     const isVideo = bgType === "video" && bgVideo;
     const isGif = bgType === "gif" && bgGif;
     if (!isVideo && !isGif) {
@@ -92,16 +107,14 @@ export default function Hero({ onHeroReady }: HeroProps) {
     }
     const video = videoRef.current;
     if (!video) return;
-    const done = () => {
-      onHeroReady();
-    };
+    const done = () => onHeroReady();
     video.addEventListener("canplaythrough", done, { once: true });
     const fallback = window.setTimeout(done, 10000);
     return () => {
       video.removeEventListener("canplaythrough", done);
       window.clearTimeout(fallback);
     };
-  }, [loading, bgType, bgVideo, bgGif, youtubeEmbed, onHeroReady]);
+  }, [loading, isMobile, bgType, bgVideo, bgGif, youtubeEmbed, onHeroReady]);
 
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -130,19 +143,19 @@ export default function Hero({ onHeroReady }: HeroProps) {
       <div className="absolute inset-0 z-0 w-full h-full min-h-full">
         <div
           className={
-            hasVideoOrGif
+            useHeavyBackground
               ? "absolute inset-0 z-10"
               : "absolute inset-0 z-10 bg-gradient-to-b from-black/70 via-black/50 to-black/60"
           }
           style={
-            hasVideoOrGif
+            useHeavyBackground
               ? {
                   background: `linear-gradient(to bottom, var(--color-icube-dark) 0%, color-mix(in srgb, var(--color-icube-dark) 85%, transparent) 12%, rgba(0,0,0,0.72) 50%, color-mix(in srgb, var(--color-icube-dark) 85%, transparent) 88%, var(--color-icube-dark) 100%)`,
                 }
               : undefined
           }
         />
-        {bgType === "gif" && bgGif ? (
+        {useHeavyBackground && bgType === "gif" && bgGif ? (
           <div className="absolute inset-0 overflow-hidden w-full h-full min-h-full">
             <img
               src={bgGif}
@@ -151,7 +164,7 @@ export default function Hero({ onHeroReady }: HeroProps) {
               style={{ transform: "translate(-50%, -50%) scale(1.10)" }}
             />
           </div>
-        ) : bgType === "video" && bgVideo ? (
+        ) : useHeavyBackground && bgType === "video" && bgVideo ? (
           youtubeEmbed ? (
             <div className="absolute inset-0 overflow-hidden w-full h-full min-h-full">
               <iframe
