@@ -9,6 +9,8 @@ import { useAuth } from "../AuthContext";
 import { useTheme } from "../ThemeContext";
 import { AnimatePresence, motion } from "motion/react";
 
+const SHOW_THEME_TOGGLE = false;
+
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -208,7 +210,9 @@ export default function Navbar() {
               </Link>
             </>
           )}
-          <ThemeToggleSwitch theme={theme} onToggle={toggleTheme} size="sm" className="shrink-0 ml-0" />
+          {SHOW_THEME_TOGGLE && (
+            <ThemeToggleSwitch theme={theme} onToggle={toggleTheme} size="sm" className="shrink-0 ml-0" />
+          )}
         </div>
 
         {/* Mobile Menu Toggle – min 44px touch target */}
@@ -244,15 +248,17 @@ export default function Navbar() {
             className="fixed top-0 left-0 right-0 bottom-0 z-40 bg-icube-dark/95 backdrop-blur-2xl flex flex-col items-center justify-center px-8 min-h-[100dvh] min-h-[100vh] md:hidden"
           >
             <div className="w-full max-w-sm bg-black/40 border border-white/10 rounded-3xl px-6 py-8 shadow-[0_30px_80px_rgba(0,0,0,0.85)] flex flex-col items-center gap-6">
-              <ThemeToggleSwitch
-                theme={theme}
-                onToggle={() => {
-                  toggleTheme();
-                  setIsMobileMenuOpen(false);
-                }}
-                size="md"
-                className="shrink-0"
-              />
+              {SHOW_THEME_TOGGLE && (
+                <ThemeToggleSwitch
+                  theme={theme}
+                  onToggle={() => {
+                    toggleTheme();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  size="md"
+                  className="shrink-0"
+                />
+              )}
               <nav className="w-full space-y-1">
                 {navLinks.map((link) => {
                   const href = (link as { href: string }).href;

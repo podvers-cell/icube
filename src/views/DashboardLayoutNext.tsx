@@ -22,6 +22,7 @@ import {
   Building2,
   Menu,
   X,
+  BookOpen,
 } from "lucide-react";
 import { api, getSiteSettings } from "../api";
 import UserProfile from "../components/UserProfile";
@@ -38,6 +39,7 @@ const nav: NavItem[] = [
   { href: "/dashboard", end: true, label: "Overview", icon: LayoutGrid },
   { href: "/dashboard/settings", end: false, label: "Site Settings", icon: Settings },
   { href: "/dashboard/hero", end: false, label: "Hero", icon: Image },
+  { href: "/dashboard/benefits", end: false, label: "Benefits", icon: BookOpen },
   { href: "/dashboard/services", end: false, label: "Services", icon: LayoutGrid },
   { href: "/dashboard/portfolio", end: false, label: "Portfolio", icon: Image },
   { href: "/dashboard/testimonials", end: false, label: "Testimonials", icon: MessageSquare },

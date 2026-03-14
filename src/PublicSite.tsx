@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { ArrowUp } from "lucide-react";
 import { motion } from "motion/react";
 import Navbar from "./components/Navbar";
@@ -19,12 +19,12 @@ import ScrollReveal from "./components/ScrollReveal";
 import { useSiteData } from "./SiteDataContext";
 
 const WHATSAPP_URL = "https://wa.me/971589965005";
-const SPLASH_STORAGE_KEY = "icube-splash-shown";
+const SESSION_LOADED_KEY = "icube-session-loaded";
 
-/** Only show splash on the very first visit (persisted in localStorage). */
-function getInitialShowSplash(): boolean {
+/** Show splash only on first load in this session; not when navigating between pages. */
+function shouldShowSplashOnMount(): boolean {
   if (typeof window === "undefined") return true;
-  return localStorage.getItem(SPLASH_STORAGE_KEY) !== "1";
+  return sessionStorage.getItem(SESSION_LOADED_KEY) !== "1";
 }
 
 /** Hash from URL (works in both Vite and Next.js; no react-router dependency). */
@@ -44,8 +44,8 @@ function useHash() {
 export default function PublicSite() {
   const { loading, error, refresh } = useSiteData();
   const hash = useHash();
+  const [mounted, setMounted] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
-  const [splashChecked, setSplashChecked] = useState(false);
   const [progress, setProgress] = useState(0);
   const [heroReady, setHeroReady] = useState(false);
   const [showWhatsAppBubble, setShowWhatsAppBubble] = useState(true);
@@ -53,48 +53,72 @@ export default function PublicSite() {
 
   const onHeroReady = useCallback(() => setHeroReady(true), []);
 
-  // Before paint: if user already saw splash in a previous visit, don't show it (navigation/return)
-  useLayoutEffect(() => {
-    if (!getInitialShowSplash()) setShowSplash(false);
-    setSplashChecked(true);
+  // After client mount: read session so we don't show splash when navigating between pages
+  useEffect(() => {
+    setMounted(true);
+    if (sessionStorage.getItem(SESSION_LOADED_KEY) === "1") {
+      setShowSplash(false);
+    }
   }, []);
 
-  // Animate progress bar while data is loading (only when splash is actually shown)
+  // Progress bar: animate only after mount (avoids hydration issues that can freeze at 0%)
   useEffect(() => {
-    if (!showSplash || !splashChecked) return;
-    let timer: number | undefined;
-    if (loading) {
-      const tick = () => {
-        setProgress((prev) => {
-          if (prev >= 88) return prev;
-          const next = prev + (88 - prev) * 0.08;
-          return next;
-        });
-        timer = window.setTimeout(tick, 120);
-      };
-      tick();
-    }
-    return () => {
-      if (timer) window.clearTimeout(timer);
-    };
-  }, [loading, showSplash, splashChecked]);
+    if (!mounted || !showSplash) return;
+    const timer = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 90) return prev;
+        return Math.min(90, prev + (90 - prev) * 0.06);
+      });
+    }, 80);
+    return () => clearInterval(timer);
+  }, [mounted, showSplash]);
 
-  // When data and hero (including video) are ready, finish bar and hide splash (first visit only)
+  // When data and hero are ready: complete bar, mark session as loaded, then hide splash
   useEffect(() => {
-    if (!showSplash || !splashChecked) return;
+    if (!mounted || !showSplash) return;
     if (!loading && heroReady) {
       setProgress(100);
       const timeout = window.setTimeout(() => {
-        setShowSplash(false);
         try {
-          localStorage.setItem(SPLASH_STORAGE_KEY, "1");
+          sessionStorage.setItem(SESSION_LOADED_KEY, "1");
         } catch {
           // ignore
         }
-      }, 400);
+        setShowSplash(false);
+      }, 350);
       return () => window.clearTimeout(timeout);
     }
-  }, [loading, heroReady, showSplash, splashChecked]);
+  }, [mounted, loading, heroReady, showSplash]);
+
+  // Fallback: if data is ready but Hero didn't call onHeroReady within 2s, hide splash anyway
+  useEffect(() => {
+    if (!mounted || !showSplash || loading) return;
+    const fallback = window.setTimeout(() => {
+      setProgress(100);
+      try {
+        sessionStorage.setItem(SESSION_LOADED_KEY, "1");
+      } catch {
+        // ignore
+      }
+      setShowSplash(false);
+    }, 2000);
+    return () => window.clearTimeout(fallback);
+  }, [mounted, showSplash, loading]);
+
+  // Fallback: never block more than 8s (e.g. network error)
+  useEffect(() => {
+    if (!mounted || !showSplash) return;
+    const maxWait = window.setTimeout(() => {
+      setProgress(100);
+      try {
+        sessionStorage.setItem(SESSION_LOADED_KEY, "1");
+      } catch {
+        // ignore
+      }
+      setShowSplash(false);
+    }, 8000);
+    return () => window.clearTimeout(maxWait);
+  }, [mounted, showSplash]);
 
   // When coming from another page (e.g. portfolio) and clicking studio: scroll to section after home loads
   useEffect(() => {
@@ -269,29 +293,31 @@ export default function PublicSite() {
     <>
       {mainContent}
       {showSplash && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-icube-dark text-white overflow-hidden">
-          <div className="relative flex flex-col items-center gap-8">
+        <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-icube-dark text-white overflow-hidden">
+          <div className="relative flex flex-col items-center gap-10 w-full max-w-sm px-8">
             <div className="absolute inset-0 blur-3xl bg-icube-gold/15 rounded-full scale-150 pointer-events-none" aria-hidden />
             <motion.img
               src="/icube-logo.svg"
               alt="ICUBE Media Studio"
-              className="relative h-24 w-auto drop-shadow-[0_0_24px_rgba(201,162,39,0.15)]"
-              initial={{ opacity: 0.6 }}
+              className="relative h-28 w-auto drop-shadow-[0_0_24px_rgba(201,162,39,0.2)]"
+              initial={{ opacity: 0.7 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, repeat: Infinity, repeatType: "reverse", repeatDelay: 0.8 }}
             />
-            <div className="relative w-56 h-0.5 rounded-full bg-white/5 overflow-hidden">
-              <motion.div
-                className="h-full bg-gradient-to-r from-icube-gold/80 to-icube-gold"
-                initial={{ width: 0 }}
-                animate={{ width: `${progress}%` }}
-                transition={{ duration: 0.2 }}
-                style={{ maxWidth: "100%" }}
-              />
+            <div className="relative w-full max-w-xs">
+              <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
+                <motion.div
+                  className="h-full rounded-full bg-gradient-to-r from-icube-gold/90 to-icube-gold"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${progress}%` }}
+                  transition={{ duration: 0.25 }}
+                  style={{ maxWidth: "100%" }}
+                />
+              </div>
+              <p className="mt-2 text-center text-xs text-gray-400 uppercase tracking-widest font-medium" aria-live="polite">
+                {loading ? "Loading…" : heroReady ? "Ready" : "Preparing…"} {Math.round(progress)}%
+              </p>
             </div>
-            <p className="relative text-xs text-gray-500 uppercase tracking-[0.2em] font-medium" aria-live="polite">
-              {loading ? "Loading…" : "Preparing…"}
-            </p>
           </div>
         </div>
       )}

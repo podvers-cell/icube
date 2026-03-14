@@ -44,17 +44,18 @@ function dashboardKindToCollection(kind: string): string {
   }
 }
 
+/** Read site settings (uses Firestore cache when available for fast loads). */
 async function getSettingsDoc() {
   const ref = doc(requireFirestore(), "site_settings", "main");
   const snap = await getDoc(ref);
   if (!snap.exists()) {
-    // Create empty doc (will require permissive rules or admin)
     await setDoc(ref, { created_at: serverTimestamp() }, { merge: true });
     return {};
   }
   return (snap.data() || {}) as Record<string, string>;
 }
 
+/** List collection (uses Firestore cache when available for fast loads). */
 async function listCollection<T>(name: string) {
   const q = query(collection(requireFirestore(), name), orderBy("sort_order", "asc"));
   const snaps = await getDocs(q);

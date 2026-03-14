@@ -53,20 +53,13 @@ export default function Hero({ onHeroReady }: HeroProps) {
   const router = useRouter();
   const pathname = usePathname();
   const reduceMotion = useReducedMotion();
-  const phrase1 =
-    settings.hero_title_1 || "Premium media & podcast studio crafting cinematic stories for modern brands.";
-  const phrase2 =
-    settings.hero_title_2 || "Dubai‑based production house for creators, podcasts, and brand content.";
-  const phrase3 =
-    settings.hero_title_3 || "From idea to final cut – we produce, record, and amplify your vision.";
-  const phrases = [phrase1, phrase2, phrase3];
-  const subtitle =
-    settings.hero_subtitle ||
-    "ICUBE is a Dubai-based media and podcast studio helping brands, founders, and creators produce cinematic content for the region.";
+  const phrase1 = settings.hero_title_1 ?? "";
+  const phrase2 = settings.hero_title_2 ?? "";
+  const phrase3 = settings.hero_title_3 ?? "";
+  const phrases = [phrase1, phrase2, phrase3].filter(Boolean).length ? [phrase1, phrase2, phrase3] : [""];
+  const subtitle = settings.hero_subtitle ?? "";
   const bgType = settings.hero_bg_type || "image";
-  const bgImage =
-    settings.hero_bg_image_url ||
-    "https://images.unsplash.com/photo-1598550880863-4e8aa3d0edb4?q=80&w=2070&auto=format&fit=crop";
+  const bgImage = settings.hero_bg_image_url?.trim() || "";
   const bgVideo = settings.hero_bg_video_url || "";
   const youtubeEmbed = bgVideo ? getYouTubeEmbedUrl(bgVideo) : null;
 
@@ -168,7 +161,7 @@ export default function Hero({ onHeroReady }: HeroProps) {
               </video>
             </div>
           )
-        ) : (
+        ) : bgImage ? (
           <Image
             src={bgImage}
             alt="Hero Background"
@@ -178,7 +171,7 @@ export default function Hero({ onHeroReady }: HeroProps) {
             className="object-cover object-center opacity-60 scale-105"
             referrerPolicy="no-referrer"
           />
-        )}
+        ) : null}
       </div>
 
       <motion.div
