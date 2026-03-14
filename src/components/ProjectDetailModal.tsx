@@ -18,26 +18,6 @@ interface VimeoPlayer {
   setMuted: (m: boolean) => Promise<void>;
 }
 
-declare global {
-  interface Window {
-    YT: typeof YT;
-    onYouTubeIframeAPIReady: () => void;
-    Vimeo?: { Player: new (el: HTMLIFrameElement) => VimeoPlayer };
-  }
-}
-
-declare const YT: {
-  Player: new (
-    element: string | HTMLElement,
-    config: {
-      videoId: string;
-      playerVars?: Record<string, number | string>;
-      events?: { onReady?: (e: { target: YTPlayer }) => void };
-    }
-  ) => YTPlayer;
-  PlayerState: { PLAYING: number };
-};
-
 interface YTPlayer {
   playVideo: () => void;
   pauseVideo: () => void;
@@ -50,6 +30,19 @@ interface YTPlayer {
   isMuted: () => boolean;
   mute: () => void;
   unMute: () => void;
+}
+
+/** YouTube Iframe API namespace (loaded at runtime). Use getYT() to avoid Window type conflicts. */
+interface YTNamespace {
+  Player: new (
+    element: string | HTMLElement,
+    config: {
+      videoId: string;
+      playerVars?: Record<string, number | string>;
+      events?: { onReady?: (e: { target: YTPlayer }) => void };
+    }
+  ) => YTPlayer;
+  PlayerState: { PLAYING: number };
 }
 
 function formatTime(seconds: number): string {
@@ -161,8 +154,11 @@ export function ProjectDetailModal({
   useEffect(() => {
     if (!embed) return;
     if (embed.provider === "youtube") {
+      const getYT = () => (window as unknown as { YT?: YTNamespace }).YT;
       const loadYT = () => {
+        const YT = getYT();
         if (!ytDivRef.current || !embed || embed.provider !== "youtube") return;
+        if (!YT?.Player) return;
         try {
           const player = new YT.Player(ytDivRef.current, {
             videoId: embed.videoId,
@@ -211,23 +207,24 @@ export function ProjectDetailModal({
           setReady(true);
         }
       };
-      if (window.YT?.Player) {
+      if (getYT()?.Player) {
         loadYT();
         return () => { playerRef.current = null; };
       }
       const script = document.createElement("script");
       script.src = "https://www.youtube.com/iframe_api";
       script.async = true;
-      const prev = window.onYouTubeIframeAPIReady;
-      window.onYouTubeIframeAPIReady = () => { prev?.(); loadYT(); };
+      const win = window as unknown as { onYouTubeIframeAPIReady?: () => void };
+      const prev = win.onYouTubeIframeAPIReady;
+      win.onYouTubeIframeAPIReady = () => { prev?.(); loadYT(); };
       document.head.appendChild(script);
-      return () => { window.onYouTubeIframeAPIReady = prev; playerRef.current = null; };
+      return () => { win.onYouTubeIframeAPIReady = prev; playerRef.current = null; };
     }
     if (embed.provider === "vimeo") {
       const iframe = vimeoIframeRef.current;
       if (!iframe) return;
       const loadVimeo = () => {
-        const Vimeo = (window as unknown as { Vimeo: { Player: new (el: HTMLIFrameElement) => VimeoPlayer } }).Vimeo;
+        const Vimeo = (window as unknown as { Vimeo?: { Player: new (el: HTMLIFrameElement) => VimeoPlayer } }).Vimeo;
         if (!Vimeo?.Player) return;
         const vp = new Vimeo.Player(iframe);
         vimeoPlayerRef.current = vp;
@@ -252,7 +249,7 @@ export function ProjectDetailModal({
         };
         vp.play().then(() => { setIsPlaying(true); setReady(true); });
       };
-      if (window.Vimeo?.Player) {
+      if ((window as unknown as { Vimeo?: { Player: unknown } }).Vimeo?.Player) {
         loadVimeo();
         return () => { playerRef.current = null; vimeoPlayerRef.current = null; };
       }
