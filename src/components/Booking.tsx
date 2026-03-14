@@ -16,11 +16,10 @@ function parseFeatures(s: string): string[] {
   }
 }
 
-/** Parse full number from after-price string (e.g. "399", "1,500 AED", "1500 / session") for checkout when price_aed is 0. */
+/** Parse first number from after-price string (e.g. "399" or "399 / session") for checkout when price_aed is 0. */
 function parsePriceFromAfter(priceAfter: string | undefined): number {
   if (!priceAfter?.trim()) return 0;
-  const normalized = priceAfter.trim().replace(/,/g, "");
-  const match = normalized.match(/^\d+/);
+  const match = priceAfter.trim().match(/^\d+/);
   return match ? parseInt(match[0], 10) : 0;
 }
 
@@ -85,20 +84,22 @@ export default function Booking() {
   return (
     <section
       id="booking"
-      className="py-20 md:py-28 relative overflow-hidden"
+      className="py-28 md:py-32 bg-gradient-to-b from-icube-dark via-icube-gray/70 to-icube-dark/80 relative overflow-hidden"
     >
-      <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
-        {/* Hero: Packages title + subtitle */}
-        <header className="text-center mb-14 md:mb-16">
-          <h1 className="font-display font-bold text-4xl md:text-5xl lg:text-6xl tracking-tight text-white mb-4">
-            Packages
-          </h1>
-          <p className="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto">
-            Transparent pricing for consistent content. Choose a plan or book a custom package tailored to your brand.
-          </p>
-        </header>
+      <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-icube-gold/5 rounded-full blur-[150px] pointer-events-none" />
 
-        {/* Glass pricing cards */}
+      <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
+        <div className="section-header">
+          <div className="section-label-row">
+            <div className="section-label-line" aria-hidden />
+            <span className="section-label">Reserve your spot</span>
+            <div className="section-label-line" aria-hidden />
+          </div>
+          <h2 className="section-title">Book a studio session</h2>
+          <div className="section-header-accent" aria-hidden />
+        </div>
+
+        {/* Pricing cards – reference layout, brand colors, no icons */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 items-start">
           {[...pkgs]
             .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
@@ -108,93 +109,105 @@ export default function Booking() {
               const isMostPopularCard = index === 1;
               const isPremiumCard = index === 2;
               const subtitle = pkg.description?.trim() || pkg.best_for_label?.trim() || null;
-              const showPremium = isPremiumCard;
-              const showMostPopular = Boolean(isPopular && !showPremium);
               return (
                 <div
                   key={pkg.id}
-                  className={`group relative flex flex-col rounded-2xl border transition-all duration-300 ease-out
-                    backdrop-blur-xl bg-white/[0.06] border-white/10
-                    shadow-[0_8px_32px_rgba(0,0,0,0.25),0_0_0_1px_rgba(255,255,255,0.06)]
-                    hover:bg-white/[0.09] hover:border-white/20 hover:shadow-[0_12px_48px_rgba(0,0,0,0.3),0_0_0_1px_rgba(255,255,255,0.1),0_0_40px_rgba(212,175,55,0.06)]
-                    ${showMostPopular || showPremium ? "ring-1 ring-icube-gold/30 shadow-[0_0_0_1px_rgba(212,175,55,0.15)] hover:ring-icube-gold/50 hover:shadow-[0_0_0_1px_rgba(212,175,55,0.25),0_0_50px_rgba(212,175,55,0.08)]" : ""}`}
+                  className={`group relative flex flex-col rounded-2xl border transition-shadow duration-300 ease-out ${
+                    isPremiumCard
+                      ? "bg-gradient-to-b from-icube-gold/15 to-icube-gold/5 border-icube-gold/60 shadow-[0_0_0_1px_rgba(212,175,55,0.3),0_16px_48px_rgba(0,0,0,0.4),0_0_60px_rgba(212,175,55,0.12)] hover:shadow-[0_0_0_1px_rgba(212,175,55,0.4),0_20px_56px_rgba(0,0,0,0.45),0_0_80px_rgba(212,175,55,0.15)] hover:border-icube-gold/80"
+                      : isMostPopularCard
+                        ? "bg-white/12 border-icube-gold/45 shadow-[0_0_0_2px_rgba(212,175,55,0.2),0_14px_44px_rgba(0,0,0,0.38)] hover:shadow-[0_0_0_2px_rgba(212,175,55,0.3),0_18px_52px_rgba(0,0,0,0.42)] ring-2 ring-icube-gold/20 hover:ring-icube-gold/30"
+                        : isPopular
+                          ? "bg-white/10 border-icube-gold/50 shadow-[0_12px_40px_rgba(0,0,0,0.4),0_0_0_1px_rgba(212,175,55,0.25)] hover:shadow-[0_16px_48px_rgba(0,0,0,0.45),0_0_0_1px_rgba(212,175,55,0.35)]"
+                          : "bg-white/[0.06] border-white/15 shadow-[0_12px_40px_rgba(0,0,0,0.3)] hover:bg-white/[0.08] hover:border-white/25 hover:shadow-[0_16px_48px_rgba(0,0,0,0.35)]"
+                  }`}
                 >
-                  {/* MOST POPULAR / Premium pill – top center */}
-                  {showPremium && (
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center bg-icube-gold text-icube-dark text-[10px] font-semibold uppercase tracking-[0.2em] py-1.5 px-4 rounded-full shadow-lg">
+                  {isPremiumCard && (
+                    <div className="absolute top-0 right-0 flex items-center justify-center bg-icube-gold/95 text-icube-dark text-[11px] font-semibold uppercase tracking-[0.2em] py-2 px-5 rounded-bl-xl rounded-tr-sm shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
                       Premium
                     </div>
                   )}
-                  {showMostPopular && !showPremium && (
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center bg-white/95 text-icube-dark text-[10px] font-semibold uppercase tracking-[0.2em] py-1.5 px-4 rounded-full shadow-lg border border-white/20">
+                  {isMostPopularCard && (
+                    <div className="absolute top-0 right-0 flex items-center justify-center bg-icube-gold/95 text-icube-dark text-[11px] font-semibold uppercase tracking-[0.2em] py-2 px-5 rounded-bl-xl rounded-tr-sm shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
                       Most Popular
                     </div>
                   )}
+                  {isPopular && !isPremiumCard && !isMostPopularCard ? (
+                    <div className="absolute top-0 right-0 flex items-center justify-center bg-icube-gold/95 text-icube-dark text-[11px] font-semibold uppercase tracking-[0.2em] py-2 px-4 rounded-bl-xl rounded-tr-sm shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
+                      Most Popular
+                    </div>
+                  ) : null}
 
-                  <div className="p-8 flex flex-col flex-1">
+                  <div className="p-8 flex flex-col">
+                    {/* Header: title + subtitle */}
                     <div className="mb-5">
-                      <h3 className="text-2xl font-display font-bold tracking-tight text-white">
+                      <h3 className={`text-2xl font-display font-bold tracking-tight pr-20 ${isPremiumCard ? "text-white drop-shadow-sm" : "text-white"}`}>
                         {pkg.name}
                       </h3>
                       {subtitle && (
-                        <p className="mt-2 text-sm leading-relaxed text-gray-400 group-hover:text-gray-300 transition-colors">
+                        <p className={`mt-2 text-sm leading-relaxed max-w-sm ${isPremiumCard ? "text-icube-gold/90" : isMostPopularCard ? "text-gray-300" : "text-gray-400"}`}>
                           {subtitle}
                         </p>
                       )}
                     </div>
 
                     {/* Price */}
-                    <div className="mb-6 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                    <div className="mb-6 flex flex-wrap items-baseline gap-x-3 gap-y-1">
                       {pkg.price_before_aed != null && pkg.price_before_aed > 0 && (
                         <span className="text-gray-500 text-sm line-through">{pkg.price_before_aed} AED</span>
                       )}
                       <span className="inline-flex items-baseline gap-1.5">
-                        <span className="text-3xl md:text-4xl font-display font-bold text-white tracking-tight">
-                          {pkg.price_aed > 0 ? pkg.price_aed.toLocaleString() : (pkg.price_after?.trim() || "—")}
+                        <span className="text-4xl md:text-5xl font-display font-bold text-white tracking-tight">
+                          {pkg.price_aed > 0 ? pkg.price_aed : (pkg.price_after?.trim() || "—")}
                         </span>
-                        <span className="text-sm font-medium text-icube-gold/90">AED</span>
+                        <span className={`text-sm font-medium uppercase tracking-wider ${isPremiumCard ? "text-icube-gold" : isMostPopularCard ? "text-icube-gold" : "text-icube-gold/90"}`}>
+                          AED
+                        </span>
                       </span>
                       {pkg.price_aed > 0 && (
                         <span className="text-gray-500 text-sm">{pkg.price_after?.trim() || "/ session"}</span>
                       )}
                     </div>
 
-                    {/* Features – checkmarks تضىء عند التمرير */}
-                    <ul className="flex-1 pt-6 space-y-3.5 border-t border-white/10">
-                      {features.map((feature, j) => (
-                        <li key={j} className="flex items-start gap-3 text-sm leading-relaxed">
-                          <CheckCircle2
-                            size={20}
-                            className="shrink-0 mt-0.5 flex-shrink-0 text-gray-500 transition-all duration-300 group-hover:text-icube-gold group-hover:drop-shadow-[0_0_8px_rgba(212,175,55,0.5)]"
-                            strokeWidth={2}
-                          />
-                          <span className="text-gray-400 group-hover:text-gray-300 transition-colors">{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-
-                    {/* CTA – أسفل البطاقة */}
+                    {/* CTA */}
                     <button
                       type="button"
                       onClick={() => handlePackageSelect(pkg)}
-                      className="w-full mt-6 py-3.5 rounded-xl font-semibold text-sm uppercase tracking-wider transition-all duration-300
-                        bg-black/50 text-white border border-white/20 hover:bg-icube-gold hover:text-icube-dark hover:border-icube-gold hover:shadow-[0_0_20px_rgba(212,175,55,0.25)]"
+                      className={`w-full py-4 rounded-xl font-semibold text-sm uppercase tracking-wider transition-all duration-300 ${
+                        isPremiumCard
+                          ? "bg-icube-gold text-icube-dark hover:bg-icube-gold-light shadow-[0_4px_24px_rgba(212,175,55,0.4)] hover:shadow-[0_6px_32px_rgba(212,175,55,0.5)]"
+                          : isMostPopularCard
+                            ? "bg-icube-dark text-white hover:bg-icube-dark/90 shadow-lg hover:shadow-xl ring-2 ring-icube-gold/40 hover:ring-icube-gold/60"
+                            : isPopular
+                              ? "bg-icube-dark text-white hover:bg-icube-dark/90 shadow-lg hover:shadow-xl"
+                              : "bg-white/10 text-white border border-white/20 hover:bg-white/15 hover:border-icube-gold/40 hover:text-icube-gold/90"
+                      }`}
                     >
-                      Choose Package
+                      Select this package
                     </button>
+
+                    {/* Features */}
+                    <ul className={`mt-6 pt-6 space-y-3.5 ${isPremiumCard ? "border-t border-icube-gold/30" : isMostPopularCard ? "border-t border-icube-gold/20" : "border-t border-white/10"}`}>
+                      {features.map((feature, j) => (
+                        <li key={j} className="flex items-start gap-3 text-sm leading-relaxed">
+                          <CheckCircle2 size={18} className="text-icube-gold shrink-0 mt-0.5 flex-shrink-0" />
+                          <span className={isPremiumCard ? "text-gray-300" : isMostPopularCard ? "text-gray-300" : "text-gray-400"}>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 </div>
               );
             })}
         </div>
 
-        <p className="mt-8 text-center text-gray-500 text-sm">
+        <p className="mt-6 text-center text-gray-500 text-sm">
           Prices in AED. Contact us for custom or multi-session quotes.
         </p>
 
         <div
           id="custom-booking-form"
-          className="mt-20 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-xl p-8 md:p-12 shadow-[0_12px_40px_rgba(0,0,0,0.25),0_0_0_1px_rgba(255,255,255,0.05)]"
+          className="mt-20 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-sm p-8 md:p-12 shadow-[0_12px_40px_rgba(0,0,0,0.3)]"
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <div>

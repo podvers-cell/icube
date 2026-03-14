@@ -3,14 +3,13 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronRight } from "lucide-react";
+import { Play, ChevronRight } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useSiteData } from "../SiteDataContext";
 import { useSwipeCarousel } from "../hooks/useSwipeCarousel";
 import { useContactModal } from "../ContactModalContext";
 import { getVideoEmbed } from "../lib/videoEmbed";
-import { ProjectDetailModal } from "./ProjectDetailModal";
-import { PlayPulseOverlay } from "./PlayPulseOverlay";
+import { VideoPlayerModal } from "./VideoPlayerModal";
 import AnimatedStaggerItem from "./AnimatedStaggerItem";
 import { AnimatedSectionHeader } from "./ScrollReveal";
 
@@ -154,19 +153,18 @@ export default function Portfolio({ limit, sectionLabel = "Selected work", title
         )}
       </div>
 
-      <AnimatePresence mode="wait">
-        {playingProject && (() => {
+      {playingProject && (() => {
           const embed = playingProject.video_url ? getVideoEmbed(playingProject.video_url) : null;
-          return embed ? (
-            <ProjectDetailModal
+          if (!embed) return null;
+          return (
+            <VideoPlayerModal
               key={playingProject.id}
-              project={playingProject as Parameters<typeof ProjectDetailModal>[0]["project"]}
               embed={embed}
+              title={playingProject.title}
               onClose={() => setPlayingProject(null)}
             />
-          ) : null;
+          );
         })()}
-      </AnimatePresence>
     </section>
   );
 }
@@ -217,13 +215,16 @@ function BentoFeaturedCard({ project, setPlayingProject }: { project: Project; s
             alt={project.title}
             fill
             sizes="(max-width: 1024px) 100vw, 66vw"
-            className="object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-[2px]"
+            className="object-cover transition-transform duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] group-hover:scale-[1.06]"
             style={{ transformOrigin: "center center" }}
             referrerPolicy="no-referrer"
           />
         </div>
-        <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors" />
-        {hasVideo && <PlayPulseOverlay className="z-20" />}
+        <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+          <div className="rounded-full flex items-center justify-center w-14 h-14 lg:w-16 lg:h-16 bg-icube-gold/25 border border-icube-gold/50 shadow-[0_0_24px_rgba(212,175,55,0.4)] opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300">
+            <Play size={28} className="text-white ml-1" />
+          </div>
+        </div>
       </div>
     </motion.div>
   );
@@ -256,13 +257,16 @@ function BentoSmallCard({ project, setPlayingProject }: { project: Project; setP
             alt={project.title}
             fill
             sizes="(max-width: 1024px) 100vw, 33vw"
-            className="object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-[2px]"
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
             style={{ transformOrigin: "center center" }}
             referrerPolicy="no-referrer"
           />
         </div>
-        <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors" />
-        {hasVideo && <PlayPulseOverlay className="z-20" />}
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+          <div className="rounded-full w-12 h-12 flex items-center justify-center bg-icube-gold/25 border border-icube-gold/40">
+            <Play size={22} className="text-white ml-0.5" />
+          </div>
+        </div>
       </div>
     </motion.div>
   );
@@ -306,13 +310,17 @@ function PortfolioCard({
             alt={project.title}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            className="object-cover transition-all duration-500 group-hover:scale-110 group-hover:blur-[2px]"
-            style={{ transformOrigin: "center center" }}
+            className={`object-cover transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${enhanced ? "group-hover:scale-[1.08]" : "group-hover:scale-105"}`}
+            style={enhanced ? { transformOrigin: "center center" } : undefined}
             referrerPolicy="no-referrer"
           />
         </div>
-        <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors duration-300 pointer-events-none" />
-        {hasVideo && <PlayPulseOverlay className="z-20" />}
+        <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300 pointer-events-none" />
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] pointer-events-none">
+          <div className={`rounded-full flex items-center justify-center border shadow-[0_0_28px_rgba(212,175,55,0.5),0_0_56px_rgba(212,175,55,0.25)] ${enhanced ? "w-24 h-24 bg-icube-gold/20 border-icube-gold/50" : "w-20 h-20 bg-white/15 border-white/30"}`}>
+            <Play size={enhanced ? 36 : 32} className="text-white ml-1" />
+          </div>
+        </div>
       </div>
     </motion.div>
     </div>

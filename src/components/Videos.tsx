@@ -1,26 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { Play } from "lucide-react";
 import { useSiteData } from "../SiteDataContext";
 import { getVideoEmbed } from "../lib/videoEmbed";
-import { ProjectDetailModal } from "./ProjectDetailModal";
-import { PlayPulseOverlay } from "./PlayPulseOverlay";
+import { VideoPlayerModal } from "./VideoPlayerModal";
 import AnimatedStaggerItem from "./AnimatedStaggerItem";
 import { AnimatedSectionHeader } from "./ScrollReveal";
-import type { ProjectDetail } from "./ProjectDetailModal";
 
 type Video = { id: string; title: string; url: string; sort_order: number };
-
-function videoToProject(v: Video): ProjectDetail {
-  return {
-    id: v.id,
-    title: v.title,
-    category: "Video",
-    image_url: "",
-    sort_order: v.sort_order,
-    video_url: v.url,
-  };
-}
 
 export default function Videos() {
   const { videos } = useSiteData();
@@ -60,7 +48,9 @@ export default function Videos() {
                   {embed ? (
                     <>
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-black/20 opacity-70 group-hover:opacity-90 transition-opacity" />
-                      <PlayPulseOverlay className="z-10" />
+                      <div className="relative z-10 w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform bg-white/15 border border-white/30 shadow-[0_0_24px_rgba(212,175,55,0.45),0_0_48px_rgba(212,175,55,0.2)]">
+                        <Play size={26} className="text-white ml-1 md:ml-1" fill="currentColor" />
+                      </div>
                     </>
                   ) : (
                     <span className="text-gray-500 text-sm">Unsupported link</span>
@@ -83,10 +73,10 @@ export default function Videos() {
           const embed = getVideoEmbed(playing.url);
           if (!embed) return null;
           return (
-            <ProjectDetailModal
+            <VideoPlayerModal
               key={playing.id}
-              project={videoToProject(playing)}
               embed={embed}
+              title={playing.title}
               onClose={() => setPlaying(null)}
             />
           );

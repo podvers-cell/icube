@@ -8,7 +8,6 @@ import { ThemeProvider } from "@/ThemeContext";
 import { ToastProvider } from "@/ToastContext";
 import MaintenanceGate from "@/components/MaintenanceGate";
 import CookieConsent from "@/components/CookieConsent";
-import CustomCursorGate from "@/components/CustomCursorGate";
 
 export function ClientProviders({ children }: { children: React.ReactNode }) {
   return (
@@ -20,7 +19,6 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
               <ToastProvider>
                 <ContactModalProvider>
                   {children}
-                  <CustomCursorGate />
                   <CookieConsent />
                 </ContactModalProvider>
               </ToastProvider>

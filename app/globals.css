@@ -88,69 +88,6 @@ body,
   background: var(--color-icube-gold);
 }
 
-/* Featured work: لوب متواصل من اليمين لليسار (أون هوف يتوقف) */
-@keyframes works-marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-.works-marquee-track {
-  animation: works-marquee 28s linear infinite;
-}
-@media (prefers-reduced-motion: reduce) {
-  .works-marquee-track { animation: none; }
-}
-
-/* Custom cursor: hide default when active (public site only) */
-html.custom-cursor-active .site-wrapper,
-html.custom-cursor-active .site-wrapper * {
-  cursor: none !important;
-}
-
-/* Glass & glow – site-wide */
-@keyframes glow-pulse {
-  0%, 100% { opacity: 0.45; }
-  50% { opacity: 0.7; }
-}
-.glow-orb-pulse {
-  animation: glow-pulse 8s ease-in-out infinite;
-}
-.glow-orb-pulse-slow {
-  animation: glow-pulse 10s ease-in-out infinite;
-  animation-delay: 1s;
-}
-.glow-orb-pulse-slower {
-  animation: glow-pulse 12s ease-in-out infinite;
-  animation-delay: 0.5s;
-}
-.site-wrapper .glass-panel {
-  background: rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.03), 0 0 60px rgba(212, 175, 55, 0.04);
-}
-.site-wrapper .glass-panel-strong {
-  background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.05), 0 0 80px rgba(212, 175, 55, 0.06);
-}
-.site-wrapper .glow-soft {
-  box-shadow: 0 0 40px rgba(212, 175, 55, 0.06), 0 0 80px rgba(212, 175, 55, 0.03);
-}
-.site-wrapper .card-flip,
-.site-wrapper .studio-card,
-.site-wrapper [class*="rounded-2xl"].border {
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.05), 0 0 40px rgba(212, 175, 55, 0.04);
-}
-.site-wrapper .card-flip:hover,
-.site-wrapper .studio-card:hover {
-  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(212, 175, 55, 0.12), 0 0 60px rgba(212, 175, 55, 0.08);
-}
-
 a:focus-visible,
 button:focus-visible,
 input:focus-visible,
@@ -270,7 +207,6 @@ a:focus-visible {
 }
 .section-divider-line {
   animation: section-divider-shimmer 3s ease-in-out infinite;
-  box-shadow: 0 0 20px rgba(212, 175, 55, 0.15);
 }
 @media (prefers-reduced-motion: reduce) {
   .section-divider-line { animation: none; }

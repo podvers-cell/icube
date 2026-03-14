@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useLayoutEffect, useState, useCallback } from "react";
 import { ArrowUp } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
+import { motion } from "motion/react";
 import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
 import Services from "./components/Services";
@@ -19,12 +19,12 @@ import ScrollReveal from "./components/ScrollReveal";
 import { useSiteData } from "./SiteDataContext";
 
 const WHATSAPP_URL = "https://wa.me/971589965005";
-const SESSION_LOADED_KEY = "icube-session-loaded";
+const SPLASH_STORAGE_KEY = "icube-splash-shown";
 
-/** Show splash only on first load in this session; not when navigating between pages. */
-function shouldShowSplashOnMount(): boolean {
+/** Only show splash on the very first visit (persisted in localStorage). */
+function getInitialShowSplash(): boolean {
   if (typeof window === "undefined") return true;
-  return sessionStorage.getItem(SESSION_LOADED_KEY) !== "1";
+  return localStorage.getItem(SPLASH_STORAGE_KEY) !== "1";
 }
 
 /** Hash from URL (works in both Vite and Next.js; no react-router dependency). */
@@ -44,8 +44,8 @@ function useHash() {
 export default function PublicSite() {
   const { loading, error, refresh } = useSiteData();
   const hash = useHash();
-  const [mounted, setMounted] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
+  const [splashChecked, setSplashChecked] = useState(false);
   const [progress, setProgress] = useState(0);
   const [heroReady, setHeroReady] = useState(false);
   const [showWhatsAppBubble, setShowWhatsAppBubble] = useState(true);
@@ -53,72 +53,48 @@ export default function PublicSite() {
 
   const onHeroReady = useCallback(() => setHeroReady(true), []);
 
-  // After client mount: read session so we don't show splash when navigating between pages
-  useEffect(() => {
-    setMounted(true);
-    if (sessionStorage.getItem(SESSION_LOADED_KEY) === "1") {
-      setShowSplash(false);
-    }
+  // Before paint: if user already saw splash in a previous visit, don't show it (navigation/return)
+  useLayoutEffect(() => {
+    if (!getInitialShowSplash()) setShowSplash(false);
+    setSplashChecked(true);
   }, []);
 
-  // Progress bar: animate only after mount (avoids hydration issues that can freeze at 0%)
+  // Animate progress bar while data is loading (only when splash is actually shown)
   useEffect(() => {
-    if (!mounted || !showSplash) return;
-    const timer = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 90) return prev;
-        return Math.min(90, prev + (90 - prev) * 0.06);
-      });
-    }, 80);
-    return () => clearInterval(timer);
-  }, [mounted, showSplash]);
+    if (!showSplash || !splashChecked) return;
+    let timer: number | undefined;
+    if (loading) {
+      const tick = () => {
+        setProgress((prev) => {
+          if (prev >= 88) return prev;
+          const next = prev + (88 - prev) * 0.08;
+          return next;
+        });
+        timer = window.setTimeout(tick, 120);
+      };
+      tick();
+    }
+    return () => {
+      if (timer) window.clearTimeout(timer);
+    };
+  }, [loading, showSplash, splashChecked]);
 
-  // When data and hero are ready: complete bar, mark session as loaded, then hide splash
+  // When data and hero (including video) are ready, finish bar and hide splash (first visit only)
   useEffect(() => {
-    if (!mounted || !showSplash) return;
+    if (!showSplash || !splashChecked) return;
     if (!loading && heroReady) {
       setProgress(100);
       const timeout = window.setTimeout(() => {
+        setShowSplash(false);
         try {
-          sessionStorage.setItem(SESSION_LOADED_KEY, "1");
+          localStorage.setItem(SPLASH_STORAGE_KEY, "1");
         } catch {
           // ignore
         }
-        setShowSplash(false);
-      }, 350);
+      }, 400);
       return () => window.clearTimeout(timeout);
     }
-  }, [mounted, loading, heroReady, showSplash]);
-
-  // Fallback: if data is ready but Hero didn't call onHeroReady within 2s, hide splash anyway
-  useEffect(() => {
-    if (!mounted || !showSplash || loading) return;
-    const fallback = window.setTimeout(() => {
-      setProgress(100);
-      try {
-        sessionStorage.setItem(SESSION_LOADED_KEY, "1");
-      } catch {
-        // ignore
-      }
-      setShowSplash(false);
-    }, 2000);
-    return () => window.clearTimeout(fallback);
-  }, [mounted, showSplash, loading]);
-
-  // Fallback: never block more than 8s (e.g. network error)
-  useEffect(() => {
-    if (!mounted || !showSplash) return;
-    const maxWait = window.setTimeout(() => {
-      setProgress(100);
-      try {
-        sessionStorage.setItem(SESSION_LOADED_KEY, "1");
-      } catch {
-        // ignore
-      }
-      setShowSplash(false);
-    }, 8000);
-    return () => window.clearTimeout(maxWait);
-  }, [mounted, showSplash]);
+  }, [loading, heroReady, showSplash, splashChecked]);
 
   // When coming from another page (e.g. portfolio) and clicking studio: scroll to section after home loads
   useEffect(() => {
@@ -153,15 +129,7 @@ export default function PublicSite() {
   }, []);
 
   const mainContent = (
-    <div className="site-wrapper relative min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray/95 to-[#0d0f18] text-white selection:bg-icube-gold selection:text-icube-dark transition-colors duration-300 overflow-hidden">
-      {/* Fixed glowing orbs – background atmosphere */}
-      <div className="fixed inset-0 pointer-events-none z-0" aria-hidden>
-        <div className="absolute top-[10%] left-[10%] w-[min(80vw,600px)] h-[min(80vw,600px)] rounded-full bg-icube-gold/15 blur-[120px] glow-orb-pulse" />
-        <div className="absolute top-[40%] right-[5%] w-[min(60vw,450px)] h-[min(60vw,450px)] rounded-full bg-white/[0.06] blur-[100px] glow-orb-pulse-slow" />
-        <div className="absolute bottom-[20%] left-[20%] w-[min(50vw,400px)] h-[min(50vw,400px)] rounded-full bg-icube-gold/10 blur-[100px] glow-orb-pulse-slower" />
-        <div className="absolute top-[60%] right-[25%] w-[min(40vw,320px)] h-[min(40vw,320px)] rounded-full bg-white/[0.04] blur-[80px]" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[min(100vw,900px)] h-[500px] rounded-full bg-icube-gold/8 blur-[150px] -translate-y-1/2 glow-orb-pulse" />
-      </div>
+    <div className="site-wrapper min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray to-[#111521] text-white selection:bg-icube-gold selection:text-icube-dark transition-colors duration-300">
       <a
         href="#main-content"
         className="fixed left-4 top-4 z-[100] -translate-y-[200%] rounded-md bg-icube-gold px-4 py-2 text-sm font-semibold text-icube-dark shadow-lg transition-transform focus:translate-y-0 focus:outline-none focus:ring-2 focus:ring-icube-dark focus:ring-offset-2 focus:ring-offset-icube-dark"
@@ -300,110 +268,33 @@ export default function PublicSite() {
   return (
     <>
       {mainContent}
-      <AnimatePresence mode="wait">
-        {showSplash && (
-          <motion.div
-            key="splash"
-          className="fixed inset-0 z-[200] flex flex-col items-center justify-center text-white overflow-hidden"
-          initial={false}
-          exit={{ opacity: 0, transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] } }}
-        >
-          {/* Dark gradient background with subtle vignette */}
-          <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0c] via-icube-dark to-[#050506]" aria-hidden />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,rgba(212,175,55,0.08)_0%,transparent_50%)]" aria-hidden />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_100%_100%_at_50%_100%,rgba(0,0,0,0.6)_0%,transparent_50%)]" aria-hidden />
-
-          {/* Animated gold orbs */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
-            <motion.div
-              className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-icube-gold/10 blur-[80px]"
-              animate={{ x: [0, 30, 0], y: [0, -20, 0] }}
-              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+      {showSplash && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-icube-dark text-white overflow-hidden">
+          <div className="relative flex flex-col items-center gap-8">
+            <div className="absolute inset-0 blur-3xl bg-icube-gold/15 rounded-full scale-150 pointer-events-none" aria-hidden />
+            <motion.img
+              src="/icube-logo.svg"
+              alt="ICUBE Media Studio"
+              className="relative h-24 w-auto drop-shadow-[0_0_24px_rgba(201,162,39,0.15)]"
+              initial={{ opacity: 0.6 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, repeat: Infinity, repeatType: "reverse", repeatDelay: 0.8 }}
             />
-            <motion.div
-              className="absolute bottom-1/3 right-1/4 w-48 h-48 rounded-full bg-icube-gold/8 blur-[60px]"
-              animate={{ x: [0, -25, 0], y: [0, 15, 0] }}
-              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-            />
-          </div>
-
-          {/* Content */}
-          <div className="relative flex flex-col items-center gap-12 w-full max-w-md px-8">
-            {/* Logo with cinematic reveal */}
-            <motion.div
-              className="relative"
-              initial={{ opacity: 0, scale: 0.92, filter: "blur(8px)" }}
-              animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-              transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
-            >
-              <motion.img
-                src="/icube-logo.svg"
-                alt="ICUBE Media Studio"
-                className="relative h-32 w-auto drop-shadow-[0_0_40px_rgba(212,175,55,0.25)]"
-                animate={{
-                  filter: [
-                    "drop-shadow(0 0 40px rgba(212,175,55,0.25))",
-                    "drop-shadow(0 0 56px rgba(212,175,55,0.35))",
-                    "drop-shadow(0 0 40px rgba(212,175,55,0.25))",
-                  ],
-                }}
-                transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-              />
-              <div className="absolute -inset-4 bg-icube-gold/5 rounded-full blur-2xl -z-10" aria-hidden />
-            </motion.div>
-
-            {/* Tagline */}
-            <motion.p
-              className="relative text-xs uppercase tracking-[0.35em] text-gray-500 font-medium"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.5 }}
-            >
-              Premium Media & Production
-            </motion.p>
-
-            {/* Creative progress: line that "draws" with glow */}
-            <div className="relative w-full max-w-xs">
-              <div className="h-px w-full rounded-full bg-white/5 overflow-visible" aria-hidden />
+            <div className="relative w-56 h-0.5 rounded-full bg-white/5 overflow-hidden">
               <motion.div
-                className="absolute left-0 top-0 h-[2px] rounded-full bg-gradient-to-r from-icube-gold/70 via-icube-gold to-icube-gold/70 shadow-[0_0_12px_rgba(212,175,55,0.5)]"
+                className="h-full bg-gradient-to-r from-icube-gold/80 to-icube-gold"
                 initial={{ width: 0 }}
                 animate={{ width: `${progress}%` }}
                 transition={{ duration: 0.2 }}
-                style={{ maxWidth: "100%", boxShadow: "0 0 20px rgba(212,175,55,0.4)" }}
+                style={{ maxWidth: "100%" }}
               />
-              <motion.div
-                className="absolute top-1/2 -translate-y-1/2 h-1.5 w-1.5 rounded-full bg-icube-gold shadow-[0_0_8px_rgba(212,175,55,0.8)]"
-                style={{ left: `${Math.min(progress, 100)}%`, marginLeft: -3 }}
-                animate={{ opacity: [0.9, 1, 0.9] }}
-                transition={{ duration: 0.5, repeat: Infinity }}
-              />
-              <p className="mt-4 text-center text-[11px] text-gray-500 uppercase tracking-[0.2em] font-medium" aria-live="polite">
-                {loading ? "Loading experience…" : heroReady ? "Ready" : "Preparing…"} <span className="text-icube-gold/90">{Math.round(progress)}%</span>
-              </p>
             </div>
-
-            {/* Minimal film strip accent */}
-            <motion.div
-              className="absolute bottom-8 left-0 right-0 flex justify-center gap-1 opacity-30"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.3 }}
-              transition={{ delay: 0.6 }}
-              aria-hidden
-            >
-              {[1, 2, 3, 4, 5].map((i) => (
-                <motion.div
-                  key={i}
-                  className="w-1 h-8 rounded-sm bg-icube-gold/40"
-                  animate={{ opacity: [0.3, 0.6, 0.3] }}
-                  transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.15 }}
-                />
-              ))}
-            </motion.div>
+            <p className="relative text-xs text-gray-500 uppercase tracking-[0.2em] font-medium" aria-live="polite">
+              {loading ? "Loading…" : "Preparing…"}
+            </p>
           </div>
-        </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
     </>
   );
 }
