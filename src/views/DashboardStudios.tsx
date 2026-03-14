@@ -47,6 +47,52 @@ function textToImages(text: string) {
     .map((image_url) => ({ image_url }));
 }
 
+/** Card image: use Cover Image, fallback to Hero GIF, then placeholder. On load error, try fallback. */
+function StudioCardImage({
+  coverImageUrl,
+  heroGifUrl,
+  name,
+}: {
+  coverImageUrl: string;
+  heroGifUrl?: string;
+  name: string;
+}) {
+  const primary = (coverImageUrl?.trim() || heroGifUrl?.trim()) || "";
+  const fallback = coverImageUrl?.trim() && heroGifUrl?.trim() ? heroGifUrl.trim() : "";
+  const [src, setSrc] = useState(primary);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    const p = (coverImageUrl?.trim() || heroGifUrl?.trim()) || "";
+    setSrc(p);
+    setFailed(false);
+  }, [coverImageUrl, heroGifUrl]);
+
+  const handleError = () => {
+    if (!failed && fallback && src !== fallback) {
+      setSrc(fallback);
+      setFailed(true);
+    }
+  };
+
+  if (!primary) {
+    return (
+      <div className="w-full h-40 bg-white/5 flex items-center justify-center text-white/30">
+        <span className="text-sm">No image</span>
+      </div>
+    );
+  }
+  return (
+    <img
+      src={src}
+      alt={name}
+      className="w-full h-40 object-cover"
+      referrerPolicy="no-referrer"
+      onError={handleError}
+    />
+  );
+}
+
 export default function DashboardStudios() {
   const [list, setList] = useState<Studio[]>([]);
   const [editing, setEditing] = useState<(Studio & { imagesText: string }) | null>(null);
@@ -157,37 +203,41 @@ export default function DashboardStudios() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {sorted.map((s) => (
           <div key={s.id} className="bg-icube-gray border border-white/10 rounded-sm overflow-hidden">
-            <img src={s.cover_image_url} alt={s.name} className="w-full h-40 object-cover" referrerPolicy="no-referrer" />
-              <div className="p-4">
-                <p className="font-semibold text-white">{s.name}</p>
-                <p className="text-gray-500 text-sm line-clamp-2">{s.short_description}</p>
-                <div className="mt-2 flex items-baseline gap-2">
-                  {s.price_aed_per_hour_before ? (
-                    <span className="text-gray-500 text-xs line-through">
-                      {s.price_aed_per_hour_before} AED/hr
-                    </span>
-                  ) : null}
-                  <span className="text-icube-gold text-sm font-semibold">{s.price_aed_per_hour} AED/hr</span>
-                </div>
-                <div className="flex gap-2 mt-3 justify-end">
-                  <button
-                    type="button"
-                    onClick={() => openEdit(s)}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/5 border border-white/15 text-gray-300 hover:border-icube-gold hover:text-icube-gold transition-colors"
-                    aria-label="Edit studio"
-                  >
-                    <Pencil size={15} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => remove(s.id)}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-red-500/5 border border-red-500/30 text-red-400 hover:bg-red-500/15 transition-colors"
-                    aria-label="Delete studio"
-                  >
-                    <Trash2 size={15} />
-                  </button>
-                </div>
+            <StudioCardImage
+              coverImageUrl={s.cover_image_url}
+              heroGifUrl={s.hero_gif_url}
+              name={s.name}
+            />
+            <div className="p-4">
+              <p className="font-semibold text-white">{s.name}</p>
+              <p className="text-gray-500 text-sm line-clamp-2">{s.short_description}</p>
+              <div className="mt-2 flex items-baseline gap-2">
+                {s.price_aed_per_hour_before ? (
+                  <span className="text-gray-500 text-xs line-through">
+                    {s.price_aed_per_hour_before} AED/hr
+                  </span>
+                ) : null}
+                <span className="text-icube-gold text-sm font-semibold">{s.price_aed_per_hour} AED/hr</span>
               </div>
+              <div className="flex gap-2 mt-3 justify-end">
+                <button
+                  type="button"
+                  onClick={() => openEdit(s)}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/5 border border-white/15 text-gray-300 hover:border-icube-gold hover:text-icube-gold transition-colors"
+                  aria-label="Edit studio"
+                >
+                  <Pencil size={15} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => remove(s.id)}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-red-500/5 border border-red-500/30 text-red-400 hover:bg-red-500/15 transition-colors"
+                  aria-label="Delete studio"
+                >
+                  <Trash2 size={15} />
+                </button>
+              </div>
+            </div>
           </div>
         ))}
       </div>

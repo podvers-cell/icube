@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -46,7 +46,26 @@ export default function Studio() {
     isPriority?: boolean;
   }) {
     const s = studio;
-    const useNextImage = isOptimizedImageUrl(s.cover_image_url);
+    const cover = s.cover_image_url?.trim() || "";
+    const heroGif = (s as { hero_gif_url?: string }).hero_gif_url?.trim() || "";
+    const primaryUrl = cover || heroGif;
+    const fallbackUrl = cover && heroGif ? heroGif : "";
+    const [cardImageUrl, setCardImageUrl] = useState(primaryUrl);
+    const [imgFailed, setImgFailed] = useState(false);
+
+    useEffect(() => {
+      setCardImageUrl(cover || heroGif);
+      setImgFailed(false);
+    }, [cover, heroGif]);
+
+    const onImageError = useCallback(() => {
+      if (!imgFailed && fallbackUrl && cardImageUrl !== fallbackUrl) {
+        setCardImageUrl(fallbackUrl);
+        setImgFailed(true);
+      }
+    }, [imgFailed, fallbackUrl, cardImageUrl]);
+
+    const useNextImage = cardImageUrl && isOptimizedImageUrl(cardImageUrl);
     return (
       <div className="w-[85%] md:w-full mx-auto">
       <article className="studio-card flex flex-col rounded-2xl border border-white/10 bg-white/[0.06] overflow-hidden transition-all duration-300">
@@ -54,25 +73,31 @@ export default function Studio() {
           href={`/studio/${s.id}`}
           className="relative block w-full aspect-[4/3] overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-icube-gold focus-visible:ring-offset-2 focus-visible:ring-offset-icube-dark"
         >
-          {useNextImage ? (
+          {!cardImageUrl ? (
+            <div className="w-full h-full bg-white/5 flex items-center justify-center text-white/40 text-sm">
+              No image
+            </div>
+          ) : useNextImage ? (
             <Image
-              src={s.cover_image_url}
+              src={cardImageUrl}
               alt={s.name}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               className="object-cover hover:scale-105 transition-transform duration-500 ease-out"
               priority={isPriority}
               loading={isPriority ? undefined : "lazy"}
+              onError={onImageError}
             />
           ) : (
             <img
-              src={s.cover_image_url}
+              src={cardImageUrl}
               alt={s.name}
               className="w-full h-full object-cover hover:scale-105 transition-transform duration-500 ease-out"
               referrerPolicy="no-referrer"
               loading={isPriority ? "eager" : "lazy"}
               decoding="async"
               fetchPriority={isPriority ? "high" : undefined}
+              onError={onImageError}
             />
           )}
         </Link>

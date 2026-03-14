@@ -36,8 +36,13 @@ export default function StudioDetailPage() {
   const [imageLoading, setImageLoading] = useState(true);
   const [playingProject, setPlayingProject] = useState<ProjectDetail | null>(null);
   const studio = id ? (studios.find((s) => s.id === id) ?? null) : null;
+  const coverOrGif = studio
+    ? (studio.cover_image_url?.trim() || (studio as { hero_gif_url?: string }).hero_gif_url?.trim() || "")
+    : "";
   const images = studio
-    ? [{ image_url: studio.cover_image_url, caption: null, sort_order: 0 }, ...(studio.images || [])]
+    ? coverOrGif
+      ? [{ image_url: coverOrGif, caption: null, sort_order: 0 }, ...(studio.images || [])]
+      : [...(studio.images || [])]
     : [];
 
   useEffect(() => {
