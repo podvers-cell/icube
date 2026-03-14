@@ -4,7 +4,53 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { X, Zap, ExternalLink, Play, Pause, Volume2, VolumeX, Maximize, Minimize } from "lucide-react";
 import { motion } from "motion/react";
 import type { VideoEmbedResult } from "../lib/videoEmbed";
-import type { VimeoPlayerInstance, YTPlayerInstance } from "../types/window";
+
+interface VimeoPlayer {
+  play: () => Promise<void>;
+  pause: () => Promise<void>;
+  getPaused: () => Promise<boolean>;
+  getCurrentTime: () => Promise<number>;
+  getDuration: () => Promise<number>;
+  setCurrentTime: (t: number) => Promise<number>;
+  getVolume: () => Promise<number>;
+  setVolume: (v: number) => Promise<void>;
+  getMuted: () => Promise<boolean>;
+  setMuted: (m: boolean) => Promise<void>;
+}
+
+declare global {
+  interface Window {
+    YT: typeof YT;
+    onYouTubeIframeAPIReady: () => void;
+    Vimeo?: { Player: new (el: HTMLIFrameElement) => VimeoPlayer };
+  }
+}
+
+declare const YT: {
+  Player: new (
+    element: string | HTMLElement,
+    config: {
+      videoId: string;
+      playerVars?: Record<string, number | string>;
+      events?: { onReady?: (e: { target: YTPlayer }) => void };
+    }
+  ) => YTPlayer;
+  PlayerState: { PLAYING: number };
+};
+
+interface YTPlayer {
+  playVideo: () => void;
+  pauseVideo: () => void;
+  getPlayerState: () => number;
+  getCurrentTime: () => number;
+  getDuration: () => number;
+  seekTo: (seconds: number, allowSeekAhead: boolean) => void;
+  setVolume: (v: number) => void;
+  getVolume: () => number;
+  isMuted: () => boolean;
+  mute: () => void;
+  unMute: () => void;
+}
 
 function formatTime(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
@@ -59,7 +105,7 @@ export function ProjectDetailModal({
   const ytDivRef = useRef<HTMLDivElement>(null);
   const vimeoIframeRef = useRef<HTMLIFrameElement>(null);
   const playerRef = useRef<PlayerApi | null>(null);
-  const vimeoPlayerRef = useRef<VimeoPlayerInstance | null>(null);
+  const vimeoPlayerRef = useRef<VimeoPlayer | null>(null);
 
   const [ready, setReady] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -118,7 +164,7 @@ export function ProjectDetailModal({
       const loadYT = () => {
         if (!ytDivRef.current || !embed || embed.provider !== "youtube") return;
         try {
-          const player = new window.YT!.Player(ytDivRef.current, {
+          const player = new YT.Player(ytDivRef.current, {
             videoId: embed.videoId,
             playerVars: {
               autoplay: 1,
@@ -133,12 +179,12 @@ export function ProjectDetailModal({
               fs: 0,
             },
             events: {
-              onReady(e: { target: YTPlayerInstance }) {
+              onReady(e: { target: YTPlayer }) {
                 const yt = e.target;
                 playerRef.current = {
                   play: () => yt.playVideo(),
                   pause: () => yt.pauseVideo(),
-                  getPlaying: () => yt.getPlayerState() === window.YT!.PlayerState.PLAYING,
+                  getPlaying: () => yt.getPlayerState() === YT.PlayerState.PLAYING,
                   getCurrentTime: () => yt.getCurrentTime(),
                   getDuration: () => yt.getDuration(),
                   seekTo: (t) => yt.seekTo(t, true),
@@ -181,7 +227,7 @@ export function ProjectDetailModal({
       const iframe = vimeoIframeRef.current;
       if (!iframe) return;
       const loadVimeo = () => {
-        const Vimeo = (window as unknown as { Vimeo: { Player: new (el: HTMLIFrameElement) => VimeoPlayerInstance } }).Vimeo;
+        const Vimeo = (window as unknown as { Vimeo: { Player: new (el: HTMLIFrameElement) => VimeoPlayer } }).Vimeo;
         if (!Vimeo?.Player) return;
         const vp = new Vimeo.Player(iframe);
         vimeoPlayerRef.current = vp;

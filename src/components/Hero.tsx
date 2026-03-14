@@ -48,7 +48,7 @@ function getYouTubeEmbedUrl(raw: string): string | null {
 type HeroProps = { onHeroReady?: () => void };
 
 export default function Hero({ onHeroReady }: HeroProps) {
-  const { settings, studios, loading } = useSiteData();
+  const { settings, loading } = useSiteData();
   const videoRef = useRef<HTMLVideoElement>(null);
   const router = useRouter();
   const pathname = usePathname();
@@ -61,43 +61,16 @@ export default function Hero({ onHeroReady }: HeroProps) {
   const bgType = settings.hero_bg_type || "image";
   const bgImage = settings.hero_bg_image_url?.trim() || "";
   const bgVideo = settings.hero_bg_video_url || "";
-  const bgGif =
-    settings.hero_bg_gif_url?.trim() ||
-    studios?.find((s) => s.hero_gif_url?.trim())?.hero_gif_url?.trim() ||
-    "";
   const youtubeEmbed = bgVideo ? getYouTubeEmbedUrl(bgVideo) : null;
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
-  const [isMobile, setIsMobile] = useState(false);
 
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 768px)");
-    setIsMobile(mq.matches);
-    const fn = () => setIsMobile(mq.matches);
-    mq.addEventListener("change", fn);
-    return () => mq.removeEventListener("change", fn);
-  }, []);
-
-  // على الموبايل: صورة ثابتة فقط (أداء أفضل) ولا نربط إخفاء الشاشة الأولى بتحميل الفيديو
-  const useHeavyBackground = !isMobile && ((bgType === "video" && bgVideo) || (bgType === "gif" && bgGif));
-  const hasVideoOrGif = (bgType === "video" && bgVideo) || (bgType === "gif" && bgGif);
-  const displayImageUrl = isMobile ? bgImage : (bgImage || (bgType === "gif" && bgGif ? bgGif : ""));
-
-  // Notify parent when hero background is ready (so splash can hide)
+  // Notify parent when hero background is ready (so splash can hide after video loads)
   useEffect(() => {
     if (loading || !onHeroReady) return;
-    if (isMobile) {
-      const t = window.setTimeout(onHeroReady, 1500);
-      return () => window.clearTimeout(t);
-    }
     const isVideo = bgType === "video" && bgVideo;
-    const isGif = bgType === "gif" && bgGif;
-    if (!isVideo && !isGif) {
-      onHeroReady();
-      return;
-    }
-    if (isGif) {
+    if (!isVideo) {
       onHeroReady();
       return;
     }
@@ -107,14 +80,16 @@ export default function Hero({ onHeroReady }: HeroProps) {
     }
     const video = videoRef.current;
     if (!video) return;
-    const done = () => onHeroReady();
+    const done = () => {
+      onHeroReady();
+    };
     video.addEventListener("canplaythrough", done, { once: true });
     const fallback = window.setTimeout(done, 10000);
     return () => {
       video.removeEventListener("canplaythrough", done);
       window.clearTimeout(fallback);
     };
-  }, [loading, isMobile, bgType, bgVideo, bgGif, youtubeEmbed, onHeroReady]);
+  }, [loading, bgType, bgVideo, youtubeEmbed, onHeroReady]);
 
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -142,29 +117,16 @@ export default function Hero({ onHeroReady }: HeroProps) {
     >
       <div className="absolute inset-0 z-0 w-full h-full min-h-full">
         <div
-          className={
-            useHeavyBackground
-              ? "absolute inset-0 z-10"
-              : "absolute inset-0 z-10 bg-gradient-to-b from-black/70 via-black/50 to-black/60"
-          }
+          className={bgType === "video" && bgVideo ? "absolute inset-0 z-10" : "absolute inset-0 z-10 bg-gradient-to-b from-black/70 via-black/50 to-black/60"}
           style={
-            useHeavyBackground
+            bgType === "video" && bgVideo
               ? {
                   background: `linear-gradient(to bottom, var(--color-icube-dark) 0%, color-mix(in srgb, var(--color-icube-dark) 85%, transparent) 12%, rgba(0,0,0,0.72) 50%, color-mix(in srgb, var(--color-icube-dark) 85%, transparent) 88%, var(--color-icube-dark) 100%)`,
                 }
               : undefined
           }
         />
-        {useHeavyBackground && bgType === "gif" && bgGif ? (
-          <div className="absolute inset-0 overflow-hidden w-full h-full min-h-full">
-            <img
-              src={bgGif}
-              alt="Hero Background"
-              className="absolute top-1/2 left-1/2 min-w-full min-h-full w-[130%] h-[130%] object-cover object-center opacity-60"
-              style={{ transform: "translate(-50%, -50%) scale(1.10)" }}
-            />
-          </div>
-        ) : useHeavyBackground && bgType === "video" && bgVideo ? (
+        {bgType === "video" && bgVideo ? (
           youtubeEmbed ? (
             <div className="absolute inset-0 overflow-hidden w-full h-full min-h-full">
               <iframe
@@ -199,9 +161,9 @@ export default function Hero({ onHeroReady }: HeroProps) {
               </video>
             </div>
           )
-        ) : displayImageUrl ? (
+        ) : bgImage ? (
           <Image
-            src={displayImageUrl}
+            src={bgImage}
             alt="Hero Background"
             fill
             priority
@@ -290,8 +252,12 @@ export default function Hero({ onHeroReady }: HeroProps) {
         onClick={() => document.getElementById("services")?.scrollIntoView({ behavior: "smooth", block: "start" })}
         className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-20 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-icube-gold focus-visible:ring-offset-2 focus-visible:ring-offset-transparent rounded p-2 min-h-[44px] min-w-[44px] justify-end"
         aria-label="Scroll to next section"
-        animate={reduceMotion ? {} : { y: [0, 6, 0] }}
-        transition={reduceMotion ? {} : { duration: 2, repeat: Infinity, ease: "easeInOut" }}
+        animate={{ y: [0, 6, 0] }}
+        transition={{
+          duration: 2,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
       >
         <span className="text-xs text-gray-400 uppercase tracking-widest">Scroll</span>
         <div className="w-[1px] h-12 bg-white/25 relative overflow-hidden rounded-full">
@@ -304,9 +270,13 @@ export default function Hero({ onHeroReady }: HeroProps) {
           />
           <motion.div
             className="absolute left-0 top-0 w-full h-4 bg-icube-gold rounded-full"
-            animate={reduceMotion ? {} : { y: [0, 32, 0] }}
-            transition={reduceMotion ? {} : { duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
-            style={reduceMotion ? undefined : { willChange: "transform" }}
+            animate={{ y: [0, 32, 0] }}
+            transition={{
+              duration: 2.2,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            style={{ willChange: "transform" }}
           />
         </div>
       </motion.button>

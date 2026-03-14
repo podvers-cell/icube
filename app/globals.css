@@ -88,18 +88,15 @@ body,
   background: var(--color-icube-gold);
 }
 
-/* Featured work: لوب متواصل — نقل بدقة بداية النسخة الثانية (--marquee-half من JS) عشان مفيش جاب عند الإعادة */
+/* Featured work: لوب متواصل من اليمين لليسار (أون هوف يتوقف) */
 @keyframes works-marquee {
   0% { transform: translateX(0); }
-  100% { transform: translateX(calc(-1 * var(--marquee-half, 50%))); }
+  100% { transform: translateX(-50%); }
 }
 .works-marquee-track {
-  animation: works-marquee 48s linear infinite;
+  animation: works-marquee 28s linear infinite;
 }
 @media (prefers-reduced-motion: reduce) {
-  .works-marquee-track { animation: none; }
-}
-@media (max-width: 768px) {
   .works-marquee-track { animation: none; }
 }
 

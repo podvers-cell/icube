@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useLayoutEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -36,13 +36,8 @@ export default function StudioDetailPage() {
   const [imageLoading, setImageLoading] = useState(true);
   const [playingProject, setPlayingProject] = useState<ProjectDetail | null>(null);
   const studio = id ? (studios.find((s) => s.id === id) ?? null) : null;
-  const coverOrGif = studio
-    ? (studio.cover_image_url?.trim() || (studio as { hero_gif_url?: string }).hero_gif_url?.trim() || "")
-    : "";
   const images = studio
-    ? coverOrGif
-      ? [{ image_url: coverOrGif, caption: null, sort_order: 0 }, ...(studio.images || [])]
-      : [...(studio.images || [])]
+    ? [{ image_url: studio.cover_image_url, caption: null, sort_order: 0 }, ...(studio.images || [])]
     : [];
 
   useEffect(() => {
@@ -88,31 +83,6 @@ export default function StudioDetailPage() {
   const worksPerSlide = 2;
   const worksSlidesCount = Math.ceil(works.length / worksPerSlide) || 1;
   const [worksMarqueePaused, setWorksMarqueePaused] = useState(false);
-  const worksTrackRef = useRef<HTMLDivElement>(null);
-
-  // إصلاح الجاب فقط: نقل اللوب بنصف عرض الـ track بالبكسل عشان يطابق بداية النسخة الثانية بالضبط
-  const updateMarqueeHalf = useCallback(() => {
-    const el = worksTrackRef.current;
-    if (!el || works.length === 0) return;
-    el.style.setProperty("--marquee-half", `${el.offsetWidth / 2}px`);
-  }, [works.length]);
-
-  useLayoutEffect(() => {
-    if (works.length === 0) return;
-    const el = worksTrackRef.current;
-    if (!el) return;
-    const raf = requestAnimationFrame(() => {
-      updateMarqueeHalf();
-    });
-    const ro = new ResizeObserver(() => {
-      requestAnimationFrame(updateMarqueeHalf);
-    });
-    ro.observe(el);
-    return () => {
-      cancelAnimationFrame(raf);
-      ro.disconnect();
-    };
-  }, [works.length, updateMarqueeHalf]);
 
   if (id && !studio) {
     return (
@@ -348,10 +318,9 @@ export default function StudioDetailPage() {
               onMouseLeave={() => setWorksMarqueePaused(false)}
             >
               <div
-                ref={worksTrackRef}
                 className="flex works-marquee-track"
                 style={{
-                  width: `${2 * worksSlidesCount * 100}%`,
+                  width: "200%",
                   animationPlayState: worksMarqueePaused ? "paused" : "running",
                 }}
               >
@@ -359,11 +328,8 @@ export default function StudioDetailPage() {
                   Array.from({ length: worksSlidesCount }, (_, slideIndex) => (
                     <div
                       key={`${copy}-${slideIndex}`}
-                      className="shrink-0 grid grid-cols-2 gap-5 pr-5 box-border"
-                      style={{
-                        width: `${100 / (2 * worksSlidesCount)}%`,
-                        minWidth: `${100 / (2 * worksSlidesCount)}%`,
-                      }}
+                      className="shrink-0 grid grid-cols-2 gap-4 md:gap-6 px-1"
+                      style={{ width: `${100 / (2 * worksSlidesCount)}%`, minWidth: `${100 / (2 * worksSlidesCount)}%` }}
                     >
                       {works.slice(slideIndex * worksPerSlide, slideIndex * worksPerSlide + worksPerSlide).map((project) => {
                         const embed = project.video_url && getVideoEmbed(project.video_url);
