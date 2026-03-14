@@ -283,6 +283,7 @@ function PortfolioCard({
 }) {
   const hasVideo = project.video_url && getVideoEmbed(project.video_url);
   return (
+    <div className="w-[85%] mx-auto">
     <motion.div
       className="group/card flex flex-col gap-3"
       whileHover={{ y: -5 }}
@@ -322,6 +323,7 @@ function PortfolioCard({
         </div>
       </div>
     </motion.div>
+    </div>
   );
 }
 
@@ -370,7 +372,7 @@ function MobilePortfolioCarousel({
         </span>
       </div>
       <div
-        className="overflow-hidden touch-pan-y select-none"
+        className="-mx-6 w-screen overflow-hidden touch-pan-y select-none max-w-[100vw] box-content"
         onTouchStart={swipe.onTouchStart}
         onTouchEnd={swipe.onTouchEnd}
       >

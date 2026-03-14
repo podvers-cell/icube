@@ -85,6 +85,7 @@ export default function Studio() {
     const s = studio;
     const useNextImage = isOptimizedImageUrl(s.cover_image_url);
     return (
+      <div className="w-[85%] mx-auto">
       <article className="studio-card flex flex-col rounded-2xl bg-white/[0.06] overflow-hidden shadow-[0_12px_40px_rgba(0,0,0,0.25)] transition-all duration-300">
         <button
           type="button"
@@ -168,6 +169,7 @@ export default function Studio() {
           </button>
         </div>
       </article>
+      </div>
     );
   }
 
@@ -217,7 +219,7 @@ export default function Studio() {
           </span>
         </div>
         <div
-          className="overflow-hidden touch-pan-y select-none"
+          className="-mx-6 w-screen overflow-hidden touch-pan-y select-none max-w-[100vw] box-content"
           onTouchStart={swipe.onTouchStart}
           onTouchEnd={swipe.onTouchEnd}
         >
