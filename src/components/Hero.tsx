@@ -48,7 +48,7 @@ function getYouTubeEmbedUrl(raw: string): string | null {
 type HeroProps = { onHeroReady?: () => void };
 
 export default function Hero({ onHeroReady }: HeroProps) {
-  const { settings, loading } = useSiteData();
+  const { settings, studios, loading } = useSiteData();
   const videoRef = useRef<HTMLVideoElement>(null);
   const router = useRouter();
   const pathname = usePathname();
@@ -61,6 +61,10 @@ export default function Hero({ onHeroReady }: HeroProps) {
   const bgType = settings.hero_bg_type || "image";
   const bgImage = settings.hero_bg_image_url?.trim() || "";
   const bgVideo = settings.hero_bg_video_url || "";
+  const bgGif =
+    settings.hero_bg_gif_url?.trim() ||
+    studios?.find((s) => s.hero_gif_url?.trim())?.hero_gif_url?.trim() ||
+    "";
   const youtubeEmbed = bgVideo ? getYouTubeEmbedUrl(bgVideo) : null;
 
   const [activeIndex, setActiveIndex] = useState(0);
@@ -70,7 +74,12 @@ export default function Hero({ onHeroReady }: HeroProps) {
   useEffect(() => {
     if (loading || !onHeroReady) return;
     const isVideo = bgType === "video" && bgVideo;
-    if (!isVideo) {
+    const isGif = bgType === "gif" && bgGif;
+    if (!isVideo && !isGif) {
+      onHeroReady();
+      return;
+    }
+    if (isGif) {
       onHeroReady();
       return;
     }
@@ -89,7 +98,7 @@ export default function Hero({ onHeroReady }: HeroProps) {
       video.removeEventListener("canplaythrough", done);
       window.clearTimeout(fallback);
     };
-  }, [loading, bgType, bgVideo, youtubeEmbed, onHeroReady]);
+  }, [loading, bgType, bgVideo, bgGif, youtubeEmbed, onHeroReady]);
 
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -117,16 +126,29 @@ export default function Hero({ onHeroReady }: HeroProps) {
     >
       <div className="absolute inset-0 z-0 w-full h-full min-h-full">
         <div
-          className={bgType === "video" && bgVideo ? "absolute inset-0 z-10" : "absolute inset-0 z-10 bg-gradient-to-b from-black/70 via-black/50 to-black/60"}
+          className={
+            (bgType === "video" && bgVideo) || (bgType === "gif" && bgGif)
+              ? "absolute inset-0 z-10"
+              : "absolute inset-0 z-10 bg-gradient-to-b from-black/70 via-black/50 to-black/60"
+          }
           style={
-            bgType === "video" && bgVideo
+            (bgType === "video" && bgVideo) || (bgType === "gif" && bgGif)
               ? {
                   background: `linear-gradient(to bottom, var(--color-icube-dark) 0%, color-mix(in srgb, var(--color-icube-dark) 85%, transparent) 12%, rgba(0,0,0,0.72) 50%, color-mix(in srgb, var(--color-icube-dark) 85%, transparent) 88%, var(--color-icube-dark) 100%)`,
                 }
               : undefined
           }
         />
-        {bgType === "video" && bgVideo ? (
+        {bgType === "gif" && bgGif ? (
+          <div className="absolute inset-0 overflow-hidden w-full h-full min-h-full">
+            <img
+              src={bgGif}
+              alt="Hero Background"
+              className="absolute top-1/2 left-1/2 min-w-full min-h-full w-[130%] h-[130%] object-cover object-center opacity-60"
+              style={{ transform: "translate(-50%, -50%) scale(1.10)" }}
+            />
+          </div>
+        ) : bgType === "video" && bgVideo ? (
           youtubeEmbed ? (
             <div className="absolute inset-0 overflow-hidden w-full h-full min-h-full">
               <iframe

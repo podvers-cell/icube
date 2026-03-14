@@ -153,7 +153,15 @@ export default function PublicSite() {
   }, []);
 
   const mainContent = (
-    <div className="site-wrapper min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray to-[#111521] text-white selection:bg-icube-gold selection:text-icube-dark transition-colors duration-300">
+    <div className="site-wrapper relative min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray/95 to-[#0d0f18] text-white selection:bg-icube-gold selection:text-icube-dark transition-colors duration-300 overflow-hidden">
+      {/* Fixed glowing orbs – background atmosphere */}
+      <div className="fixed inset-0 pointer-events-none z-0" aria-hidden>
+        <div className="absolute top-[10%] left-[10%] w-[min(80vw,600px)] h-[min(80vw,600px)] rounded-full bg-icube-gold/15 blur-[120px] glow-orb-pulse" />
+        <div className="absolute top-[40%] right-[5%] w-[min(60vw,450px)] h-[min(60vw,450px)] rounded-full bg-white/[0.06] blur-[100px] glow-orb-pulse-slow" />
+        <div className="absolute bottom-[20%] left-[20%] w-[min(50vw,400px)] h-[min(50vw,400px)] rounded-full bg-icube-gold/10 blur-[100px] glow-orb-pulse-slower" />
+        <div className="absolute top-[60%] right-[25%] w-[min(40vw,320px)] h-[min(40vw,320px)] rounded-full bg-white/[0.04] blur-[80px]" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[min(100vw,900px)] h-[500px] rounded-full bg-icube-gold/8 blur-[150px] -translate-y-1/2 glow-orb-pulse" />
+      </div>
       <a
         href="#main-content"
         className="fixed left-4 top-4 z-[100] -translate-y-[200%] rounded-md bg-icube-gold px-4 py-2 text-sm font-semibold text-icube-dark shadow-lg transition-transform focus:translate-y-0 focus:outline-none focus:ring-2 focus:ring-icube-dark focus:ring-offset-2 focus:ring-offset-icube-dark"

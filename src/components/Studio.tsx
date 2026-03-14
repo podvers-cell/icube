@@ -49,7 +49,7 @@ export default function Studio() {
     const useNextImage = isOptimizedImageUrl(s.cover_image_url);
     return (
       <div className="w-[85%] md:w-full mx-auto">
-      <article className="studio-card flex flex-col rounded-2xl bg-white/[0.06] overflow-hidden shadow-[0_12px_40px_rgba(0,0,0,0.25)] transition-all duration-300">
+      <article className="studio-card flex flex-col rounded-2xl border border-white/10 bg-white/[0.06] overflow-hidden transition-all duration-300">
         <Link
           href={`/studio/${s.id}`}
           className="relative block w-full aspect-[4/3] overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-icube-gold focus-visible:ring-offset-2 focus-visible:ring-offset-icube-dark"

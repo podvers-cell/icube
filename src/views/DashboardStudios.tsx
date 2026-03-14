@@ -16,6 +16,7 @@ type Studio = {
   capacity: number;
   size_sqm: number;
   cover_image_url: string;
+  hero_gif_url?: string;
   sort_order: number;
   images: { image_url: string; caption: string | null; sort_order: number }[];
 };
@@ -29,6 +30,7 @@ const emptyStudio: Omit<Studio, "id" | "images"> & { imagesText: string } = {
   capacity: 4,
   size_sqm: 25,
   cover_image_url: "",
+  hero_gif_url: "",
   sort_order: 0,
   imagesText: "",
 };
@@ -84,6 +86,7 @@ export default function DashboardStudios() {
       capacity: Number(editing.capacity),
       size_sqm: Number(editing.size_sqm),
       cover_image_url: editing.cover_image_url,
+      hero_gif_url: (editing as Studio).hero_gif_url?.trim() || "",
       sort_order: Number(editing.sort_order ?? 0),
       images: textToImages(editing.imagesText),
     };
@@ -211,6 +214,14 @@ export default function DashboardStudios() {
                 type="image"
                 folder="studios"
                 placeholder="https://… or click Upload"
+              />
+              <CloudinaryUploadField
+                label="Hero GIF URL (عرض في الهيرو)"
+                value={(editing as Studio).hero_gif_url ?? ""}
+                onChange={(url) => setEditing((x) => (x ? { ...x, hero_gif_url: url } : null))}
+                type="image"
+                folder="studios/hero-gif"
+                placeholder="https://… GIF or click Upload"
               />
               <div>
                 <label className="block text-sm text-gray-400 mb-1">Before price (AED/hr)</label>

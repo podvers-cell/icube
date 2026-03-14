@@ -27,6 +27,7 @@ db.exec(`
     capacity INTEGER NOT NULL,
     size_sqm INTEGER NOT NULL,
     cover_image_url TEXT NOT NULL,
+    hero_gif_url TEXT,
     sort_order INTEGER DEFAULT 0,
     created_at TEXT DEFAULT (datetime('now'))
   );
@@ -126,6 +127,13 @@ db.exec(`
   );
 `);
 
+// Migration: add hero_gif_url to studios if missing (existing DBs)
+try {
+  db.exec("ALTER TABLE studios ADD COLUMN hero_gif_url TEXT;");
+} catch {
+  // Column already exists
+}
+
 // Seed default admin (password: admin123)
 const adminHash = bcrypt.hashSync("admin123", 10);
 db.prepare(
@@ -220,10 +228,10 @@ if (equipmentCount.c === 0) {
 const studiosCount = db.prepare("SELECT COUNT(*) as c FROM studios").get() as { c: number };
 if (studiosCount.c === 0) {
   db.exec(`
-    INSERT INTO studios (name, short_description, details, price_aed_per_hour, capacity, size_sqm, cover_image_url, sort_order) VALUES
-    ('Studio A – Podcast Suite', 'Soundproof podcast studio with 3-camera setup.', 'Ideal for podcasts, interviews, and talk shows. Includes acoustic treatment, multi-cam recording, and professional lighting control.', 350, 4, 28, 'https://images.unsplash.com/photo-1559523161-0fc0d8b38a7a?q=80&w=2076&auto=format&fit=crop', 0),
-    ('Studio B – Video Set', 'Flexible video studio for commercials and brand content.', 'A versatile set with modular backgrounds, controlled lighting, and space for product shoots, branded shows, and social content.', 500, 8, 45, 'https://images.unsplash.com/photo-1536240478700-b869070f9279?q=80&w=2000&auto=format&fit=crop', 1),
-    ('Studio C – Creator Corner', 'Compact studio optimized for vertical content and livestreams.', 'Perfect for TikTok/Reels/Shorts and livestreaming. Quick setup, modern look, and ready-to-shoot lighting presets.', 250, 3, 18, 'https://images.unsplash.com/photo-1601506521937-0121a7fc2a6b?q=80&w=2071&auto=format&fit=crop', 2);
+    INSERT INTO studios (name, short_description, details, price_aed_per_hour, capacity, size_sqm, cover_image_url, hero_gif_url, sort_order) VALUES
+    ('Studio A – Podcast Suite', 'Soundproof podcast studio with 3-camera setup.', 'Ideal for podcasts, interviews, and talk shows. Includes acoustic treatment, multi-cam recording, and professional lighting control.', 350, 4, 28, 'https://images.unsplash.com/photo-1559523161-0fc0d8b38a7a?q=80&w=2076&auto=format&fit=crop', NULL, 0),
+    ('Studio B – Video Set', 'Flexible video studio for commercials and brand content.', 'A versatile set with modular backgrounds, controlled lighting, and space for product shoots, branded shows, and social content.', 500, 8, 45, 'https://images.unsplash.com/photo-1536240478700-b869070f9279?q=80&w=2000&auto=format&fit=crop', NULL, 1),
+    ('Studio C – Creator Corner', 'Compact studio optimized for vertical content and livestreams.', 'Perfect for TikTok/Reels/Shorts and livestreaming. Quick setup, modern look, and ready-to-shoot lighting presets.', 250, 3, 18, 'https://images.unsplash.com/photo-1601506521937-0121a7fc2a6b?q=80&w=2071&auto=format&fit=crop', NULL, 2);
   `);
 
   const studios = db.prepare("SELECT id, sort_order FROM studios ORDER BY sort_order, id").all() as { id: number; sort_order: number }[];

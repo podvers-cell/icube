@@ -68,7 +68,7 @@ app.get("/api/studio-equipment", (_req, res) => {
 app.get("/api/studios", (_req, res) => {
   const studios = db
     .prepare(
-      "SELECT id, name, short_description, details, price_aed_per_hour, capacity, size_sqm, cover_image_url, sort_order FROM studios ORDER BY sort_order, id"
+      "SELECT id, name, short_description, details, price_aed_per_hour, capacity, size_sqm, cover_image_url, hero_gif_url, sort_order FROM studios ORDER BY sort_order, id"
     )
     .all() as {
     id: number;
@@ -79,6 +79,7 @@ app.get("/api/studios", (_req, res) => {
     capacity: number;
     size_sqm: number;
     cover_image_url: string;
+    hero_gif_url: string | null;
     sort_order: number;
   }[];
 
@@ -356,7 +357,7 @@ app.put("/api/dashboard/studio-equipment/:id", requireAuth, (req, res) => {
 app.get("/api/dashboard/studios", requireAuth, (_req, res) => {
   const studios = db
     .prepare(
-      "SELECT id, name, short_description, details, price_aed_per_hour, capacity, size_sqm, cover_image_url, sort_order FROM studios ORDER BY sort_order, id"
+      "SELECT id, name, short_description, details, price_aed_per_hour, capacity, size_sqm, cover_image_url, hero_gif_url, sort_order FROM studios ORDER BY sort_order, id"
     )
     .all();
   const images = db
@@ -372,7 +373,7 @@ app.get("/api/dashboard/studios", requireAuth, (_req, res) => {
 });
 
 app.post("/api/dashboard/studios", requireAuth, (req, res) => {
-  const { name, short_description, details, price_aed_per_hour, capacity, size_sqm, cover_image_url, sort_order, images } =
+  const { name, short_description, details, price_aed_per_hour, capacity, size_sqm, cover_image_url, hero_gif_url, sort_order, images } =
     req.body as {
       name: string;
       short_description: string;
@@ -381,13 +382,14 @@ app.post("/api/dashboard/studios", requireAuth, (req, res) => {
       capacity: number;
       size_sqm: number;
       cover_image_url: string;
+      hero_gif_url?: string;
       sort_order?: number;
       images?: { image_url: string; caption?: string | null }[] | string[];
     };
 
   const result = db
     .prepare(
-      "INSERT INTO studios (name, short_description, details, price_aed_per_hour, capacity, size_sqm, cover_image_url, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+      "INSERT INTO studios (name, short_description, details, price_aed_per_hour, capacity, size_sqm, cover_image_url, hero_gif_url, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
     )
     .run(
       name,
@@ -397,6 +399,7 @@ app.post("/api/dashboard/studios", requireAuth, (req, res) => {
       capacity,
       size_sqm,
       cover_image_url,
+      hero_gif_url?.trim() || null,
       sort_order ?? 0
     );
   const id = Number(result.lastInsertRowid);
@@ -412,7 +415,7 @@ app.post("/api/dashboard/studios", requireAuth, (req, res) => {
 
 app.put("/api/dashboard/studios/:id", requireAuth, (req, res) => {
   const { id } = req.params;
-  const { name, short_description, details, price_aed_per_hour, capacity, size_sqm, cover_image_url, sort_order, images } =
+  const { name, short_description, details, price_aed_per_hour, capacity, size_sqm, cover_image_url, hero_gif_url, sort_order, images } =
     req.body as {
       name: string;
       short_description: string;
@@ -421,13 +424,14 @@ app.put("/api/dashboard/studios/:id", requireAuth, (req, res) => {
       capacity: number;
       size_sqm: number;
       cover_image_url: string;
+      hero_gif_url?: string;
       sort_order?: number;
       images?: { image_url: string; caption?: string | null }[] | string[];
     };
 
   const tx = db.transaction(() => {
     db.prepare(
-      "UPDATE studios SET name=?, short_description=?, details=?, price_aed_per_hour=?, capacity=?, size_sqm=?, cover_image_url=?, sort_order=? WHERE id=?"
+      "UPDATE studios SET name=?, short_description=?, details=?, price_aed_per_hour=?, capacity=?, size_sqm=?, cover_image_url=?, hero_gif_url=?, sort_order=? WHERE id=?"
     ).run(
       name,
       short_description,
@@ -436,6 +440,7 @@ app.put("/api/dashboard/studios/:id", requireAuth, (req, res) => {
       capacity,
       size_sqm,
       cover_image_url,
+      hero_gif_url?.trim() || null,
       sort_order ?? 0,
       id
     );

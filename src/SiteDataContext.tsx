@@ -15,6 +15,15 @@ type Project = {
   video_url?: string;
   visible?: boolean;
   show_in_selected_work?: boolean;
+  client?: string;
+  subtitle?: string;
+  description?: string;
+  deliverables?: string[];
+  year?: string | number;
+  camera?: string;
+  output?: string;
+  live_link?: string;
+  roles?: string[];
 };
 type Testimonial = { id: number; quote: string; author: string; role: string; image_url: string; sort_order: number };
 type Package = {
@@ -42,6 +51,7 @@ type Studio = {
   capacity: number;
   size_sqm: number;
   cover_image_url: string;
+  hero_gif_url?: string;
   sort_order: number;
   images?: { image_url: string; caption?: string | null; sort_order?: number }[];
 };
@@ -88,6 +98,7 @@ const FALLBACK_SETTINGS: Record<string, string> = {
   hero_bg_type: "image",
   hero_bg_image_url: "",
   hero_bg_video_url: "",
+  hero_bg_gif_url: "",
   contact_address: "Dubai Media City, Building 1\nDubai, United Arab Emirates",
   contact_email: CONTACT_EMAIL,
   contact_email_bookings: CONTACT_EMAIL,

@@ -315,6 +315,15 @@ export type PortfolioProject = {
   video_url?: string;
   visible?: boolean;
   show_in_selected_work?: boolean;
+  client?: string;
+  subtitle?: string;
+  description?: string;
+  deliverables?: string[];
+  year?: string | number;
+  camera?: string;
+  output?: string;
+  live_link?: string;
+  roles?: string[];
 };
 export async function getPortfolio() {
   return api.get<PortfolioProject[]>("/portfolio");
@@ -342,6 +351,7 @@ export async function getStudios() {
       capacity: number;
       size_sqm: number;
       cover_image_url: string;
+      hero_gif_url?: string;
       sort_order: number;
       images?: { image_url: string; caption?: string | null; sort_order?: number }[];
     }[]
