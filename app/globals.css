@@ -99,6 +99,9 @@ body,
 @media (prefers-reduced-motion: reduce) {
   .works-marquee-track { animation: none; }
 }
+@media (max-width: 768px) {
+  .works-marquee-track { animation: none; }
+}
 
 /* Custom cursor: hide default when active (public site only) */
 html.custom-cursor-active .site-wrapper,

@@ -70,6 +70,9 @@ export default function Hero({ onHeroReady }: HeroProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
 
+  const hasVideoOrGif = (bgType === "video" && bgVideo) || (bgType === "gif" && bgGif);
+  const displayImageUrl = bgImage || (bgType === "gif" && bgGif ? bgGif : "");
+
   // Notify parent when hero background is ready (so splash can hide after video loads)
   useEffect(() => {
     if (loading || !onHeroReady) return;
@@ -127,12 +130,12 @@ export default function Hero({ onHeroReady }: HeroProps) {
       <div className="absolute inset-0 z-0 w-full h-full min-h-full">
         <div
           className={
-            (bgType === "video" && bgVideo) || (bgType === "gif" && bgGif)
+            hasVideoOrGif
               ? "absolute inset-0 z-10"
               : "absolute inset-0 z-10 bg-gradient-to-b from-black/70 via-black/50 to-black/60"
           }
           style={
-            (bgType === "video" && bgVideo) || (bgType === "gif" && bgGif)
+            hasVideoOrGif
               ? {
                   background: `linear-gradient(to bottom, var(--color-icube-dark) 0%, color-mix(in srgb, var(--color-icube-dark) 85%, transparent) 12%, rgba(0,0,0,0.72) 50%, color-mix(in srgb, var(--color-icube-dark) 85%, transparent) 88%, var(--color-icube-dark) 100%)`,
                 }
@@ -183,9 +186,9 @@ export default function Hero({ onHeroReady }: HeroProps) {
               </video>
             </div>
           )
-        ) : bgImage ? (
+        ) : displayImageUrl ? (
           <Image
-            src={bgImage}
+            src={displayImageUrl}
             alt="Hero Background"
             fill
             priority
@@ -274,12 +277,8 @@ export default function Hero({ onHeroReady }: HeroProps) {
         onClick={() => document.getElementById("services")?.scrollIntoView({ behavior: "smooth", block: "start" })}
         className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-20 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-icube-gold focus-visible:ring-offset-2 focus-visible:ring-offset-transparent rounded p-2 min-h-[44px] min-w-[44px] justify-end"
         aria-label="Scroll to next section"
-        animate={{ y: [0, 6, 0] }}
-        transition={{
-          duration: 2,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
+        animate={reduceMotion ? {} : { y: [0, 6, 0] }}
+        transition={reduceMotion ? {} : { duration: 2, repeat: Infinity, ease: "easeInOut" }}
       >
         <span className="text-xs text-gray-400 uppercase tracking-widest">Scroll</span>
         <div className="w-[1px] h-12 bg-white/25 relative overflow-hidden rounded-full">
@@ -292,13 +291,9 @@ export default function Hero({ onHeroReady }: HeroProps) {
           />
           <motion.div
             className="absolute left-0 top-0 w-full h-4 bg-icube-gold rounded-full"
-            animate={{ y: [0, 32, 0] }}
-            transition={{
-              duration: 2.2,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-            style={{ willChange: "transform" }}
+            animate={reduceMotion ? {} : { y: [0, 32, 0] }}
+            transition={reduceMotion ? {} : { duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+            style={reduceMotion ? undefined : { willChange: "transform" }}
           />
         </div>
       </motion.button>

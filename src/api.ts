@@ -3,7 +3,9 @@ import {
   deleteDoc,
   doc,
   getDoc,
+  getDocFromServer,
   getDocs,
+  getDocsFromServer,
   limit,
   orderBy,
   query,
@@ -44,7 +46,7 @@ function dashboardKindToCollection(kind: string): string {
   }
 }
 
-/** Read site settings (uses Firestore cache when available for fast loads). */
+/** Read site settings (cache allowed, used by dashboard). */
 async function getSettingsDoc() {
   const ref = doc(requireFirestore(), "site_settings", "main");
   const snap = await getDoc(ref);
@@ -55,10 +57,25 @@ async function getSettingsDoc() {
   return (snap.data() || {}) as Record<string, string>;
 }
 
-/** List collection (uses Firestore cache when available for fast loads). */
+/** Read site settings from server only (public site — بيانات حديثة من قاعدة البيانات). */
+async function getSettingsDocFromServer() {
+  const ref = doc(requireFirestore(), "site_settings", "main");
+  const snap = await getDocFromServer(ref);
+  if (!snap.exists()) return {};
+  return (snap.data() || {}) as Record<string, string>;
+}
+
+/** List collection (cache allowed, used by dashboard). */
 async function listCollection<T>(name: string) {
   const q = query(collection(requireFirestore(), name), orderBy("sort_order", "asc"));
   const snaps = await getDocs(q);
+  return snaps.docs.map((d) => ({ ...(d.data() as T), id: d.id })) as IdDoc<T>[];
+}
+
+/** List collection from server only (public site — بيانات حديثة من قاعدة البيانات). */
+async function listCollectionFromServer<T>(name: string) {
+  const q = query(collection(requireFirestore(), name), orderBy("sort_order", "asc"));
+  const snaps = await getDocsFromServer(q);
   return snaps.docs.map((d) => ({ ...(d.data() as T), id: d.id })) as IdDoc<T>[];
 }
 
@@ -71,16 +88,16 @@ async function listByCreatedAtDesc<T>(name: string, max = 500) {
 // A compatibility layer so existing dashboard code can keep calling api.get("/dashboard/...").
 export const api = {
   get: async <T>(path: string): Promise<T> => {
-    if (path === "/site/settings") return (await getSettingsDoc()) as T;
-    if (path === "/services") return (await listCollection("services")) as T;
-    if (path === "/portfolio") return (await listCollection("portfolio")) as T;
-    if (path === "/testimonials") return (await listCollection("testimonials")) as T;
-    if (path === "/booking-packages") return (await listCollection("booking_packages")) as T;
-    if (path === "/booking-addons") return (await listCollection("booking_addons")) as T;
-    if (path === "/why-us") return (await listCollection("why_us")) as T;
-    if (path === "/studio-equipment") return (await listCollection("studio_equipment")) as T;
-    if (path === "/studios") return (await listCollection("studios")) as T;
-    if (path === "/videos") return (await listCollection("videos")) as T;
+    if (path === "/site/settings") return (await getSettingsDocFromServer()) as T;
+    if (path === "/services") return (await listCollectionFromServer("services")) as T;
+    if (path === "/portfolio") return (await listCollectionFromServer("portfolio")) as T;
+    if (path === "/testimonials") return (await listCollectionFromServer("testimonials")) as T;
+    if (path === "/booking-packages") return (await listCollectionFromServer("booking_packages")) as T;
+    if (path === "/booking-addons") return (await listCollectionFromServer("booking_addons")) as T;
+    if (path === "/why-us") return (await listCollectionFromServer("why_us")) as T;
+    if (path === "/studio-equipment") return (await listCollectionFromServer("studio_equipment")) as T;
+    if (path === "/studios") return (await listCollectionFromServer("studios")) as T;
+    if (path === "/videos") return (await listCollectionFromServer("videos")) as T;
 
     // Dashboard
     if (path === "/dashboard/settings") {
