@@ -20,7 +20,7 @@ function ServiceCard({
 }) {
   const Icon = getIcon(service.icon);
   return (
-    <div className="w-[85%] mx-auto">
+    <div className="w-[85%] md:w-full mx-auto">
     <motion.div
       className="card-flip group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-sm p-8 transition-[border-color,box-shadow] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:border-icube-gold/50 hover:shadow-[0_24px_56px_rgba(0,0,0,0.4),0_0_0_1px_rgba(212,175,55,0.1)]"
       whileHover={{ y: -6 }}

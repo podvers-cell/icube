@@ -290,70 +290,107 @@ select:focus-visible {
   color: var(--color-icube-gold) !important;
 }
 
-/* Light mode: navbar transparent at top, dark when scrolled */
-[data-theme="light"] .site-wrapper nav[class*="fixed"] {
-  color: #e5e5e5 !important;
-}
-/* Home only: transparent at top, frosted when scrolled */
+/* Light mode: navbar over hero (home, not scrolled) – transparent, white text */
 [data-theme="light"] .site-wrapper nav[class*="fixed"][data-home="true"]:not([data-scrolled="true"]) {
   background: transparent !important;
   border-color: transparent !important;
+  color: #ffffff !important;
 }
-[data-theme="light"] .site-wrapper nav[class*="fixed"][data-home="true"][data-scrolled="true"] {
-  background: rgba(0, 0, 0, 0.35) !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-  backdrop-filter: blur(24px);
+[data-theme="light"] .site-wrapper nav[class*="fixed"][data-home="true"]:not([data-scrolled="true"]) *,
+[data-theme="light"] .site-wrapper nav[class*="fixed"][data-home="true"]:not([data-scrolled="true"]) .nav-menu-link {
+  color: #ffffff !important;
 }
-/* Non-home pages: always black navbar in light mode */
+[data-theme="light"] .site-wrapper nav[class*="fixed"][data-home="true"]:not([data-scrolled="true"]) a[href="/login"] {
+  color: #ffffff !important;
+}
+/* Light mode: navbar with light bar (scrolled on home, or any non-home page) – cream bg, dark text */
+[data-theme="light"] .site-wrapper nav[class*="fixed"][data-home="true"][data-scrolled="true"],
 [data-theme="light"] .site-wrapper nav[class*="fixed"][data-home="false"] {
-  background: #000000 !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(242, 240, 235, 0.98) !important;
+  border-color: rgba(120, 113, 108, 0.4) !important;
   backdrop-filter: blur(24px);
+  color: #1c1917 !important;
 }
-[data-theme="light"] .site-wrapper nav[class*="fixed"] a,
-[data-theme="light"] .site-wrapper nav[class*="fixed"] button,
-[data-theme="light"] .site-wrapper nav[class*="fixed"] span {
-  color: #ffffff !important;
+[data-theme="light"] .site-wrapper nav[class*="fixed"][data-home="true"][data-scrolled="true"] *,
+[data-theme="light"] .site-wrapper nav[class*="fixed"][data-home="false"] *,
+[data-theme="light"] .site-wrapper nav[class*="fixed"][data-home="true"][data-scrolled="true"] .nav-menu-link,
+[data-theme="light"] .site-wrapper nav[class*="fixed"][data-home="false"] .nav-menu-link {
+  color: #1c1917 !important;
 }
-/* Menu links: always white (light + dark mode) */
-.site-wrapper nav .nav-menu-link,
-[data-theme="light"] .site-wrapper nav[class*="fixed"] .nav-menu-link {
-  color: #ffffff !important;
+[data-theme="light"] .site-wrapper nav[class*="fixed"][data-home="true"][data-scrolled="true"] .nav-menu-link:hover,
+[data-theme="light"] .site-wrapper nav[class*="fixed"][data-home="false"] .nav-menu-link:hover {
+  color: #1c1917 !important;
 }
-.site-wrapper nav .nav-menu-link:hover,
-[data-theme="light"] .site-wrapper nav[class*="fixed"] .nav-menu-link:hover {
-  color: #ffffff !important;
+[data-theme="light"] .site-wrapper nav[class*="fixed"][data-home="true"][data-scrolled="true"] a[href="/login"],
+[data-theme="light"] .site-wrapper nav[class*="fixed"][data-home="false"] a[href="/login"] {
+  color: #1c1917 !important;
 }
-/* استثناء .nav-cta-link حتى لا يصير النص ذهبياً = لون الزر فيختفي */
-[data-theme="light"] .site-wrapper nav[class*="fixed"] a:hover:not(.nav-menu-link):not(.nav-cta-link),
-[data-theme="light"] .site-wrapper nav[class*="fixed"] button.theme-toggle-nav:hover {
+[data-theme="light"] .site-wrapper nav[class*="fixed"][data-home="true"][data-scrolled="true"] a[href="/login"]:hover,
+[data-theme="light"] .site-wrapper nav[class*="fixed"][data-home="false"] a[href="/login"]:hover {
   color: var(--color-icube-gold) !important;
 }
-[data-theme="light"] .site-wrapper nav[class*="fixed"] button.theme-toggle-nav {
-  background: rgba(255, 255, 255, 0.05) !important;
+[data-theme="light"] .site-wrapper nav[class*="fixed"][data-home="true"][data-scrolled="true"] .nav-logout-btn,
+[data-theme="light"] .site-wrapper nav[class*="fixed"][data-home="false"] .nav-logout-btn {
+  background: rgba(214, 211, 209, 0.8) !important;
+  border-color: rgba(120, 113, 108, 0.5) !important;
+  color: #1c1917 !important;
+}
+[data-theme="light"] .site-wrapper nav[class*="fixed"][data-home="true"][data-scrolled="true"] .nav-logout-btn:hover,
+[data-theme="light"] .site-wrapper nav[class*="fixed"][data-home="false"] .nav-logout-btn:hover {
+  background: rgba(168, 162, 158, 0.6) !important;
+  color: var(--color-icube-gold) !important;
+}
+[data-theme="light"] .site-wrapper nav[class*="fixed"][data-home="true"][data-scrolled="true"] button.theme-toggle-nav,
+[data-theme="light"] .site-wrapper nav[class*="fixed"][data-home="false"] button.theme-toggle-nav {
+  background: rgba(214, 211, 209, 0.6) !important;
+  border-color: rgba(120, 113, 108, 0.4) !important;
+  color: #1c1917 !important;
+}
+/* استثناء: زر Sign up (خلفية ذهبية) → نص داكن لكونتراست جيد */
+[data-theme="light"] .site-wrapper nav[class*="fixed"] a[href="/signup"] {
+  color: var(--color-icube-dark) !important;
+  background: var(--color-icube-gold) !important;
+}
+[data-theme="light"] .site-wrapper nav[class*="fixed"] a[href="/signup"]:hover {
+  color: var(--color-icube-dark) !important;
+  background: var(--color-icube-gold-light) !important;
+}
+/* Dark theme + light theme (transparent nav): menu links white */
+.site-wrapper nav .nav-menu-link {
+  color: #ffffff !important;
+}
+.site-wrapper nav .nav-menu-link:hover {
+  color: #ffffff !important;
+}
+/* Light bar only: Sign in hover gold */
+[data-theme="light"] .site-wrapper nav[class*="fixed"][data-home="false"] a[href="/login"]:hover,
+[data-theme="light"] .site-wrapper nav[class*="fixed"][data-home="true"][data-scrolled="true"] a[href="/login"]:hover {
+  color: var(--color-icube-gold) !important;
+}
+/* Transparent nav (home, not scrolled) light theme: toggle + logout white style */
+[data-theme="light"] .site-wrapper nav[class*="fixed"][data-home="true"]:not([data-scrolled="true"]) button.theme-toggle-nav {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+}
+[data-theme="light"] .site-wrapper nav[class*="fixed"][data-home="true"]:not([data-scrolled="true"]) .nav-logout-btn {
+  background: rgba(255, 255, 255, 0.08) !important;
   border-color: rgba(255, 255, 255, 0.2) !important;
-  color: rgba(229, 229, 229, 0.9) !important;
+  color: #ffffff !important;
 }
-/* Logout button: subtle contrast in light mode (nav is dark) */
-[data-theme="light"] .site-wrapper nav .nav-logout-btn {
-  background: rgba(255, 255, 255, 0.06) !important;
-  border-color: rgba(255, 255, 255, 0.18) !important;
-  color: rgba(255, 255, 255, 0.85) !important;
-}
-[data-theme="light"] .site-wrapper nav .nav-logout-btn:hover {
-  background: rgba(255, 255, 255, 0.1) !important;
-  border-color: rgba(255, 255, 255, 0.28) !important;
+[data-theme="light"] .site-wrapper nav[class*="fixed"][data-home="true"]:not([data-scrolled="true"]) .nav-logout-btn:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
   color: var(--color-icube-gold) !important;
 }
 [data-theme="light"] .site-wrapper nav .nav-logout-btn svg {
   color: inherit !important;
 }
-/* Gold only for Welcome name etc. – exclude .nav-menu-link (they use after:bg-icube-gold) */
+/* Welcome + اسم المستخدم: ذهبي (كلا الوضعين) */
 [data-theme="light"] .site-wrapper nav[class*="fixed"] a[class*="icube-gold"]:not(.nav-menu-link),
 [data-theme="light"] .site-wrapper nav[class*="fixed"] span[class*="icube-gold"] {
   color: var(--color-icube-gold) !important;
 }
-/* Dashboard & Book Studio: النص والأيقونة دائماً واضحان (لا يختفيان) */
+/* أزرار Book Studio و Dashboard (إطار ذهبي): نص ذهبي */
 .site-wrapper nav .nav-cta-link,
 .site-wrapper nav .nav-cta-link span {
   color: var(--color-icube-gold);
@@ -362,10 +399,11 @@ select:focus-visible {
   color: inherit;
 }
 [data-theme="light"] .site-wrapper nav .nav-cta-link,
-[data-theme="light"] .site-wrapper nav .nav-cta-link span {
+[data-theme="light"] .site-wrapper nav .nav-cta-link span,
+[data-theme="light"] .site-wrapper nav .nav-cta-link svg {
   color: var(--color-icube-gold) !important;
 }
-/* عند الـ hover الزر يصير ذهبي → النص والأيقونة أسود (خصوصية عالية تفوز على قواعد الناف) */
+/* عند hover على Book Studio / Dashboard: خلفية ذهبية ونص أسود */
 .site-wrapper nav .nav-cta-link:hover,
 .site-wrapper nav .nav-cta-link:hover span,
 .site-wrapper nav .nav-cta-link:hover svg {
@@ -375,6 +413,13 @@ select:focus-visible {
 [data-theme="light"] .site-wrapper nav[class*="fixed"] a.nav-cta-link:hover span,
 [data-theme="light"] .site-wrapper nav[class*="fixed"] a.nav-cta-link:hover svg {
   color: var(--color-icube-dark) !important;
+}
+/* Sign in: transparent nav = white; light bar = dark (already set above) */
+[data-theme="light"] .site-wrapper nav[class*="fixed"][data-home="true"]:not([data-scrolled="true"]) a[href="/login"] {
+  color: #ffffff !important;
+}
+[data-theme="light"] .site-wrapper nav[class*="fixed"][data-home="true"]:not([data-scrolled="true"]) a[href="/login"]:hover {
+  color: var(--color-icube-gold) !important;
 }
 
 /* Sections: alternating cream shades for contrast (except #home) */
@@ -468,6 +513,15 @@ select:focus-visible {
 }
 [data-theme="light"] .site-wrapper main svg {
   color: #1c1917 !important;
+}
+/* أي زر أو رابط بخلفية ذهبية: نص داكن لكونتراست جيد في الوضع الفاتح */
+[data-theme="light"] .site-wrapper a[class*="bg-icube-gold"]:not([class*="bg-icube-gold/0"]):not([class*="bg-icube-gold/10"]):not([class*="bg-icube-gold/20"]),
+[data-theme="light"] .site-wrapper button[class*="bg-icube-gold"]:not([class*="bg-icube-gold/0"]):not([class*="bg-icube-gold/10"]):not([class*="bg-icube-gold/20"]) {
+  color: var(--color-icube-dark) !important;
+}
+[data-theme="light"] .site-wrapper a[class*="bg-icube-gold"]:not([class*="bg-icube-gold/0"]):hover,
+[data-theme="light"] .site-wrapper button[class*="bg-icube-gold"]:not([class*="bg-icube-gold/0"]):hover {
+  color: var(--color-icube-dark) !important;
 }
 /* Cards – creamy surface so they stand out on cream bg */
 [data-theme="light"] .site-wrapper .rounded-2xl.border,

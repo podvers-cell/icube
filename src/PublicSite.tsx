@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useLayoutEffect, useState, useCallback } from "react";
 import { ArrowUp } from "lucide-react";
 import { motion } from "motion/react";
 import Navbar from "./components/Navbar";
@@ -19,6 +19,13 @@ import ScrollReveal from "./components/ScrollReveal";
 import { useSiteData } from "./SiteDataContext";
 
 const WHATSAPP_URL = "https://wa.me/971589965005";
+const SPLASH_STORAGE_KEY = "icube-splash-shown";
+
+/** Only show splash on the very first visit (persisted in localStorage). */
+function getInitialShowSplash(): boolean {
+  if (typeof window === "undefined") return true;
+  return localStorage.getItem(SPLASH_STORAGE_KEY) !== "1";
+}
 
 /** Hash from URL (works in both Vite and Next.js; no react-router dependency). */
 function useHash() {
@@ -38,6 +45,7 @@ export default function PublicSite() {
   const { loading, error, refresh } = useSiteData();
   const hash = useHash();
   const [showSplash, setShowSplash] = useState(true);
+  const [splashChecked, setSplashChecked] = useState(false);
   const [progress, setProgress] = useState(0);
   const [heroReady, setHeroReady] = useState(false);
   const [showWhatsAppBubble, setShowWhatsAppBubble] = useState(true);
@@ -45,9 +53,15 @@ export default function PublicSite() {
 
   const onHeroReady = useCallback(() => setHeroReady(true), []);
 
-  // Animate progress bar while data is loading
+  // Before paint: if user already saw splash in a previous visit, don't show it (navigation/return)
+  useLayoutEffect(() => {
+    if (!getInitialShowSplash()) setShowSplash(false);
+    setSplashChecked(true);
+  }, []);
+
+  // Animate progress bar while data is loading (only when splash is actually shown)
   useEffect(() => {
-    if (!showSplash) return;
+    if (!showSplash || !splashChecked) return;
     let timer: number | undefined;
     if (loading) {
       const tick = () => {
@@ -63,16 +77,24 @@ export default function PublicSite() {
     return () => {
       if (timer) window.clearTimeout(timer);
     };
-  }, [loading, showSplash]);
+  }, [loading, showSplash, splashChecked]);
 
-  // When data and hero (including video) are ready, finish bar and hide splash
+  // When data and hero (including video) are ready, finish bar and hide splash (first visit only)
   useEffect(() => {
+    if (!showSplash || !splashChecked) return;
     if (!loading && heroReady) {
       setProgress(100);
-      const timeout = window.setTimeout(() => setShowSplash(false), 400);
+      const timeout = window.setTimeout(() => {
+        setShowSplash(false);
+        try {
+          localStorage.setItem(SPLASH_STORAGE_KEY, "1");
+        } catch {
+          // ignore
+        }
+      }, 400);
       return () => window.clearTimeout(timeout);
     }
-  }, [loading, heroReady]);
+  }, [loading, heroReady, showSplash, splashChecked]);
 
   // When coming from another page (e.g. portfolio) and clicking studio: scroll to section after home loads
   useEffect(() => {

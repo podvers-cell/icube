@@ -283,7 +283,7 @@ function PortfolioCard({
 }) {
   const hasVideo = project.video_url && getVideoEmbed(project.video_url);
   return (
-    <div className="w-[85%] mx-auto">
+    <div className="w-[85%] md:w-full mx-auto">
     <motion.div
       className="group/card flex flex-col gap-3"
       whileHover={{ y: -5 }}

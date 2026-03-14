@@ -95,16 +95,26 @@ export default function Navbar() {
   }
 
   const isHome = pathname === "/";
+  const isLight = theme === "light";
+  const isLightNavBar = isLight && (isScrolled || !isHome);
+
+  const navTextStyle = isLightNavBar ? { color: "#1c1917" } : isLight ? { color: "#ffffff" } : undefined;
+
+  const navBgClass = isLight
+    ? isScrolled || !isHome
+      ? "bg-[#f2f0eb]/98 border-b border-stone-300/60 backdrop-blur-2xl shadow-lg"
+      : "bg-transparent border-b border-transparent"
+    : isScrolled
+      ? "bg-black/35 border-b border-white/10 backdrop-blur-2xl shadow-lg"
+      : "bg-transparent border-b border-transparent";
 
   return (
     <nav
       data-scrolled={isScrolled ? "true" : undefined}
       data-home={isHome ? "true" : "false"}
-      className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-        isScrolled
-          ? "bg-black/35 border-b border-white/10 backdrop-blur-2xl shadow-lg"
-          : "bg-transparent border-b border-transparent"
-      }`}
+      data-theme={theme}
+      style={navTextStyle}
+      className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${navBgClass} ${isLightNavBar ? "text-stone-900" : isLight ? "text-white" : ""}`}
     >
       <div className="w-full px-4 md:px-8 lg:px-10 py-2 flex items-center justify-between gap-4 md:justify-start md:gap-6">
         {/* Logo – left */}
@@ -127,9 +137,10 @@ export default function Navbar() {
                     <Link
                       href={href}
                       onClick={(e) => handleNavLinkClick(e, href)}
+                      style={navTextStyle}
                       className={`nav-menu-link relative inline-block py-2 pb-2.5 whitespace-nowrap text-[11px] font-medium tracking-[0.18em] uppercase transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-full after:bg-icube-gold after:origin-left after:transition-transform after:duration-300 after:[transition-timing-function:cubic-bezier(0.4,0,0.2,1)] hover:after:scale-x-100 ${
-                        active ? "text-white after:scale-x-100" : "text-gray-200/80 hover:text-white after:scale-x-0"
-                      }`}
+                        isLightNavBar ? "text-stone-900 hover:text-stone-900" : isLight ? "text-white hover:text-white" : active ? "text-white after:scale-x-100" : "text-gray-200/80 hover:text-white after:scale-x-0"
+                      } ${active ? "after:scale-x-100" : "after:scale-x-0"}`}
                       aria-current={active ? "page" : undefined}
                     >
                       {link.name}
@@ -144,7 +155,7 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-2 lg:gap-3 shrink-0">
           {user ? (
             <>
-              <span className="text-[11px] uppercase tracking-[0.18em] text-gray-300/90">
+              <span style={navTextStyle} className={`text-[11px] uppercase tracking-[0.18em] ${isLightNavBar ? "text-stone-900" : isLight ? "text-white" : "text-gray-300/90"}`}>
                 Welcome <span className="text-icube-gold">{displayName}</span>
               </span>
               {isAdmin && (
@@ -159,7 +170,8 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="nav-logout-btn inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/5 border border-white/20 text-gray-200 hover:bg-white/15 hover:text-icube-gold transition-colors"
+                style={navTextStyle}
+                className={`nav-logout-btn inline-flex h-7 w-7 items-center justify-center rounded-full hover:text-icube-gold transition-colors ${isLightNavBar ? "bg-stone-200/80 border border-stone-300 text-stone-800 hover:bg-stone-300/80" : "bg-white/5 border border-white/20 hover:bg-white/15 text-gray-200"}`}
                 aria-label="Log out"
               >
                 <LogOut size={14} />
@@ -176,13 +188,14 @@ export default function Navbar() {
             <>
               <Link
                 href="/login"
-                className="px-4 py-1.5 rounded-full bg-white/5 border border-white/20 text-[11px] font-medium uppercase tracking-[0.2em] text-gray-50 hover:bg-white/15 transition-colors active:scale-[0.98]"
+                style={navTextStyle}
+                className={`px-4 py-1.5 rounded-full text-[11px] font-medium uppercase tracking-[0.2em] transition-colors active:scale-[0.98] ${isLightNavBar ? "bg-stone-200/80 border border-stone-300 text-stone-800 hover:bg-stone-300/80 hover:text-stone-900" : "bg-white/5 border border-white/20 text-gray-50 hover:bg-white/15"}`}
               >
                 Sign in
               </Link>
               <Link
                 href="/signup"
-                className="px-4 py-1.5 rounded-full bg-icube-gold/90 text-[11px] font-semibold uppercase tracking-[0.22em] text-icube-dark hover:bg-icube-gold-light transition-colors shadow-[0_0_18px_rgba(212,175,55,0.45)] active:scale-[0.98]"
+                className="px-4 py-1.5 rounded-full bg-icube-gold text-[11px] font-semibold uppercase tracking-[0.22em] text-icube-dark hover:bg-icube-gold-light transition-colors shadow-[0_0_18px_rgba(212,175,55,0.45)] active:scale-[0.98]"
               >
                 Sign up
               </Link>
@@ -200,18 +213,18 @@ export default function Navbar() {
 
         {/* Mobile Menu Toggle – min 44px touch target */}
         <button
-          className="md:hidden z-50 text-white p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-icube-gold focus-visible:ring-offset-2 focus-visible:ring-offset-icube-dark"
+          className={`md:hidden z-50 p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-icube-gold focus-visible:ring-offset-2 ${isLightNavBar ? "text-stone-800 focus-visible:ring-offset-[#f2f0eb]" : "text-white focus-visible:ring-offset-icube-dark"}`}
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           aria-label={isMobileMenuOpen ? "Close navigation" : "Open navigation"}
         >
           <span className="relative flex flex-col justify-center items-center w-7 h-7">
             <span
-              className={`block h-[2px] w-7 rounded-full bg-white transition-all duration-300 ${
+              className={`block h-[2px] w-7 rounded-full transition-all duration-300 ${isLightNavBar ? "bg-stone-800" : "bg-white"} ${
                 isMobileMenuOpen ? "translate-y-[3px] -rotate-45" : "-translate-y-[3px]"
               }`}
             />
             <span
-              className={`block h-[2px] w-7 rounded-full bg-white transition-all duration-300 ${
+              className={`block h-[2px] w-7 rounded-full transition-all duration-300 ${isLightNavBar ? "bg-stone-800" : "bg-white"} ${
                 isMobileMenuOpen ? "-translate-y-[3px] rotate-45" : "translate-y-[3px]"
               }`}
             />

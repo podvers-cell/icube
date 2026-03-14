@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState, useRef } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { useState, useEffect } from "react";
+import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
-import { X, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
-import { useFocusTrap } from "../hooks/useFocusTrap";
+import { ChevronDown } from "lucide-react";
 import { useSwipeCarousel } from "../hooks/useSwipeCarousel";
 import { useSiteData } from "../SiteDataContext";
 import { useBooking } from "../BookingContext";
@@ -26,42 +26,7 @@ export default function Studio() {
   const router = useRouter();
   const { studios } = useSiteData();
   const { setSelectedStudio, setSelectedPackage } = useBooking();
-  const [openId, setOpenId] = useState<string | null>(null);
-  const [activeImage, setActiveImage] = useState(0);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-
-  const selected = useMemo(() => studios.find((s) => s.id === openId) || null, [studios, openId]);
-  const images = selected?.images?.length
-    ? selected.images
-    : selected
-      ? [{ image_url: selected.cover_image_url, caption: null, sort_order: 0 }]
-      : [];
-
-  const [modalImageLoaded, setModalImageLoaded] = useState(false);
-  const studioModalRef = useRef<HTMLDivElement>(null);
-  useFocusTrap(studioModalRef, !!selected);
-
-  useEffect(() => {
-    if (!selected) return;
-    setActiveImage(0);
-    setModalImageLoaded(false);
-  }, [selected?.id]);
-
-  useEffect(() => {
-    setModalImageLoaded(false);
-  }, [activeImage]);
-
-
-  useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpenId(null);
-      if (!selected) return;
-      if (e.key === "ArrowLeft") setActiveImage((i) => (i - 1 + images.length) % images.length);
-      if (e.key === "ArrowRight") setActiveImage((i) => (i + 1) % images.length);
-    }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [selected, images.length]);
 
   function StudioCard({
     studio,
@@ -69,7 +34,6 @@ export default function Studio() {
     setExpandedId,
     setSelectedStudio,
     setSelectedPackage,
-    setOpenId,
     router,
     isPriority = false,
   }: {
@@ -78,18 +42,16 @@ export default function Studio() {
     setExpandedId: (id: string | null) => void;
     setSelectedStudio: (studio: { id: string; name: string; price_aed_per_hour: number }) => void;
     setSelectedPackage: (p: null) => void;
-    setOpenId: (id: string | null) => void;
     router: ReturnType<typeof useRouter>;
     isPriority?: boolean;
   }) {
     const s = studio;
     const useNextImage = isOptimizedImageUrl(s.cover_image_url);
     return (
-      <div className="w-[85%] mx-auto">
+      <div className="w-[85%] md:w-full mx-auto">
       <article className="studio-card flex flex-col rounded-2xl bg-white/[0.06] overflow-hidden shadow-[0_12px_40px_rgba(0,0,0,0.25)] transition-all duration-300">
-        <button
-          type="button"
-          onClick={() => setOpenId(s.id)}
+        <Link
+          href={`/studio/${s.id}`}
           className="relative block w-full aspect-[4/3] overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-icube-gold focus-visible:ring-offset-2 focus-visible:ring-offset-icube-dark"
         >
           {useNextImage ? (
@@ -113,7 +75,7 @@ export default function Studio() {
               fetchPriority={isPriority ? "high" : undefined}
             />
           )}
-        </button>
+        </Link>
         <div className="flex flex-col flex-1 p-6">
           <h3 className="text-xl font-display font-bold text-white mb-1">{s.name}</h3>
           <div className="mb-3 flex items-baseline gap-2">
@@ -179,10 +141,9 @@ export default function Studio() {
     setExpandedId: (id: string | null) => void;
     setSelectedStudio: (studio: { id: string; name: string; price_aed_per_hour: number }) => void;
     setSelectedPackage: (p: null) => void;
-    setOpenId: (id: string | null) => void;
     router: ReturnType<typeof useRouter>;
   }) {
-    const { studios, expandedId, setExpandedId, setSelectedStudio, setSelectedPackage, setOpenId, router } = props;
+    const { studios, expandedId, setExpandedId, setSelectedStudio, setSelectedPackage, router } = props;
     const len = studios.length;
     const [index, setIndex] = useState(0);
     const [noTransition, setNoTransition] = useState(false);
@@ -236,7 +197,6 @@ export default function Studio() {
                   setExpandedId={setExpandedId}
                   setSelectedStudio={setSelectedStudio}
                   setSelectedPackage={setSelectedPackage}
-                  setOpenId={setOpenId}
                   router={router}
                   isPriority={i === 0}
                 />
@@ -288,7 +248,7 @@ export default function Studio() {
           </p>
         </AnimatedSectionHeader>
 
-        {/* Mobile carousel with arrows */}
+        {/* Mobile carousel */}
         <div className="md:hidden">
           <MobileStudiosCarousel
             studios={studios}
@@ -296,12 +256,11 @@ export default function Studio() {
             setExpandedId={setExpandedId}
             setSelectedStudio={setSelectedStudio}
             setSelectedPackage={setSelectedPackage}
-            setOpenId={setOpenId}
             router={router}
           />
         </div>
 
-        {/* Desktop / tablet grid stays as before */}
+        {/* Desktop / tablet grid */}
         <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {studios.map((s, index) => (
             <AnimatedStaggerItem key={s.id} index={index}>
@@ -311,7 +270,6 @@ export default function Studio() {
                 setExpandedId={setExpandedId}
                 setSelectedStudio={setSelectedStudio}
                 setSelectedPackage={setSelectedPackage}
-                setOpenId={setOpenId}
                 router={router}
                 isPriority={index === 0}
               />
@@ -319,179 +277,6 @@ export default function Studio() {
           ))}
         </div>
       </div>
-
-      {selected && (
-          <div
-            className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-4"
-            onClick={() => setOpenId(null)}
-          >
-            <div
-              ref={studioModalRef}
-              className="w-full max-w-6xl bg-white/[0.04] border border-white/10 rounded-2xl overflow-hidden max-h-[90vh] flex flex-col shadow-2xl backdrop-blur-xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between p-5 border-b border-white/10 bg-white/[0.02]">
-                <div className="min-w-0">
-                  <p className="text-icube-gold text-xs uppercase tracking-[0.2em]">Studio</p>
-                  <h3 className="text-xl md:text-2xl font-display font-bold text-white truncate">{selected.name}</h3>
-                </div>
-                <button
-                  onClick={() => setOpenId(null)}
-                  className="p-2 rounded-sm hover:bg-white/5 text-gray-300 hover:text-white"
-                  aria-label="Close"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-[7fr_3fr] flex-1 min-h-0 overflow-auto">
-                <div className="relative bg-black min-h-[320px]">
-                  {images[activeImage]?.image_url && !modalImageLoaded && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-icube-gray/50 min-h-[320px]">
-                      <div className="h-12 w-12 animate-pulse rounded-full border-2 border-icube-gold/30 border-t-icube-gold" aria-hidden />
-                    </div>
-                  )}
-                  {images[activeImage]?.image_url && (() => {
-                    const url = images[activeImage].image_url;
-                    const useNextImage = isOptimizedImageUrl(url);
-                    return useNextImage ? (
-                      <div className="relative w-full h-[380px] md:h-[560px]">
-                        <Image
-                          src={url}
-                          alt={selected.name}
-                          fill
-                          sizes="(max-width: 1024px) 100vw, 70vw"
-                          className="object-contain"
-                          onLoad={() => setModalImageLoaded(true)}
-                        />
-                      </div>
-                    ) : (
-                      <img
-                        src={url}
-                        alt={selected.name}
-                        className="w-full h-[380px] md:h-[560px] object-contain"
-                        referrerPolicy="no-referrer"
-                        loading="lazy"
-                        decoding="async"
-                        onLoad={() => setModalImageLoaded(true)}
-                      />
-                    );
-                  })()}
-                  {images.length > 1 && (
-                    <>
-                      <button
-                        onClick={() => setActiveImage((i) => (i - 1 + images.length) % images.length)}
-                        className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white hover:bg-black/70"
-                        aria-label="Previous image"
-                      >
-                        <ChevronLeft size={20} />
-                      </button>
-                      <button
-                        onClick={() => setActiveImage((i) => (i + 1) % images.length)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white hover:bg-black/70"
-                        aria-label="Next image"
-                      >
-                        <ChevronRight size={20} />
-                      </button>
-                    </>
-                  )}
-                  {images.length > 1 && (
-                    <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
-                      <div className="flex gap-2 overflow-x-auto">
-                        {images.map((img, i) => (
-                          <button
-                            key={`${img.image_url}-${i}`}
-                            onClick={() => setActiveImage(i)}
-                            className={`shrink-0 w-20 h-14 rounded-sm overflow-hidden border relative ${
-                              i === activeImage ? "border-icube-gold" : "border-white/10"
-                            }`}
-                            aria-label={`Thumbnail ${i + 1}`}
-                          >
-                            {isOptimizedImageUrl(img.image_url) ? (
-                              <Image
-                                src={img.image_url}
-                                alt=""
-                                fill
-                                sizes="80px"
-                                className="object-cover"
-                                loading="lazy"
-                              />
-                            ) : (
-                              <img
-                                src={img.image_url}
-                                alt=""
-                                className="w-full h-full object-cover"
-                                referrerPolicy="no-referrer"
-                                loading="lazy"
-                                decoding="async"
-                              />
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="p-5 md:p-6 lg:p-6 max-w-[420px] lg:max-w-none flex flex-col gap-6 overflow-auto">
-                  <div className="space-y-3">
-                    <p className="text-[11px] uppercase tracking-[0.2em] text-gray-400 font-medium">About this studio</p>
-                    <div className="rounded-xl border border-white/10 bg-white/[0.06] backdrop-blur-md p-5 min-h-[80px] shadow-inner">
-                      <p className="text-gray-200 font-light text-sm leading-relaxed whitespace-pre-wrap break-words max-h-[240px] overflow-auto pr-1">
-                        {selected.details}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-white/10 pt-5 space-y-3">
-                    <p className="text-[11px] uppercase tracking-[0.2em] text-gray-400 font-medium">Details</p>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="rounded-xl border border-white/10 bg-white/[0.06] backdrop-blur-md p-4 flex flex-col gap-2 min-h-[72px] shadow-inner">
-                        <p className="text-gray-400 text-[10px] uppercase tracking-wider font-medium shrink-0">Price</p>
-                        <div className="flex flex-col gap-0.5 min-h-0">
-                          {selected.price_aed_per_hour_before ? (
-                            <span className="text-gray-500 text-xs line-through shrink-0">
-                              {selected.price_aed_per_hour_before} AED/hr
-                            </span>
-                          ) : null}
-                          <span className="text-white font-semibold text-sm">{selected.price_aed_per_hour} AED/hr</span>
-                        </div>
-                      </div>
-                      <div className="rounded-xl border border-white/10 bg-white/[0.06] backdrop-blur-md p-4 flex flex-col gap-2 min-h-[72px] shadow-inner">
-                        <p className="text-gray-400 text-[10px] uppercase tracking-wider font-medium shrink-0">Capacity</p>
-                        <p className="text-white font-semibold text-sm mt-0.5">{selected.capacity} people</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-auto pt-2 space-y-3">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (selected) {
-                          setSelectedStudio({
-                            id: selected.id,
-                            name: selected.name,
-                            price_aed_per_hour: selected.price_aed_per_hour,
-                          });
-                          setSelectedPackage(null);
-                          setOpenId(null);
-                          router.push("/studio/booking/date-time");
-                        }
-                      }}
-                      className="w-full px-6 py-3.5 bg-icube-gold text-icube-dark font-semibold rounded-xl hover:bg-icube-gold-light transition-colors shadow-lg"
-                    >
-                      Book this studio
-                    </button>
-                    <p className="text-gray-500 text-[11px]">
-                      Tip: Use ← → to browse images, Esc to close.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
     </section>
   );
 }
