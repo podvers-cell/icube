@@ -46,9 +46,10 @@ const nav: NavItem[] = [
   { href: "/dashboard/bookings", end: false, label: "Bookings", icon: Calendar, countKey: "bookings" },
   { href: "/dashboard/package-bookings", end: false, label: "Package Bookings", icon: ClipboardList, countKey: "package-bookings" },
   { href: "/dashboard/messages", end: false, label: "Contact Messages", icon: Mail, countKey: "messages" },
-  { href: "/dashboard/benefits", end: false, label: "Benefits", icon: Sparkles },
+  { href: "/dashboard/why-us", end: false, label: "Why Us", icon: Sparkles },
   { href: "/dashboard/studios", end: false, label: "Studios", icon: Building2 },
   { href: "/dashboard/studio", end: false, label: "Studio Equipment", icon: Video },
+  { href: "/dashboard/videos", end: false, label: "Videos", icon: Video },
 ];
 
 type BookingRow = { id: string; status?: string; package_id?: string | null };

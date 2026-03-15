@@ -6,9 +6,7 @@ import { api } from "../api";
 
 type Why = { id: number; icon: string; title: string; description: string; sort_order: number };
 
-type Props = { pageTitle?: string; pageDescription?: string };
-
-export default function DashboardWhyUs({ pageTitle = "Why Us", pageDescription = "Key reasons shown under the “Why ICUBE” section." }: Props) {
+export default function DashboardWhyUs() {
   const [list, setList] = useState<Why[]>([]);
   const [editing, setEditing] = useState<Why | null>(null);
   const isCreating = editing && editing.id === 0;
@@ -48,8 +46,8 @@ export default function DashboardWhyUs({ pageTitle = "Why Us", pageDescription =
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-display font-bold text-white">{pageTitle}</h1>
-          <p className="text-gray-500 text-sm mt-1">{pageDescription}</p>
+          <h1 className="text-3xl font-display font-bold text-white">Why Us</h1>
+          <p className="text-gray-500 text-sm mt-1">Key reasons shown under the “Why ICUBE” section.</p>
         </div>
         <button
           onClick={() =>

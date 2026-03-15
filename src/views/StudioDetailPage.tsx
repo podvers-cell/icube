@@ -77,18 +77,18 @@ export default function StudioDetailPage() {
     if (works.length === 0) return;
     const el = carouselRef.current;
     if (!el) return;
-    const speed = 0.6;
-    let rafId: number;
-    const tick = () => {
-      if (!carouselPausedRef.current && el) {
-        el.scrollLeft += speed;
-        const half = el.scrollWidth / 2;
-        if (el.scrollLeft >= half) el.scrollLeft -= half;
+    const step = () => {
+      if (carouselPausedRef.current) return;
+      const { scrollLeft, scrollWidth, offsetWidth } = el;
+      const next = scrollLeft + offsetWidth;
+      if (next >= scrollWidth - 2) {
+        el.scrollTo({ left: 0, behavior: "smooth" });
+      } else {
+        el.scrollTo({ left: next, behavior: "smooth" });
       }
-      rafId = requestAnimationFrame(tick);
     };
-    rafId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafId);
+    const t = setInterval(step, 3500);
+    return () => clearInterval(t);
   }, [works.length]);
 
   if (id && !studio) {
@@ -322,14 +322,14 @@ export default function StudioDetailPage() {
                 ref={carouselRef}
                 onMouseEnter={() => { carouselPausedRef.current = true; }}
                 onMouseLeave={() => { carouselPausedRef.current = false; }}
-                className="flex gap-4 md:gap-6 overflow-x-auto pb-2 -mx-1 scrollbar-hide"
+                className="flex gap-4 md:gap-6 overflow-x-auto snap-x snap-mandatory pb-2 -mx-1 scroll-smooth scrollbar-hide"
               >
-                {[...works, ...works].map((project, i) => {
+                {works.map((project) => {
                   const embed = project.video_url && getVideoEmbed(project.video_url);
                   return (
                     <div
-                      key={`${project.id}-${i}`}
-                      className="group flex-[0_0_calc(50%-0.5rem)] md:flex-[0_0_calc(50%-0.75rem)] min-w-0 shrink-0"
+                      key={project.id}
+                      className="group flex-[0_0_calc(50%-0.5rem)] md:flex-[0_0_calc(50%-0.75rem)] snap-start min-w-0"
                     >
                       <div className="aspect-[4/3] overflow-hidden border border-white/10 bg-white/5 relative">
                         <Image
@@ -337,7 +337,7 @@ export default function StudioDetailPage() {
                           alt={project.title}
                           fill
                           sizes="(max-width: 768px) 50vw, 33vw"
-                          className="object-cover transition-all duration-300 group-hover:scale-105 group-hover:blur-[3px]"
+                          className="object-cover transition-transform duration-300 group-hover:scale-105"
                           referrerPolicy="no-referrer"
                         />
                         <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors flex items-center justify-center">
@@ -345,15 +345,10 @@ export default function StudioDetailPage() {
                             <button
                               type="button"
                               onClick={() => setPlayingProject(project)}
-                              className="play-btn-glass-wrap rounded-full w-12 h-12 flex items-center justify-center text-white hover:opacity-90 transition-opacity"
+                              className="w-12 h-12 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-white hover:bg-icube-gold/30 hover:border-icube-gold/50 transition-colors"
                               aria-label={`Play ${project.title}`}
                             >
-                              <span className="play-btn-ring" aria-hidden />
-                              <span className="play-btn-ring" aria-hidden />
-                              <span className="play-btn-ring" aria-hidden />
-                              <div className="play-btn-glass rounded-full w-12 h-12 flex items-center justify-center absolute inset-0">
-                                <Play size={22} className="text-white ml-0.5" fill="currentColor" />
-                              </div>
+                              <Play size={22} className="text-white ml-0.5" fill="currentColor" />
                             </button>
                           ) : null}
                         </div>
