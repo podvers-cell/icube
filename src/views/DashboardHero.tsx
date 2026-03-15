@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent, type ChangeEvent } from "react";
 import { api } from "../api";
 import { requireStorage } from "../firebase";
+import { useSiteData, invalidateSiteCache } from "../SiteDataContext";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { uploadToCloudinaryWithProgress } from "../lib/uploadCloudinary";
 
@@ -14,6 +15,7 @@ type HeroSettings = {
 };
 
 export default function DashboardHero() {
+  const { refresh } = useSiteData();
   const [settings, setSettings] = useState<HeroSettings>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -53,6 +55,8 @@ export default function DashboardHero() {
     setSaving(true);
     try {
       await api.put("/dashboard/settings", settings);
+      invalidateSiteCache();
+      await refresh();
       alert("Hero background saved.");
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to save hero settings");

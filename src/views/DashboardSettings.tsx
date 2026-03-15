@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { api } from "../api";
 import { useToast } from "../ToastContext";
+import { useSiteData, invalidateSiteCache } from "../SiteDataContext";
 
 const keys = [
   "hero_tagline",
@@ -27,6 +28,7 @@ const keys = [
 
 export default function DashboardSettings() {
   const { showToast } = useToast();
+  const { refresh } = useSiteData();
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
@@ -41,6 +43,8 @@ export default function DashboardSettings() {
     setSaving(true);
     try {
       await api.put("/dashboard/settings", settings);
+      invalidateSiteCache();
+      await refresh();
       showToast("Settings saved.", "success");
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Failed to save", "error");

@@ -111,6 +111,8 @@ export default function Portfolio({ limit, sectionLabel = "Selected work", title
                         ? "bg-white text-icube-dark"
                         : "bg-transparent border border-white/30 text-white hover:border-white/50 hover:bg-white/5"
                     }`}
+                    aria-pressed={activeCategory === cat}
+                    aria-label={activeCategory === cat ? `Filter: ${cat} (selected)` : `Filter by ${cat}`}
                   >
                     {cat}
                   </button>

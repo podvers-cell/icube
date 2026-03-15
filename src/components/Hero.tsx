@@ -149,8 +149,8 @@ export default function Hero({ onHeroReady }: HeroProps) {
                 : undefined
           }
         />
-        {/* On mobile: skip video/GIF to speed up load; use image or gradient only */}
-        {!isMobile && bgType === "video" && bgVideo ? (
+        {/* Video/GIF background: same on mobile and desktop (muted + playsInline for mobile autoplay) */}
+        {bgType === "video" && bgVideo ? (
           youtubeEmbed ? (
             <div className="absolute inset-0 overflow-hidden w-full h-full min-h-full">
               <iframe
@@ -180,12 +180,14 @@ export default function Hero({ onHeroReady }: HeroProps) {
                 muted
                 loop
                 playsInline
+                disablePictureInPicture
+                disableRemotePlayback
               >
                 <source src={bgVideo} />
               </video>
             </div>
           )
-        ) : !isMobile && bgType === "gif" && bgGif ? (
+        ) : bgType === "gif" && bgGif ? (
           <img
             src={bgGif}
             alt="Hero Background"
@@ -198,6 +200,7 @@ export default function Hero({ onHeroReady }: HeroProps) {
             alt="Hero Background"
             fill
             priority
+            fetchPriority="high"
             sizes="100vw"
             className="object-cover object-center opacity-60 scale-105"
             referrerPolicy="no-referrer"

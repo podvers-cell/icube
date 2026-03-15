@@ -30,17 +30,6 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Custom cursor: hide default cursor only when pointer can hover (desktop). On touch we don't hide so mobile works normally. */
-@media (hover: hover) {
-  html,
-  html body,
-  html *,
-  html *::before,
-  html *::after {
-    cursor: none !important;
-  }
-}
-
 /* Mobile navigation loading bar animation */
 @keyframes navigation-loading {
   0% { transform: translateX(-100%); }
@@ -54,6 +43,21 @@ h1, h2, h3, h4, h5, h6 {
 
 html {
   scroll-behavior: smooth;
+}
+
+/* Accessibility: visible focus for keyboard users (focus-visible only, not mouse) */
+a:focus-visible,
+button:focus-visible,
+[tabindex="0"]:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-icube-dark), 0 0 0 4px var(--color-icube-gold);
+  border-radius: 4px;
+}
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-icube-gold);
 }
 
 /* تدريجي عند التبديل بين الدارك واللايت مود */

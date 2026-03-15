@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { api } from "../api";
+import { useSiteData, invalidateSiteCache } from "../SiteDataContext";
 import CloudinaryUploadField from "../components/CloudinaryUploadField";
 
 type Project = {
@@ -19,6 +20,7 @@ type Project = {
 };
 
 export default function DashboardPortfolio() {
+  const { refresh } = useSiteData();
   const [list, setList] = useState<Project[]>([]);
   const [editing, setEditing] = useState<Project | null>(null);
   const isCreating = editing && editing.id === 0;
@@ -46,6 +48,8 @@ export default function DashboardPortfolio() {
       } else {
         await api.put(`/dashboard/portfolio/${editing.id}`, editing);
       }
+      invalidateSiteCache();
+      await refresh();
       setEditing(null);
       load();
     } catch (err) {
@@ -57,6 +61,8 @@ export default function DashboardPortfolio() {
     if (!confirm("Delete this project?")) return;
     try {
       await api.delete(`/dashboard/portfolio/${id}`);
+      invalidateSiteCache();
+      await refresh();
       load();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed");

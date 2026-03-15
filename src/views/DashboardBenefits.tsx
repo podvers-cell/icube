@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { api } from "../api";
 import { useToast } from "../ToastContext";
+import { useSiteData, invalidateSiteCache } from "../SiteDataContext";
 import CloudinaryUploadField from "../components/CloudinaryUploadField";
 
 const BENEFITS_KEYS = [
@@ -48,6 +49,7 @@ const DEFAULTS: Record<(typeof BENEFITS_KEYS)[number], string> = {
 
 export default function DashboardBenefits() {
   const { showToast } = useToast();
+  const { refresh } = useSiteData();
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
@@ -62,6 +64,8 @@ export default function DashboardBenefits() {
     setSaving(true);
     try {
       await api.put("/dashboard/settings", settings);
+      invalidateSiteCache();
+      await refresh();
       showToast("Benefits content saved.", "success");
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Failed to save", "error");

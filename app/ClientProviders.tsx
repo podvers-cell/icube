@@ -9,15 +9,15 @@ import { ToastProvider } from "@/ToastContext";
 import MaintenanceGate from "@/components/MaintenanceGate";
 import CookieConsent from "@/components/CookieConsent";
 import { SplashScreen } from "@/components/SplashScreen";
-import CustomCursorProvider from "@/components/CustomCursorProvider";
 import NavigationLoadingBar from "@/components/NavigationLoadingBar";
+import { ErrorBoundary } from "@/ErrorBoundary";
 
 export function ClientProviders({ children }: { children: React.ReactNode }) {
   return (
+    <ErrorBoundary>
     <ThemeProvider>
       <SplashScreen />
       <NavigationLoadingBar />
-      <CustomCursorProvider />
       <AuthProvider>
         <SiteDataProvider>
           <MaintenanceGate>
@@ -33,5 +33,6 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
         </SiteDataProvider>
       </AuthProvider>
     </ThemeProvider>
+    </ErrorBoundary>
   );
 }

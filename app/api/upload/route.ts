@@ -15,12 +15,22 @@ function getConfig() {
   return null;
 }
 
+/** In production only server-side key is allowed. Never use NEXT_PUBLIC_UPLOAD_API_KEY in production. */
 function getUploadKey(): string | null {
+  const isProduction = process.env.NODE_ENV === "production";
+  if (isProduction) return process.env.UPLOAD_API_KEY ?? null;
   return process.env.UPLOAD_API_KEY ?? process.env.NEXT_PUBLIC_UPLOAD_API_KEY ?? null;
 }
 
 export async function POST(request: NextRequest) {
   const uploadKey = getUploadKey();
+  const isProduction = process.env.NODE_ENV === "production";
+  if (isProduction && !uploadKey) {
+    return NextResponse.json(
+      { error: "Upload not configured. Set UPLOAD_API_KEY server-side in production." },
+      { status: 503 }
+    );
+  }
   if (uploadKey) {
     const provided = request.headers.get("x-upload-key") ?? request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
     if (!provided || provided !== uploadKey) {
