@@ -3,15 +3,11 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { api } from "../api";
 import { useToast } from "../ToastContext";
-import { useSiteData, invalidateSiteCache } from "../SiteDataContext";
-import CloudinaryUploadField from "../components/CloudinaryUploadField";
 
 const BENEFITS_KEYS = [
   "benefits_section_label",
   "benefits_title",
   "benefits_intro",
-  "benefits_image_url",
-  "benefits_image_alt",
   "benefits_col1_p1",
   "benefits_col1_p2",
   "benefits_col2_p1",
@@ -22,8 +18,6 @@ const LABELS: Record<(typeof BENEFITS_KEYS)[number], string> = {
   benefits_section_label: "Section label (e.g. Why work with us)",
   benefits_title: "Main heading",
   benefits_intro: "Intro paragraph (use ICUBE for highlighted brand name)",
-  benefits_image_url: "Image URL (right side of section)",
-  benefits_image_alt: "Image alt text (accessibility)",
   benefits_col1_p1: "Left column – first paragraph",
   benefits_col1_p2: "Left column – second paragraph",
   benefits_col2_p1: "Right column – first paragraph",
@@ -43,13 +37,10 @@ const DEFAULTS: Record<(typeof BENEFITS_KEYS)[number], string> = {
     "We manage the full production pipeline: podcast recording, video shoots, and multi-format content. From our Dubai studios we support creators and businesses across the UAE and beyond with a skilled team of producers, sound engineers, and creatives.",
   benefits_col2_p2:
     "Our clients get access to professional-grade technology and workflows designed for scalability. Whether you're launching a new show or levelling up your brand content, we're here to help you grow your audience and reach.",
-  benefits_image_url: "/podcast-still.png",
-  benefits_image_alt: "Podcast production at ICUBE Media Studio – professional recording setup",
 };
 
 export default function DashboardBenefits() {
   const { showToast } = useToast();
-  const { refresh } = useSiteData();
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
@@ -64,8 +55,6 @@ export default function DashboardBenefits() {
     setSaving(true);
     try {
       await api.put("/dashboard/settings", settings);
-      invalidateSiteCache();
-      await refresh();
       showToast("Benefits content saved.", "success");
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Failed to save", "error");
@@ -117,32 +106,6 @@ export default function DashboardBenefits() {
               rows={4}
               className="w-full bg-black/40 border border-white/10 rounded px-3 py-2 text-white placeholder-gray-500 resize-y"
               placeholder={DEFAULTS.benefits_intro}
-            />
-          </div>
-        </div>
-
-        {/* Image – right side of section */}
-        <div className="space-y-4 rounded-lg border border-white/10 bg-white/[0.03] p-6">
-          <h2 className="text-sm font-semibold text-icube-gold uppercase tracking-wider">Image</h2>
-          <div>
-            <CloudinaryUploadField
-              value={value("benefits_image_url")}
-              onChange={(url) => update("benefits_image_url", url)}
-              type="image"
-              folder="icube/benefits"
-              label={LABELS.benefits_image_url}
-              placeholder="/podcast-still.png or full URL"
-              className="mb-2"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1">{LABELS.benefits_image_alt}</label>
-            <input
-              type="text"
-              value={value("benefits_image_alt")}
-              onChange={(e) => update("benefits_image_alt", e.target.value)}
-              className="w-full bg-black/40 border border-white/10 rounded px-3 py-2 text-white placeholder-gray-500"
-              placeholder="Describe the image for accessibility"
             />
           </div>
         </div>

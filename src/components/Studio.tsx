@@ -92,7 +92,6 @@ export default function Studio() {
               onClick={() => setExpandedId(expandedId === s.id ? null : s.id)}
               className="flex items-center justify-between w-full py-2 text-left text-sm font-medium text-white/90 hover:text-icube-gold transition-colors"
               aria-expanded={expandedId === s.id}
-              aria-label={expandedId === s.id ? `Collapse details for ${s.name}` : `Expand details for ${s.name}`}
             >
               <span>What&apos;s included?</span>
               <ChevronDown
@@ -127,7 +126,6 @@ export default function Studio() {
               router.push("/studio/booking/date-time");
             }}
             className="mt-4 inline-flex items-center justify-center w-full py-3 px-4 bg-icube-dark border border-icube-gold/40 text-white font-semibold uppercase tracking-wider text-sm rounded-lg hover:bg-icube-gold hover:text-icube-dark transition-colors duration-200"
-            aria-label={`Book ${s.name} studio`}
           >
             Book now
           </button>

@@ -13,7 +13,7 @@ export default function PackagesPage() {
         <div className="absolute bottom-0 right-1/3 w-[50vmax] h-[50vmax] translate-y-1/3 rounded-full bg-blue-500/10 blur-[90px]" />
       </div>
       <Navbar />
-      <main id="main-content" className="relative z-10 pt-20 md:pt-24">
+      <main id="main-content" className="relative z-10">
         <Booking />
       </main>
       <div className="relative z-10">

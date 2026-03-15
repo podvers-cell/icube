@@ -118,13 +118,13 @@ export default function Navbar() {
       style={navTextStyle}
       className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${navBgClass} ${isLightNavBar ? "text-stone-900" : isLight ? "text-white" : ""}`}
     >
-      <div className="relative z-50 w-full px-4 md:px-8 lg:px-10 py-2 flex items-center justify-between gap-4 md:justify-start md:gap-6">
+      <div className="w-full px-4 md:px-8 lg:px-10 py-2 flex items-center justify-between gap-4 md:justify-start md:gap-6">
         {/* Logo – left */}
-        <Link href="/" className="flex items-center gap-2 shrink-0">
+        <Link href="/" className="flex items-center gap-2 z-50 shrink-0">
           <img
             src="/icube-logo.svg"
             alt="ICUBE Vision TV Production"
-            className={`h-14 w-auto object-contain ${isLightNavBar ? "invert" : ""}`}
+            className="h-14 w-auto object-contain"
           />
         </Link>
 
@@ -215,9 +215,9 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* Mobile Menu Toggle – min 44px touch target; always visible above content */}
+        {/* Mobile Menu Toggle – min 44px touch target */}
         <button
-          className={`relative z-[60] md:hidden p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-icube-gold focus-visible:ring-offset-2 ${isLightNavBar ? "bg-stone-200/90 text-stone-800 focus-visible:ring-offset-[#f2f0eb] border border-stone-300/80" : "text-white focus-visible:ring-offset-icube-dark"}`}
+          className={`md:hidden z-50 p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-icube-gold focus-visible:ring-offset-2 ${isLightNavBar ? "text-stone-800 focus-visible:ring-offset-[#f2f0eb]" : "text-white focus-visible:ring-offset-icube-dark"}`}
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           aria-label={isMobileMenuOpen ? "Close navigation" : "Open navigation"}
         >

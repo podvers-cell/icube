@@ -26,28 +26,12 @@ function getBaseUrl(): string {
 
 const baseUrl = getBaseUrl();
 
-const defaultTitle = "ICUBE Media Studio";
-const defaultDescription =
-  "Professional media production and podcast studio in Dubai. Studio booking, video production, and branded content.";
-
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
-  title: { default: defaultTitle, template: "%s | ICUBE Media Studio" },
-  description: defaultDescription,
-  icons: { icon: "/favicon.svg" },
-  openGraph: {
-    type: "website",
-    locale: "en_AE",
-    url: baseUrl,
-    siteName: defaultTitle,
-    title: defaultTitle,
-    description: defaultDescription,
-    images: [{ url: "/icube-logo.svg", width: 512, height: 160, alt: "ICUBE Media Studio" }],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: defaultTitle,
-    description: defaultDescription,
+  title: "ICUBE Media Studio",
+  description: "ICUBE Media Studio – Production & Media Solutions",
+  icons: {
+    icon: "/favicon.svg",
   },
 };
 

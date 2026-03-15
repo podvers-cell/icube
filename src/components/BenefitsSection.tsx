@@ -17,8 +17,6 @@ const DEFAULTS = {
     "We manage the full production pipeline: podcast recording, video shoots, and multi-format content. From our Dubai studios we support creators and businesses across the UAE and beyond with a skilled team of producers, sound engineers, and creatives.",
   benefits_col2_p2:
     "Our clients get access to professional-grade technology and workflows designed for scalability. Whether you're launching a new show or levelling up your brand content, we're here to help you grow your audience and reach.",
-  benefits_image_url: "/podcast-still.png",
-  benefits_image_alt: "Podcast production at ICUBE Media Studio – professional recording setup",
 };
 
 function get(settings: Record<string, string>, key: keyof typeof DEFAULTS) {
@@ -34,8 +32,6 @@ export default function BenefitsSection() {
   const col1P2 = get(settings, "benefits_col1_p2");
   const col2P1 = get(settings, "benefits_col2_p1");
   const col2P2 = get(settings, "benefits_col2_p2");
-  const imageUrl = get(settings, "benefits_image_url") || "/podcast-still.png";
-  const imageAlt = get(settings, "benefits_image_alt") || DEFAULTS.benefits_image_alt;
 
   return (
     <section
@@ -85,11 +81,11 @@ export default function BenefitsSection() {
             </div>
           </AnimatedStaggerItem>
 
-          {/* Visual – image from settings */}
+          {/* Visual – podcast still */}
           <AnimatedStaggerItem index={1} className="lg:col-span-5 xl:col-span-4 flex items-center justify-center lg:justify-end">
             <img
-              src={imageUrl}
-              alt={imageAlt}
+              src="/podcast-still.png"
+              alt="Podcast production at ICUBE Media Studio – professional recording setup"
               className="w-full h-auto max-h-[480px] object-contain max-w-md lg:max-w-lg"
             />
           </AnimatedStaggerItem>
