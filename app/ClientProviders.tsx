@@ -8,10 +8,14 @@ import { ThemeProvider } from "@/ThemeContext";
 import { ToastProvider } from "@/ToastContext";
 import MaintenanceGate from "@/components/MaintenanceGate";
 import CookieConsent from "@/components/CookieConsent";
+import { SplashScreen } from "@/components/SplashScreen";
+import CustomCursorProvider from "@/components/CustomCursorProvider";
 
 export function ClientProviders({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider>
+      <SplashScreen />
+      <CustomCursorProvider />
       <AuthProvider>
         <SiteDataProvider>
           <MaintenanceGate>

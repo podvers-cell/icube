@@ -104,10 +104,10 @@ export default function Navbar() {
 
   const navBgClass = isLight
     ? isScrolled || !isHome
-      ? "bg-[#f2f0eb]/98 border-b border-stone-300/60 backdrop-blur-2xl shadow-lg"
+      ? "bg-[#f2f0eb]/90 border-b border-stone-300/50 backdrop-blur-2xl shadow-lg shadow-black/10"
       : "bg-transparent border-b border-transparent"
     : isScrolled
-      ? "bg-black/35 border-b border-white/10 backdrop-blur-2xl shadow-lg"
+      ? "bg-black/25 border-b border-white/10 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.06)]"
       : "bg-transparent border-b border-transparent";
 
   return (

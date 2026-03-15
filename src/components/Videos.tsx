@@ -42,7 +42,7 @@ export default function Videos() {
                 <button
                   type="button"
                   onClick={() => embed && setPlaying(video)}
-                  className="card-flip w-full group text-left rounded-2xl overflow-hidden border border-white/10 bg-white/[0.06] backdrop-blur-sm hover:border-icube-gold/40 shadow-[0_12px_40px_rgba(0,0,0,0.25)] hover:shadow-[0_20px_48px_rgba(0,0,0,0.35)] transition-[border-color,box-shadow] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-icube-gold"
+                  className="card-flip glass-card w-full group text-left rounded-2xl overflow-hidden hover:border-icube-gold/40 transition-[border-color,box-shadow] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-icube-gold"
                 >
                 <div className="aspect-video bg-black/50 flex items-center justify-center relative overflow-hidden">
                   {embed ? (

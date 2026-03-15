@@ -10,6 +10,8 @@ type Project = {
   id: number | string;
   title: string;
   category: string;
+  /** Client or brand name shown under title on portfolio page */
+  client?: string;
   image_url: string;
   sort_order: number;
   video_url?: string;
@@ -80,15 +82,15 @@ const defaultData: SiteData = {
 const SiteDataContext = createContext<SiteData>(defaultData);
 
 const FALLBACK_SETTINGS: Record<string, string> = {
-  hero_tagline: "Premium Media Agency – Dubai",
-  hero_title_1: "CREATE.",
-  hero_title_2: "RECORD.",
-  hero_title_3: "AMPLIFY.",
-  hero_subtitle: "Professional media production and podcast studio in Dubai. Elevate your content with cinematic quality.",
+  hero_tagline: "",
+  hero_title_1: "",
+  hero_title_2: "",
+  hero_title_3: "",
+  hero_subtitle: "",
   hero_bg_type: "image",
-  hero_bg_image_url:
-    "https://images.unsplash.com/photo-1598550880863-4e8aa3d0edb4?q=80&w=2070&auto=format&fit=crop",
+  hero_bg_image_url: "",
   hero_bg_video_url: "",
+  hero_bg_gif_url: "",
   contact_address: "Dubai Media City, Building 1\nDubai, United Arab Emirates",
   contact_email: CONTACT_EMAIL,
   contact_email_bookings: CONTACT_EMAIL,

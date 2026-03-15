@@ -31,7 +31,7 @@ export default function Footer() {
   }
 
   return (
-    <footer className="bg-black border-t border-white/10">
+    <footer className="glass-panel border-t border-white/10 bg-black/40 backdrop-blur-xl">
       {/* Main footer content */}
       <div className="max-w-7xl mx-auto px-6 md:px-12 py-16 md:py-20">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8">

@@ -177,7 +177,7 @@ export default function Contact() {
 
           {/* Form: right on desktop, first on mobile */}
           <AnimatedStaggerItem index={2} className="order-1 lg:order-2">
-            <div className="bg-white/5 border border-white/10 p-8 md:p-12 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.25)]">
+            <div className="glass-card p-8 md:p-12 rounded-2xl">
               <h3 className="text-3xl font-display font-bold mb-8">Send a Message</h3>
               <form onSubmit={handleSubmit} className="space-y-6">
                 {submitted && <p className="text-icube-gold text-sm">Message sent. We'll get back to you soon.</p>}

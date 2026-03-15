@@ -53,21 +53,15 @@ export default function Hero({ onHeroReady }: HeroProps) {
   const router = useRouter();
   const pathname = usePathname();
   const reduceMotion = useReducedMotion();
-  const phrase1 =
-    settings.hero_title_1 || "Premium media & podcast studio crafting cinematic stories for modern brands.";
-  const phrase2 =
-    settings.hero_title_2 || "Dubai‑based production house for creators, podcasts, and brand content.";
-  const phrase3 =
-    settings.hero_title_3 || "From idea to final cut – we produce, record, and amplify your vision.";
-  const phrases = [phrase1, phrase2, phrase3];
-  const subtitle =
-    settings.hero_subtitle ||
-    "ICUBE is a Dubai-based media and podcast studio helping brands, founders, and creators produce cinematic content for the region.";
+  const phrase1 = settings.hero_title_1 ?? "";
+  const phrase2 = settings.hero_title_2 ?? "";
+  const phrase3 = settings.hero_title_3 ?? "";
+  const phrases = [phrase1, phrase2, phrase3].filter(Boolean);
+  const subtitle = settings.hero_subtitle ?? "";
   const bgType = settings.hero_bg_type || "image";
-  const bgImage =
-    settings.hero_bg_image_url ||
-    "https://images.unsplash.com/photo-1598550880863-4e8aa3d0edb4?q=80&w=2070&auto=format&fit=crop";
+  const bgImage = settings.hero_bg_image_url ?? "";
   const bgVideo = settings.hero_bg_video_url || "";
+  const bgGif = settings.hero_bg_gif_url ?? "";
   const youtubeEmbed = bgVideo ? getYouTubeEmbedUrl(bgVideo) : null;
 
   const [activeIndex, setActiveIndex] = useState(0);
@@ -77,7 +71,12 @@ export default function Hero({ onHeroReady }: HeroProps) {
   useEffect(() => {
     if (loading || !onHeroReady) return;
     const isVideo = bgType === "video" && bgVideo;
-    if (!isVideo) {
+    const isGif = bgType === "gif" && bgGif;
+    if (!isVideo && !isGif) {
+      onHeroReady();
+      return;
+    }
+    if (isGif) {
       onHeroReady();
       return;
     }
@@ -96,9 +95,10 @@ export default function Hero({ onHeroReady }: HeroProps) {
       video.removeEventListener("canplaythrough", done);
       window.clearTimeout(fallback);
     };
-  }, [loading, bgType, bgVideo, youtubeEmbed, onHeroReady]);
+  }, [loading, bgType, bgVideo, bgGif, youtubeEmbed, onHeroReady]);
 
   useEffect(() => {
+    if (phrases.length === 0) return;
     const id = window.setInterval(() => {
       setActiveIndex((prev) => (prev + 1) % phrases.length);
     }, 5000);
@@ -124,13 +124,17 @@ export default function Hero({ onHeroReady }: HeroProps) {
     >
       <div className="absolute inset-0 z-0 w-full h-full min-h-full">
         <div
-          className={bgType === "video" && bgVideo ? "absolute inset-0 z-10" : "absolute inset-0 z-10 bg-gradient-to-b from-black/70 via-black/50 to-black/60"}
+          className={bgType === "video" && bgVideo ? "absolute inset-0 z-10" : bgType === "gif" && bgGif ? "absolute inset-0 z-10" : "absolute inset-0 z-10 bg-gradient-to-b from-black/70 via-black/50 to-black/60"}
           style={
             bgType === "video" && bgVideo
               ? {
                   background: `linear-gradient(to bottom, var(--color-icube-dark) 0%, color-mix(in srgb, var(--color-icube-dark) 85%, transparent) 12%, rgba(0,0,0,0.72) 50%, color-mix(in srgb, var(--color-icube-dark) 85%, transparent) 88%, var(--color-icube-dark) 100%)`,
                 }
-              : undefined
+              : bgType === "gif" && bgGif
+                ? {
+                    background: `linear-gradient(to bottom, var(--color-icube-dark) 0%, color-mix(in srgb, var(--color-icube-dark) 85%, transparent) 12%, rgba(0,0,0,0.72) 50%, color-mix(in srgb, var(--color-icube-dark) 85%, transparent) 88%, var(--color-icube-dark) 100%)`,
+                  }
+                : undefined
           }
         />
         {bgType === "video" && bgVideo ? (
@@ -168,7 +172,14 @@ export default function Hero({ onHeroReady }: HeroProps) {
               </video>
             </div>
           )
-        ) : (
+        ) : bgType === "gif" && bgGif ? (
+          <img
+            src={bgGif}
+            alt="Hero Background"
+            className="absolute inset-0 w-full h-full object-cover object-center opacity-60 scale-105"
+            style={{ pointerEvents: "none" }}
+          />
+        ) : bgImage ? (
           <Image
             src={bgImage}
             alt="Hero Background"
@@ -178,7 +189,7 @@ export default function Hero({ onHeroReady }: HeroProps) {
             className="object-cover object-center opacity-60 scale-105"
             referrerPolicy="no-referrer"
           />
-        )}
+        ) : null}
       </div>
 
       <motion.div
@@ -192,29 +203,33 @@ export default function Hero({ onHeroReady }: HeroProps) {
           animate={reduceMotion ? { y: 0 } : { y: [0, 5, 0] }}
           transition={reduceMotion ? {} : { duration: 5, repeat: Infinity, ease: "easeInOut" }}
         >
-        <div className="min-h-[3.5rem] sm:min-h-[4rem] md:mb-4 md:min-h-[7rem] flex items-center justify-center overflow-hidden">
-          <h1
-            className="text-4xl md:text-7xl lg:text-9xl font-display font-extrabold tracking-tight text-white leading-tight px-1 relative"
-            style={{ textShadow: "0 0 32px rgba(212,175,55,0.65)" }}
-          >
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.span
-                key={activeIndex}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
-                className="block"
-              >
-                {phrases[activeIndex]}
-              </motion.span>
-            </AnimatePresence>
-          </h1>
-        </div>
+        {phrases.length > 0 && (
+          <div className="min-h-[3.5rem] sm:min-h-[4rem] md:mb-4 md:min-h-[7rem] flex items-center justify-center overflow-hidden">
+            <h1
+              className="text-4xl md:text-7xl lg:text-9xl font-display font-extrabold tracking-tight text-white leading-tight px-1 relative"
+              style={{ textShadow: "0 0 32px rgba(212,175,55,0.65)" }}
+            >
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.span
+                  key={activeIndex}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+                  className="block"
+                >
+                  {phrases[activeIndex % phrases.length]}
+                </motion.span>
+              </AnimatePresence>
+            </h1>
+          </div>
+        )}
 
-        <p className="max-w-2xl text-sm md:text-base text-gray-300/90 leading-relaxed mt-1 sm:mt-0">
-          {subtitle}
-        </p>
+        {subtitle ? (
+          <p className="max-w-2xl text-sm md:text-base text-gray-300/90 leading-relaxed mt-1 sm:mt-0">
+            {subtitle}
+          </p>
+        ) : null}
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 w-full sm:w-auto mt-8 sm:mt-10 md:mt-1">
           <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }} className="w-full sm:w-auto">

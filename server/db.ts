@@ -134,11 +134,11 @@ db.prepare(
 
 // Seed default site_settings for Dubai
 const defaults: [string, string][] = [
-  ["hero_tagline", "Premium Media Agency – Dubai"],
-  ["hero_title_1", "CREATE."],
-  ["hero_title_2", "RECORD."],
-  ["hero_title_3", "AMPLIFY."],
-  ["hero_subtitle", "Professional media production and podcast studio in Dubai. Elevate your content with cinematic quality."],
+  ["hero_tagline", ""],
+  ["hero_title_1", ""],
+  ["hero_title_2", ""],
+  ["hero_title_3", ""],
+  ["hero_subtitle", ""],
   ["contact_address", "Dubai Media City, Building 1\nDubai, United Arab Emirates"],
   ["contact_email", "hello@icube.ae"],
   ["contact_email_bookings", "bookings@icube.ae"],
