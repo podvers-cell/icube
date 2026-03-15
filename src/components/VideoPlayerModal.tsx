@@ -1,19 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { X, Play, Pause, Volume2, VolumeX, Maximize, Zap } from "lucide-react";
+import { X, Play, Pause, Volume2, VolumeX, Maximize } from "lucide-react";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 import type { VideoEmbedResult } from "../lib/videoEmbed";
-
-export type VideoPlayerProjectInfo = {
-  subtitle?: string;
-  category?: string;
-  description?: string;
-  deliverables?: string[];
-  year?: string;
-  camera?: string;
-  output?: string;
-};
 
 interface VimeoPlayer {
   play: () => Promise<void>;
@@ -86,12 +76,10 @@ export function VideoPlayerModal({
   embed,
   title,
   onClose,
-  projectInfo,
 }: {
   embed: VideoEmbedResult;
   title: string;
   onClose: () => void;
-  projectInfo?: VideoPlayerProjectInfo;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   useFocusTrap(containerRef, true);
@@ -120,10 +108,8 @@ export function VideoPlayerModal({
     stopTick();
     const tick = () => {
       const p = playerRef.current;
-      if (p) {
-        const t = p.getCurrentTime();
-        if (Number.isFinite(t)) setCurrentTime(t);
-      }
+      if (!p || !p.getPlaying()) return;
+      setCurrentTime(p.getCurrentTime());
       tickRef.current = requestAnimationFrame(tick);
     };
     tickRef.current = requestAnimationFrame(tick);
@@ -132,19 +118,6 @@ export function VideoPlayerModal({
   useEffect(() => {
     return () => stopTick();
   }, [stopTick]);
-
-  // YouTube: poll duration when ready (in case it was 0 on first load)
-  useEffect(() => {
-    if (embed?.provider !== "youtube" || !ready) return;
-    const id = setInterval(() => {
-      const p = playerRef.current;
-      if (p) {
-        const d = p.getDuration();
-        if (Number.isFinite(d) && d > 0) setDuration(d);
-      }
-    }, 500);
-    return () => clearInterval(id);
-  }, [embed?.provider, ready]);
 
   useEffect(() => {
     if (!embed) return;
@@ -183,8 +156,7 @@ export function VideoPlayerModal({
                   getMuted: () => yt.isMuted(),
                   setMuted: (m) => (m ? yt.mute() : yt.unMute()),
                 };
-                const d = yt.getDuration();
-                if (Number.isFinite(d)) setDuration(d);
+                setDuration(yt.getDuration());
                 setVolume(yt.getVolume());
                 yt.unMute();
                 yt.setVolume(100);
@@ -242,8 +214,8 @@ export function VideoPlayerModal({
         play: () => { vp.play(); setIsPlaying(true); },
         pause: () => { vp.pause(); setIsPlaying(false); },
         getPlaying: () => true,
-        getCurrentTime: () => 0,
-        getDuration: () => 0,
+        getCurrentTime: () => currentTime,
+        getDuration: () => duration,
         seekTo: (t) => vp.setCurrentTime(t),
         getVolume: () => volume,
         setVolume: (v) => { vp.setVolume(v / 100); setVolume(v); },
@@ -268,16 +240,16 @@ export function VideoPlayerModal({
     return () => { playerRef.current = null; vimeoPlayerRef.current = null; };
   }, [embed?.provider, embed?.videoId]);
 
-  // Vimeo: poll currentTime and duration so timer and indicator update
+  // Vimeo: poll currentTime and duration when playing
   useEffect(() => {
     if (embed?.provider !== "vimeo" || !ready) return;
     const vp = vimeoPlayerRef.current;
     if (!vp) return;
     const id = setInterval(() => {
-      vp.getCurrentTime().then((t) => setCurrentTime((prev) => (Number.isFinite(t) ? t : prev)));
-      vp.getDuration().then((d) => setDuration((prev) => (Number.isFinite(d) ? d : prev)));
+      vp.getCurrentTime().then(setCurrentTime);
+      vp.getDuration().then(setDuration);
       vp.getPaused().then((p) => setIsPlaying(!p));
-    }, 150);
+    }, 250);
     return () => clearInterval(id);
   }, [embed?.provider, ready]);
 
@@ -327,31 +299,31 @@ export function VideoPlayerModal({
     }
   };
 
-  const hasProjectInfo = projectInfo && (projectInfo.subtitle || projectInfo.category || projectInfo.description || (projectInfo.deliverables?.length) || projectInfo.year || projectInfo.camera || projectInfo.output);
-  const tags = projectInfo?.category ? [projectInfo.category] : [];
-
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
       onClick={onClose}
     >
       <div
         ref={containerRef}
-        className="relative w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl flex flex-col border border-white/10 bg-[#1a1d26]"
+        className="relative w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl flex flex-col border border-white/10 bg-white/[0.04] backdrop-blur-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close – top right of card */}
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-white/20 transition-colors shrink-0 border border-white/10"
-          aria-label="Close"
-        >
-          <X size={20} />
-        </button>
+        {/* Header – glass */}
+        <div className="flex items-center justify-between gap-3 px-5 py-3.5 border-b border-white/10 bg-white/[0.06] backdrop-blur-md shrink-0">
+          <p className="text-white font-semibold text-sm truncate flex-1 min-w-0">{title}</p>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-10 h-10 rounded-xl bg-white/10 text-white flex items-center justify-center hover:bg-icube-gold hover:text-icube-dark transition-colors shrink-0 border border-white/5"
+            aria-label="Close"
+          >
+            <X size={20} />
+          </button>
+        </div>
 
-        {/* Video area – with centered play overlay when paused */}
-        <div className="relative w-full aspect-video min-h-0 bg-black overflow-hidden">
+        {/* Video area */}
+        <div className="relative w-full aspect-video min-h-0 bg-black/40 rounded-none overflow-hidden">
           {embed.provider === "youtube" && <div ref={ytDivRef} className="absolute inset-0 w-full h-full" />}
           {embed.provider === "vimeo" && (
             <iframe
@@ -363,109 +335,19 @@ export function VideoPlayerModal({
               allowFullScreen
             />
           )}
-          {/* Centered play overlay when paused */}
-          {!isPlaying && (
-            <button
-              type="button"
-              onClick={handlePlayPause}
-              className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 hover:bg-black/30 transition-colors"
-              aria-label="Play"
-            >
-              <span className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30 hover:bg-white/30 hover:scale-105 transition-all">
-                <Play size={36} className="text-white ml-1" fill="white" />
-              </span>
-            </button>
-          )}
+          <div
+            className="absolute inset-0 z-10 bg-transparent cursor-default"
+            aria-hidden
+            style={{ pointerEvents: "auto" }}
+          />
         </div>
 
-        {/* Project details – title, subtitle, tags, The Project, Deliverables, Details */}
-        {hasProjectInfo ? (
-          <div className="flex flex-col lg:flex-row gap-8 p-6 md:p-8 border-t border-white/10">
-            <div className="flex-1 min-w-0 space-y-6">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <h2 className="text-2xl md:text-3xl font-display font-bold text-white tracking-tight">{title}</h2>
-                  {projectInfo?.subtitle && (
-                    <p className="mt-1 text-white/80 text-base">{projectInfo.subtitle}</p>
-                  )}
-                </div>
-                {tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {tags.map((tag) => (
-                      <span key={tag} className="px-3 py-1.5 rounded-full bg-white/10 text-white text-xs font-medium uppercase tracking-wider">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {projectInfo?.description && (
-                <div>
-                  <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-white/90 mb-2">
-                    <Zap size={14} className="text-icube-gold" />
-                    The Project
-                  </h3>
-                  <p className="text-white/90 text-sm leading-relaxed">{projectInfo.description}</p>
-                </div>
-              )}
-
-              {projectInfo?.deliverables && projectInfo.deliverables.length > 0 && (
-                <div>
-                  <h3 className="text-sm font-semibold uppercase tracking-wider text-white/90 mb-2">Deliverables</h3>
-                  <ul className="list-disc list-inside text-white/90 text-sm space-y-1">
-                    {projectInfo.deliverables.map((d, i) => (
-                      <li key={i}>{d}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-
-            {(projectInfo?.year || projectInfo?.category || projectInfo?.camera || projectInfo?.output) && (
-              <div className="lg:w-52 shrink-0">
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-white/90 mb-3">Details</h3>
-                <dl className="space-y-2 text-sm">
-                  {projectInfo.year && (
-                    <>
-                      <dt className="text-gray-400">Year</dt>
-                      <dd className="text-white font-medium">{projectInfo.year}</dd>
-                    </>
-                  )}
-                  {projectInfo.category && (
-                    <>
-                      <dt className="text-gray-400">Category</dt>
-                      <dd className="text-white font-medium">{projectInfo.category}</dd>
-                    </>
-                  )}
-                  {projectInfo.camera && (
-                    <>
-                      <dt className="text-gray-400">Camera</dt>
-                      <dd className="text-white font-medium">{projectInfo.camera}</dd>
-                    </>
-                  )}
-                  {projectInfo.output && (
-                    <>
-                      <dt className="text-gray-400">Output</dt>
-                      <dd className="text-white font-medium">{projectInfo.output}</dd>
-                    </>
-                  )}
-                </dl>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="px-6 py-3 border-t border-white/10">
-            <h2 className="text-xl font-display font-bold text-white truncate">{title}</h2>
-          </div>
-        )}
-
-        {/* Control bar */}
-        <div className="z-30 flex items-center gap-3 px-4 py-3 border-t border-white/10 bg-black/30">
+        {/* Control bar – glass */}
+        <div className="z-30 flex items-center gap-3 px-4 py-3 border-t border-white/10 bg-white/[0.06] backdrop-blur-md">
           <button
             type="button"
             onClick={handlePlayPause}
-            className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 text-white hover:bg-icube-gold hover:text-icube-dark transition-colors shrink-0 border border-white/10"
+            className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 text-white hover:bg-icube-gold hover:text-icube-dark transition-colors shrink-0 border border-white/5"
             aria-label={isPlaying ? "Pause" : "Play"}
           >
             {isPlaying ? <Pause size={20} /> : <Play size={20} className="ml-0.5" />}
@@ -474,14 +356,14 @@ export function VideoPlayerModal({
           <input
             type="range"
             min={0}
-            max={duration > 0 ? duration : 1}
-            value={Math.min(currentTime, duration > 0 ? duration : 1)}
+            max={duration || 100}
+            value={currentTime}
             onChange={(e) => {
               const t = Number(e.target.value);
               setCurrentTime(t);
               playerRef.current?.seekTo(t);
             }}
-            className="video-progress-range flex-1 h-1.5 rounded-full appearance-none bg-white/20 cursor-pointer min-w-0"
+            className="flex-1 h-1.5 rounded-full appearance-none bg-white/20 accent-icube-gold cursor-pointer min-w-0"
           />
           <span className="text-white/90 text-xs tabular-nums shrink-0 min-w-[2.5rem]">{formatTime(duration)}</span>
           <div className="flex items-center gap-1.5 shrink-0">

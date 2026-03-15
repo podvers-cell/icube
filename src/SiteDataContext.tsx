@@ -10,8 +10,6 @@ type Project = {
   id: number | string;
   title: string;
   category: string;
-  /** Client or brand name shown under title on portfolio page */
-  client?: string;
   image_url: string;
   sort_order: number;
   video_url?: string;

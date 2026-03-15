@@ -9,12 +9,12 @@ type Project = {
   id: number | string;
   title: string;
   category: string;
-  /** Client or brand name (shown under title on portfolio page) */
-  client?: string;
   image_url: string;
   sort_order: number;
   video_url?: string;
+  /** Show work on site. Default true */
   visible?: boolean;
+  /** Show in Selected Work section on homepage. Default false */
   show_in_selected_work?: boolean;
 };
 
@@ -36,7 +36,6 @@ export default function DashboardPortfolio() {
         await api.post("/dashboard/portfolio", {
           title: editing.title,
           category: editing.category,
-          client: editing.client || undefined,
           image_url: editing.image_url,
           sort_order: editing.sort_order ?? list.length,
           video_url: editing.video_url || undefined,
@@ -76,7 +75,6 @@ export default function DashboardPortfolio() {
               id: 0,
               title: "",
               category: "",
-              client: "",
               image_url: "",
               sort_order: list.length,
               video_url: "",
@@ -99,7 +97,6 @@ export default function DashboardPortfolio() {
                 id: 0,
                 title: "",
                 category: "",
-                client: "",
                 image_url: "",
                 sort_order: list.length,
                 video_url: "",
@@ -127,7 +124,7 @@ export default function DashboardPortfolio() {
                     <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-icube-gold/20 text-icube-gold">Selected Work</span>
                   )}
                 </div>
-                <p className="text-gray-500 text-sm">{p.client || p.category}</p>
+                <p className="text-gray-500 text-sm">{p.category}</p>
                 <div className="flex gap-2 mt-2 justify-end">
                   <button
                     type="button"
@@ -168,13 +165,7 @@ export default function DashboardPortfolio() {
               value={editing.category}
               onChange={(e) => setEditing((x) => (x ? { ...x, category: e.target.value } : null))}
               className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white"
-              placeholder="Category (e.g. Commercial, Product)"
-            />
-            <input
-              value={editing.client ?? ""}
-              onChange={(e) => setEditing((x) => (x ? { ...x, client: e.target.value } : null))}
-              className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white"
-              placeholder="Client / Brand (optional; shown under title on portfolio page)"
+              placeholder="Category"
             />
             <CloudinaryUploadField
               label="Image URL"

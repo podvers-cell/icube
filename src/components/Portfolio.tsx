@@ -17,7 +17,6 @@ type Project = {
   id: number | string;
   title: string;
   category: string;
-  client?: string;
   image_url: string;
   sort_order: number;
   video_url?: string;
@@ -32,21 +31,16 @@ type PortfolioProps = {
   sectionLabel?: string;
   /** Main heading. Default "Portfolio highlights". Use "Our work" on full page. */
   title?: string;
-  /** Subtitle under main title (used on standalone portfolio page). */
-  subtitle?: string;
   /** Show "Full portfolio" link to /portfolio. Default true when limit is set. */
   showFullPortfolioLink?: boolean;
   /** When true (home), show only items with show_in_selected_work. When false (full page), show all visible. */
   useSelectedWorkOnly?: boolean;
-  /** When true, use standalone portfolio page layout: big title, subtitle, category filters, card grid. */
-  isStandalonePage?: boolean;
 };
 
-export default function Portfolio({ limit, sectionLabel = "Selected work", title: titleProp = "Portfolio highlights", subtitle: subtitleProp, showFullPortfolioLink = !!limit, useSelectedWorkOnly = false, isStandalonePage = false }: PortfolioProps) {
+export default function Portfolio({ limit, sectionLabel = "Selected work", title: titleProp = "Portfolio highlights", showFullPortfolioLink = !!limit, useSelectedWorkOnly = false }: PortfolioProps) {
   const { portfolio } = useSiteData();
   const { openContact } = useContactModal();
   const [playingProject, setPlayingProject] = useState<Project | null>(null);
-  const [activeCategory, setActiveCategory] = useState<string>("All");
   const items = (() => {
     let list = portfolio.filter((p) => p.visible !== false);
     if (useSelectedWorkOnly) {
@@ -58,67 +52,26 @@ export default function Portfolio({ limit, sectionLabel = "Selected work", title
     return limit != null ? list.slice(0, limit) : list;
   })();
 
-  const categories = React.useMemo(() => {
-    const set = new Set<string>(items.map((p) => p.category).filter(Boolean));
-    return ["All", ...Array.from(set).sort()];
-  }, [items]);
-
-  const filteredItems = activeCategory === "All" ? items : items.filter((p) => p.category === activeCategory);
-
   const columnsPerRow = limit != null ? 3 : 4;
   const gridColsClass = limit != null ? "md:grid-cols-2 lg:grid-cols-3" : "md:grid-cols-2 lg:grid-cols-4";
   const separatorSpanClass = limit != null ? "md:col-span-2 lg:col-span-3" : "md:col-span-2 lg:col-span-4";
   const isSelectedWork = limit != null;
 
-  const useBentoLayout = !isStandalonePage && isSelectedWork && items.length >= 2 && items.length <= 4 && limit != null;
+  const useBentoLayout = isSelectedWork && items.length >= 2 && items.length <= 4 && limit != null;
 
   return (
     <section
       id="portfolio"
-      className="py-16 md:py-24 bg-gradient-to-b from-icube-dark via-icube-gray/70 to-icube-dark/80 relative overflow-hidden"
+      className="py-28 md:py-32 bg-gradient-to-b from-icube-dark via-icube-gray/70 to-icube-dark/80 relative overflow-hidden"
     >
-      {!isStandalonePage && (
-        <>
-          <div className="absolute inset-0 opacity-[0.03] pointer-events-none" aria-hidden>
-            <div className="absolute inset-0" style={{ backgroundImage: "linear-gradient(rgba(212,175,55,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(212,175,55,0.15) 1px, transparent 1px)", backgroundSize: "48px 48px" }} />
-          </div>
-          <div className="absolute top-1/2 -right-32 w-80 h-80 bg-icube-gold/5 rounded-full blur-[100px] pointer-events-none" />
-          <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-icube-gold/5 rounded-full blur-[80px] pointer-events-none" />
-        </>
-      )}
+      {/* Background texture */}
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none" aria-hidden>
+        <div className="absolute inset-0" style={{ backgroundImage: "linear-gradient(rgba(212,175,55,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(212,175,55,0.15) 1px, transparent 1px)", backgroundSize: "48px 48px" }} />
+      </div>
+      <div className="absolute top-1/2 -right-32 w-80 h-80 bg-icube-gold/5 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-icube-gold/5 rounded-full blur-[80px] pointer-events-none" />
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
-        {isStandalonePage ? (
-          <>
-            <header className="text-left mb-10 md:mb-12">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold text-white tracking-tight">
-                {titleProp}
-              </h1>
-              {subtitleProp && (
-                <p className="mt-3 text-gray-400 font-light text-base md:text-lg max-w-2xl">
-                  {subtitleProp}
-                </p>
-              )}
-            </header>
-            {categories.length > 1 && (
-              <div className="flex flex-wrap gap-2 mb-10 md:mb-12">
-                {categories.map((cat) => (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => setActiveCategory(cat)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium uppercase tracking-wider transition-all duration-200 ${
-                      activeCategory === cat
-                        ? "bg-white text-icube-dark"
-                        : "bg-transparent border border-white/30 text-white hover:border-white/50 hover:bg-white/5"
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-            )}
-          </>
-        ) : (
+        {/* Header: more dramatic for selected work */}
         <AnimatedSectionHeader className={`section-header ${useBentoLayout ? "md:mb-20" : ""}`} amount={0.25}>
           <div className="section-label-row">
             <div className="section-label-line" aria-hidden />
@@ -158,7 +111,6 @@ export default function Portfolio({ limit, sectionLabel = "Selected work", title
             </button>
           )}
         </AnimatedSectionHeader>
-        )}
 
         {items.length === 0 ? (
           <div className="glass-card text-center py-16 px-6 rounded-2xl">
@@ -171,28 +123,14 @@ export default function Portfolio({ limit, sectionLabel = "Selected work", title
               Get in touch about a project
             </button>
           </div>
-        ) : isStandalonePage ? (
-          filteredItems.length === 0 ? (
-            <p className="text-gray-400 font-light py-12 text-center">No projects in this category.</p>
-          ) : (
-          <>
-            <div className="md:hidden">
-              <MobilePortfolioCarousel items={filteredItems} setPlayingProject={setPlayingProject} enhanced={false} useStandaloneCard />
-            </div>
-            <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-              {filteredItems.map((project, index) => (
-                <AnimatedStaggerItem key={project.id} index={index}>
-                  <StandalonePortfolioCard project={project} setPlayingProject={setPlayingProject} />
-                </AnimatedStaggerItem>
-              ))}
-            </div>
-          </>
-          )
         ) : (
           <>
+            {/* Mobile: arrow-controlled carousel */}
             <div className="md:hidden">
               <MobilePortfolioCarousel items={items} setPlayingProject={setPlayingProject} enhanced={isSelectedWork} />
             </div>
+
+            {/* Desktop: bento layout for selected work (3–4 items), else standard grid */}
             {useBentoLayout ? (
               <div className="hidden md:block">
                 <BentoSelectedWork items={items} setPlayingProject={setPlayingProject} />
@@ -224,10 +162,6 @@ export default function Portfolio({ limit, sectionLabel = "Selected work", title
               embed={embed}
               title={playingProject.title}
               onClose={() => setPlayingProject(null)}
-              projectInfo={{
-                subtitle: playingProject.client,
-                category: playingProject.category,
-              }}
             />
           );
         })()}
@@ -338,53 +272,6 @@ function BentoSmallCard({ project, setPlayingProject }: { project: Project; setP
   );
 }
 
-/** Card for standalone portfolio page: image, title, subtitle (client/category), category tag */
-function StandalonePortfolioCard({ project, setPlayingProject }: { project: Project; setPlayingProject: (p: Project | null) => void }) {
-  const hasVideo = project.video_url && getVideoEmbed(project.video_url);
-  const subtitle = project.client || project.category;
-
-  return (
-    <motion.div
-      className="group flex flex-col"
-      whileHover={{ y: -4 }}
-      whileTap={{ scale: 0.98 }}
-      transition={{ type: "tween", duration: 0.2 }}
-    >
-      <div
-        role={hasVideo ? "button" : undefined}
-        tabIndex={hasVideo ? 0 : undefined}
-        onClick={() => hasVideo && setPlayingProject(project)}
-        onKeyDown={(e) => hasVideo && (e.key === "Enter" || e.key === " ") && setPlayingProject(project)}
-        className="relative aspect-[4/3] overflow-hidden rounded-xl bg-white/5 border border-white/10 cursor-pointer transition-all duration-300 hover:border-white/20"
-      >
-        <Image
-          src={project.image_url}
-          alt={project.title}
-          fill
-          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
-          referrerPolicy="no-referrer"
-        />
-        <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors" />
-        {hasVideo && (
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-            <div className="rounded-full w-14 h-14 flex items-center justify-center bg-white/90 text-icube-dark">
-              <Play size={28} className="ml-1" />
-            </div>
-          </div>
-        )}
-        <span className="absolute bottom-3 right-3 px-2.5 py-1 rounded bg-black/70 text-white text-[10px] font-semibold uppercase tracking-wider">
-          {project.category || "Work"}
-        </span>
-      </div>
-      <div className="mt-3">
-        <h3 className="font-display font-semibold text-lg text-white">{project.title}</h3>
-        {subtitle && <p className="text-gray-400 text-sm mt-0.5">{subtitle}</p>}
-      </div>
-    </motion.div>
-  );
-}
-
 function PortfolioCard({
   project,
   setPlayingProject,
@@ -444,12 +331,10 @@ function MobilePortfolioCarousel({
   items,
   setPlayingProject,
   enhanced = false,
-  useStandaloneCard = false,
 }: {
   items: Project[];
   setPlayingProject: (p: Project | null) => void;
   enhanced?: boolean;
-  useStandaloneCard?: boolean;
 }) {
   const len = items.length;
   const [index, setIndex] = useState(0);
@@ -497,12 +382,8 @@ function MobilePortfolioCarousel({
           transition={noTransition ? { duration: 0 } : { duration: 0.4, ease: [0.25, 0.8, 0.25, 1] }}
         >
           {displayItems.map((p, i) => (
-            <div key={`${p.id}-${i}`} className="w-full shrink-0 px-2">
-              {useStandaloneCard ? (
-                <StandalonePortfolioCard project={p} setPlayingProject={setPlayingProject} />
-              ) : (
-                <PortfolioCard project={p} setPlayingProject={setPlayingProject} enhanced={enhanced} />
-              )}
+            <div key={`${p.id}-${i}`} className="w-full shrink-0">
+              <PortfolioCard project={p} setPlayingProject={setPlayingProject} enhanced={enhanced} />
             </div>
           ))}
         </motion.div>

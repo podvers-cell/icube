@@ -88,14 +88,6 @@ body,
   background: var(--color-icube-gold);
 }
 
-.scrollbar-hide {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
-}
-
 /* Glass panels – frosted glass effect */
 .site-wrapper .glass-panel {
   background: rgba(25, 30, 46, 0.45);
@@ -128,39 +120,6 @@ body,
 .site-wrapper {
   position: relative;
   isolation: isolate;
-}
-
-/* Packages page: all checkmarks glow when hovering on the card */
-.site-wrapper .package-card:hover .package-feature-check {
-  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.9));
-  transform: scale(1.12);
-}
-.site-wrapper .package-feature-check {
-  transition: filter 0.3s ease, transform 0.3s ease;
-}
-
-/* Video player: progress bar thumb – white with glow (no yellow circle) */
-.video-progress-range {
-  --thumb-size: 14px;
-}
-.video-progress-range::-webkit-slider-thumb {
-  appearance: none;
-  width: var(--thumb-size);
-  height: var(--thumb-size);
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 0 12px rgba(255, 255, 255, 0.9), 0 0 24px rgba(255, 255, 255, 0.4);
-  cursor: pointer;
-  border: 0;
-}
-.video-progress-range::-moz-range-thumb {
-  width: var(--thumb-size);
-  height: var(--thumb-size);
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 0 12px rgba(255, 255, 255, 0.9), 0 0 24px rgba(255, 255, 255, 0.4);
-  cursor: pointer;
-  border: 0;
 }
 
 /* Splash screen – تصميم كريتيف: حلقة تقدم + توهج + شبكة */

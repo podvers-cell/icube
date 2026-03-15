@@ -84,101 +84,117 @@ export default function Booking() {
   return (
     <section
       id="booking"
-      className="py-16 md:py-24 relative overflow-hidden"
+      className="py-28 md:py-32 bg-gradient-to-b from-icube-dark via-icube-gray/70 to-icube-dark/80 relative overflow-hidden"
     >
-      <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
-        {/* Packages header – centered, like reference */}
-        <header className="text-center mb-12 md:mb-16">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold text-white tracking-tight">
-            Packages
-          </h1>
-          <p className="mt-4 text-gray-400 font-light text-base md:text-lg max-w-2xl mx-auto">
-            Transparent pricing for consistent content. Choose a plan or book a custom package tailored to your brand.
-          </p>
-        </header>
+      <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-icube-gold/5 rounded-full blur-[150px] pointer-events-none" />
 
-        {/* Pricing cards – glass style, MOST POPULAR glow */}
+      <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
+        <div className="section-header">
+          <div className="section-label-row">
+            <div className="section-label-line" aria-hidden />
+            <span className="section-label">Reserve your spot</span>
+            <div className="section-label-line" aria-hidden />
+          </div>
+          <h2 className="section-title">Book a studio session</h2>
+          <div className="section-header-accent" aria-hidden />
+        </div>
+
+        {/* Pricing cards – reference layout, brand colors, no icons */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 items-start">
           {[...pkgs]
             .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
             .map((pkg, index) => {
               const features = parseFeatures(pkg.features);
-              const isPopular = !!pkg.is_popular;
+              const isPopular = pkg.is_popular;
+              const isMostPopularCard = index === 1;
               const isPremiumCard = index === 2;
               const subtitle = pkg.description?.trim() || pkg.best_for_label?.trim() || null;
               return (
                 <div
                   key={pkg.id}
-                  className={`package-card group/card relative flex flex-col rounded-2xl border transition-all duration-300 ease-out ${
+                  className={`group relative flex flex-col rounded-2xl border transition-shadow duration-300 ease-out ${
                     isPremiumCard
-                      ? "glass-card bg-white/[0.08] border-icube-gold/30 shadow-[0_0_0_1px_rgba(212,175,55,0.2),0_8px_32px_rgba(0,0,0,0.25)] hover:shadow-[0_0_0_1px_rgba(212,175,55,0.35),0_0_24px_rgba(212,175,55,0.12)]"
-                      : isPopular
-                        ? "glass-card bg-white/[0.08] border-white/20 shadow-[0_0_0_1px_rgba(255,255,255,0.15),0_8px_32px_rgba(0,0,0,0.25)] hover:shadow-[0_0_0_1px_rgba(255,255,255,0.25),0_0_24px_rgba(255,255,255,0.08),0_8px_32px_rgba(0,0,0,0.3)]"
-                        : "glass-card bg-white/[0.05] border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.2)] hover:border-white/15 hover:shadow-[0_8px_32px_rgba(0,0,0,0.25)]"
+                      ? "bg-gradient-to-b from-icube-gold/15 to-icube-gold/5 border-icube-gold/60 shadow-[0_0_0_1px_rgba(212,175,55,0.3),0_16px_48px_rgba(0,0,0,0.4),0_0_60px_rgba(212,175,55,0.12)] hover:shadow-[0_0_0_1px_rgba(212,175,55,0.4),0_20px_56px_rgba(0,0,0,0.45),0_0_80px_rgba(212,175,55,0.15)] hover:border-icube-gold/80"
+                      : isMostPopularCard
+                        ? "bg-white/12 border-icube-gold/45 shadow-[0_0_0_2px_rgba(212,175,55,0.2),0_14px_44px_rgba(0,0,0,0.38)] hover:shadow-[0_0_0_2px_rgba(212,175,55,0.3),0_18px_52px_rgba(0,0,0,0.42)] ring-2 ring-icube-gold/20 hover:ring-icube-gold/30"
+                        : isPopular
+                          ? "bg-white/10 border-icube-gold/50 shadow-[0_12px_40px_rgba(0,0,0,0.4),0_0_0_1px_rgba(212,175,55,0.25)] hover:shadow-[0_16px_48px_rgba(0,0,0,0.45),0_0_0_1px_rgba(212,175,55,0.35)]"
+                          : "bg-white/[0.06] border-white/15 shadow-[0_12px_40px_rgba(0,0,0,0.3)] hover:bg-white/[0.08] hover:border-white/25 hover:shadow-[0_16px_48px_rgba(0,0,0,0.35)]"
                   }`}
                 >
                   {isPremiumCard && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center justify-center bg-icube-gold text-icube-dark text-[10px] font-semibold uppercase tracking-[0.2em] py-1.5 px-4 rounded-full shadow-[0_0_20px_rgba(212,175,55,0.4)] z-10">
+                    <div className="absolute top-0 right-0 flex items-center justify-center bg-icube-gold/95 text-icube-dark text-[11px] font-semibold uppercase tracking-[0.2em] py-2 px-5 rounded-bl-xl rounded-tr-sm shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
                       Premium
                     </div>
                   )}
-                  {!isPremiumCard && isPopular && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center justify-center bg-white text-icube-dark text-[10px] font-semibold uppercase tracking-[0.2em] py-1.5 px-4 rounded-full shadow-[0_0_20px_rgba(255,255,255,0.25)] z-10">
+                  {isMostPopularCard && (
+                    <div className="absolute top-0 right-0 flex items-center justify-center bg-icube-gold/95 text-icube-dark text-[11px] font-semibold uppercase tracking-[0.2em] py-2 px-5 rounded-bl-xl rounded-tr-sm shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
                       Most Popular
                     </div>
                   )}
+                  {isPopular && !isPremiumCard && !isMostPopularCard ? (
+                    <div className="absolute top-0 right-0 flex items-center justify-center bg-icube-gold/95 text-icube-dark text-[11px] font-semibold uppercase tracking-[0.2em] py-2 px-4 rounded-bl-xl rounded-tr-sm shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
+                      Most Popular
+                    </div>
+                  ) : null}
 
-                  <div className="p-8 flex flex-col flex-1">
+                  <div className="p-8 flex flex-col">
+                    {/* Header: title + subtitle */}
                     <div className="mb-5">
-                      <h3 className="text-xl font-display font-bold tracking-tight text-white">
+                      <h3 className={`text-2xl font-display font-bold tracking-tight pr-20 ${isPremiumCard ? "text-white drop-shadow-sm" : "text-white"}`}>
                         {pkg.name}
                       </h3>
                       {subtitle && (
-                        <p className="mt-2 text-sm leading-relaxed text-gray-400">
+                        <p className={`mt-2 text-sm leading-relaxed max-w-sm ${isPremiumCard ? "text-icube-gold/90" : isMostPopularCard ? "text-gray-300" : "text-gray-400"}`}>
                           {subtitle}
                         </p>
                       )}
                     </div>
 
                     {/* Price */}
-                    <div className="mb-6 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                    <div className="mb-6 flex flex-wrap items-baseline gap-x-3 gap-y-1">
                       {pkg.price_before_aed != null && pkg.price_before_aed > 0 && (
                         <span className="text-gray-500 text-sm line-through">{pkg.price_before_aed} AED</span>
                       )}
-                      <span className="text-3xl md:text-4xl font-display font-bold text-white tracking-tight">
-                        {pkg.price_aed > 0 ? pkg.price_aed.toLocaleString() : (pkg.price_after?.trim() || "—")}
+                      <span className="inline-flex items-baseline gap-1.5">
+                        <span className="text-4xl md:text-5xl font-display font-bold text-white tracking-tight">
+                          {pkg.price_aed > 0 ? pkg.price_aed : (pkg.price_after?.trim() || "—")}
+                        </span>
+                        <span className={`text-sm font-medium uppercase tracking-wider ${isPremiumCard ? "text-icube-gold" : isMostPopularCard ? "text-icube-gold" : "text-icube-gold/90"}`}>
+                          AED
+                        </span>
                       </span>
-                      <span className="text-base text-gray-400">
-                        {pkg.price_aed > 0 ? ` AED ${(pkg.price_after?.trim() || "/ session").replace(/^\s*\/?/, "").trim()}` : ""}
-                      </span>
+                      {pkg.price_aed > 0 && (
+                        <span className="text-gray-500 text-sm">{pkg.price_after?.trim() || "/ session"}</span>
+                      )}
                     </div>
 
-                    {/* Features – all checkmarks glow when hovering anywhere on card */}
-                    <ul className="mt-2 pt-6 space-y-3.5 border-t border-white/10 flex-1">
-                      {features.map((feature, j) => (
-                        <li
-                          key={j}
-                          className="flex items-start gap-3 text-sm leading-relaxed cursor-default"
-                        >
-                          <span className="package-feature-check shrink-0 mt-0.5 inline-flex">
-                            <CheckCircle2
-                              size={20}
-                              className="text-white/90"
-                            />
-                          </span>
-                          <span className="text-gray-300 group-hover/card:text-white/90 transition-colors duration-300">{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-
-                    {/* CTA – white + glow, hover: gold + glow */}
+                    {/* CTA */}
                     <button
                       type="button"
                       onClick={() => handlePackageSelect(pkg)}
-                      className="mt-6 w-full py-3.5 rounded-xl font-semibold text-sm uppercase tracking-wider transition-all duration-300 bg-white text-icube-dark shadow-[0_0_20px_rgba(255,255,255,0.25)] hover:bg-icube-gold hover:text-icube-dark hover:shadow-[0_0_24px_rgba(212,175,55,0.5)]"
+                      className={`w-full py-4 rounded-xl font-semibold text-sm uppercase tracking-wider transition-all duration-300 ${
+                        isPremiumCard
+                          ? "bg-icube-gold text-icube-dark hover:bg-icube-gold-light shadow-[0_4px_24px_rgba(212,175,55,0.4)] hover:shadow-[0_6px_32px_rgba(212,175,55,0.5)]"
+                          : isMostPopularCard
+                            ? "bg-icube-dark text-white hover:bg-icube-dark/90 shadow-lg hover:shadow-xl ring-2 ring-icube-gold/40 hover:ring-icube-gold/60"
+                            : isPopular
+                              ? "bg-icube-dark text-white hover:bg-icube-dark/90 shadow-lg hover:shadow-xl"
+                              : "bg-white/10 text-white border border-white/20 hover:bg-white/15 hover:border-icube-gold/40 hover:text-icube-gold/90"
+                      }`}
                     >
-                      Choose package
+                      Select this package
                     </button>
+
+                    {/* Features */}
+                    <ul className={`mt-6 pt-6 space-y-3.5 ${isPremiumCard ? "border-t border-icube-gold/30" : isMostPopularCard ? "border-t border-icube-gold/20" : "border-t border-white/10"}`}>
+                      {features.map((feature, j) => (
+                        <li key={j} className="flex items-start gap-3 text-sm leading-relaxed">
+                          <CheckCircle2 size={18} className="text-icube-gold shrink-0 mt-0.5 flex-shrink-0" />
+                          <span className={isPremiumCard ? "text-gray-300" : isMostPopularCard ? "text-gray-300" : "text-gray-400"}>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 </div>
               );
@@ -191,7 +207,7 @@ export default function Booking() {
 
         <div
           id="custom-booking-form"
-          className="glass-card mt-20 overflow-hidden rounded-2xl p-8 md:p-12"
+          className="mt-20 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-sm p-8 md:p-12 shadow-[0_12px_40px_rgba(0,0,0,0.3)]"
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <div>
