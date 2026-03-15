@@ -1,10 +1,77 @@
 import type { Metadata } from "next";
+import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import { ClientProviders } from "./ClientProviders";
+import Script from "next/script";
+const GA_ID = "G-71ZDWR0H40";
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
+
+const outfit = Outfit({
+  subsets: ["latin"],
+  variable: "--font-display",
+  display: "swap",
+});
+
+function getBaseUrl(): string {
+  const appUrl = process.env.APP_URL?.trim();
+  if (appUrl && appUrl.startsWith("http")) return appUrl;
+  const vercel = process.env.VERCEL_URL?.trim();
+  if (vercel) return `https://${vercel}`;
+  return "https://icube.ae";
+}
+
+const baseUrl = getBaseUrl();
+
+const defaultTitle = "ICUBE Media Studio";
+const defaultDescription =
+  "Professional media production and podcast studio in Dubai. Studio booking, video production, and branded content.";
 
 export const metadata: Metadata = {
-  title: "ICUBE Media Studio",
-  description: "ICUBE Media Studio – Production & Media Solutions",
+  metadataBase: new URL(baseUrl),
+  title: { default: defaultTitle, template: "%s | ICUBE Media Studio" },
+  description: defaultDescription,
+  icons: { icon: "/favicon.svg" },
+  openGraph: {
+    type: "website",
+    locale: "en_AE",
+    url: baseUrl,
+    siteName: defaultTitle,
+    title: defaultTitle,
+    description: defaultDescription,
+    images: [{ url: "/icube-logo.svg", width: 512, height: 160, alt: "ICUBE Media Studio" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: defaultTitle,
+    description: defaultDescription,
+  },
+};
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": ["Organization", "LocalBusiness"],
+  name: "ICUBE Media Studio",
+  description: "Professional media production and podcast studio in Dubai. Studio booking, video production, and branded content.",
+  url: baseUrl,
+  logo: `${baseUrl}/icube-logo.svg`,
+  address: {
+    "@type": "PostalAddress",
+    addressLocality: "Dubai",
+    addressRegion: "Dubai",
+    addressCountry: "AE",
+  },
+  contactPoint: {
+    "@type": "ContactPoint",
+    contactType: "customer service",
+    email: "hello@icube.ae",
+    areaServed: "AE",
+    availableLanguage: "English, Arabic",
+  },
+  sameAs: [],
 };
 
 export default function RootLayout({
@@ -13,9 +80,34 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${inter.variable} ${outfit.variable}`} suppressHydrationWarning>
+      <head>
+        <meta name="format-detection" content="telephone=no" />
+      </head>
       <body>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){var t=localStorage.getItem('icube-theme');document.documentElement.setAttribute('data-theme',t==='light'?'light':'dark');})();`,
+          }}
+        />
         <ClientProviders>{children}</ClientProviders>
+        <Script
+  src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+  strategy="afterInteractive"
+/>
+
+<Script id="google-analytics" strategy="afterInteractive">
+  {`
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', '${GA_ID}');
+  `}
+</Script>
       </body>
     </html>
   );
