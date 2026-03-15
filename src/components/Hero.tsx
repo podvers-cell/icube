@@ -61,16 +61,34 @@ export default function Hero({ onHeroReady }: HeroProps) {
   const bgType = settings.hero_bg_type || "image";
   const bgImage = settings.hero_bg_image_url ?? "";
   const bgVideo = settings.hero_bg_video_url || "";
+  const bgGif = settings.hero_bg_gif_url ?? "";
   const youtubeEmbed = bgVideo ? getYouTubeEmbedUrl(bgVideo) : null;
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
 
-  // Notify parent when hero background is ready (so splash can hide after video loads)
+  useEffect(() => {
+    const check = () => setIsMobile(typeof window !== "undefined" && window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  // Notify parent when hero background is ready (so splash can hide after video loads). On mobile, never wait for media.
   useEffect(() => {
     if (loading || !onHeroReady) return;
+    if (isMobile) {
+      onHeroReady();
+      return;
+    }
     const isVideo = bgType === "video" && bgVideo;
-    if (!isVideo) {
+    const isGif = bgType === "gif" && bgGif;
+    if (!isVideo && !isGif) {
+      onHeroReady();
+      return;
+    }
+    if (isGif) {
       onHeroReady();
       return;
     }
@@ -89,7 +107,7 @@ export default function Hero({ onHeroReady }: HeroProps) {
       video.removeEventListener("canplaythrough", done);
       window.clearTimeout(fallback);
     };
-  }, [loading, bgType, bgVideo, youtubeEmbed, onHeroReady]);
+  }, [loading, isMobile, bgType, bgVideo, bgGif, youtubeEmbed, onHeroReady]);
 
   useEffect(() => {
     if (phrases.length === 0) return;
@@ -118,15 +136,20 @@ export default function Hero({ onHeroReady }: HeroProps) {
     >
       <div className="absolute inset-0 z-0 w-full h-full min-h-full">
         <div
-          className={bgType === "video" && bgVideo ? "absolute inset-0 z-10" : "absolute inset-0 z-10 bg-gradient-to-b from-black/70 via-black/50 to-black/60"}
+          className={bgType === "video" && bgVideo ? "absolute inset-0 z-10" : bgType === "gif" && bgGif ? "absolute inset-0 z-10" : "absolute inset-0 z-10 bg-gradient-to-b from-black/70 via-black/50 to-black/60"}
           style={
             bgType === "video" && bgVideo
               ? {
                   background: `linear-gradient(to bottom, var(--color-icube-dark) 0%, color-mix(in srgb, var(--color-icube-dark) 85%, transparent) 12%, rgba(0,0,0,0.72) 50%, color-mix(in srgb, var(--color-icube-dark) 85%, transparent) 88%, var(--color-icube-dark) 100%)`,
                 }
-              : undefined
+              : bgType === "gif" && bgGif
+                ? {
+                    background: `linear-gradient(to bottom, var(--color-icube-dark) 0%, color-mix(in srgb, var(--color-icube-dark) 85%, transparent) 12%, rgba(0,0,0,0.72) 50%, color-mix(in srgb, var(--color-icube-dark) 85%, transparent) 88%, var(--color-icube-dark) 100%)`,
+                  }
+                : undefined
           }
         />
+        {/* Video/GIF background: same on mobile and desktop (muted + playsInline for mobile autoplay) */}
         {bgType === "video" && bgVideo ? (
           youtubeEmbed ? (
             <div className="absolute inset-0 overflow-hidden w-full h-full min-h-full">
@@ -157,17 +180,27 @@ export default function Hero({ onHeroReady }: HeroProps) {
                 muted
                 loop
                 playsInline
+                disablePictureInPicture
+                disableRemotePlayback
               >
                 <source src={bgVideo} />
               </video>
             </div>
           )
+        ) : bgType === "gif" && bgGif ? (
+          <img
+            src={bgGif}
+            alt="Hero Background"
+            className="absolute inset-0 w-full h-full object-cover object-center opacity-60 scale-105"
+            style={{ pointerEvents: "none" }}
+          />
         ) : bgImage ? (
           <Image
             src={bgImage}
             alt="Hero Background"
             fill
             priority
+            fetchPriority="high"
             sizes="100vw"
             className="object-cover object-center opacity-60 scale-105"
             referrerPolicy="no-referrer"

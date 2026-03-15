@@ -175,10 +175,12 @@ export const api = {
       return { success: true } as T;
     }
 
-    // Dashboard creates
+    // Dashboard creates – body is a record to merge into Firestore
+    const docBody = (b: unknown) => (typeof b === "object" && b !== null ? (b as Record<string, unknown>) : {});
+
     if (path === "/dashboard/services") {
       assertAuth();
-      const s = body as any;
+      const s = docBody(body);
       const ref = await addDoc(collection(requireFirestore(), "services"), {
         ...s,
         created_at: serverTimestamp(),
@@ -187,49 +189,49 @@ export const api = {
     }
     if (path === "/dashboard/portfolio") {
       assertAuth();
-      const p = body as any;
+      const p = docBody(body);
       const ref = await addDoc(collection(requireFirestore(), "portfolio"), { ...p, created_at: serverTimestamp() });
       return { id: ref.id, ...p } as T;
     }
     if (path === "/dashboard/testimonials") {
       assertAuth();
-      const t = body as any;
+      const t = docBody(body);
       const ref = await addDoc(collection(requireFirestore(), "testimonials"), { ...t, created_at: serverTimestamp() });
       return { id: ref.id, ...t } as T;
     }
     if (path === "/dashboard/packages") {
       assertAuth();
-      const p = body as any;
+      const p = docBody(body);
       const ref = await addDoc(collection(requireFirestore(), "booking_packages"), { ...p, created_at: serverTimestamp() });
       return { id: ref.id, ...p } as T;
     }
     if (path === "/dashboard/addons") {
       assertAuth();
-      const a = body as any;
+      const a = docBody(body);
       const ref = await addDoc(collection(requireFirestore(), "booking_addons"), { ...a, created_at: serverTimestamp() });
       return { id: ref.id, ...a } as T;
     }
     if (path === "/dashboard/why-us") {
       assertAuth();
-      const w = body as any;
+      const w = docBody(body);
       const ref = await addDoc(collection(requireFirestore(), "why_us"), { ...w, created_at: serverTimestamp() });
       return { id: ref.id, ...w } as T;
     }
     if (path === "/dashboard/studio-equipment") {
       assertAuth();
-      const e = body as any;
+      const e = docBody(body);
       const ref = await addDoc(collection(requireFirestore(), "studio_equipment"), { ...e, created_at: serverTimestamp() });
       return { id: ref.id, ...e } as T;
     }
     if (path === "/dashboard/studios") {
       assertAuth();
-      const s = body as any;
+      const s = docBody(body);
       const ref = await addDoc(collection(requireFirestore(), "studios"), { ...s, created_at: serverTimestamp() });
       return { id: ref.id, ...s } as T;
     }
     if (path === "/dashboard/videos") {
       assertAuth();
-      const v = body as any;
+      const v = docBody(body);
       const ref = await addDoc(collection(requireFirestore(), "videos"), { ...v, created_at: serverTimestamp() });
       return { id: ref.id, ...v } as T;
     }
@@ -241,7 +243,8 @@ export const api = {
     // Settings
     if (path === "/dashboard/settings") {
       assertAuth();
-      await setDoc(doc(requireFirestore(), "site_settings", "main"), { ...(body as any), updated_at: serverTimestamp() }, { merge: true });
+      const settings = typeof body === "object" && body !== null ? (body as Record<string, unknown>) : {};
+      await setDoc(doc(requireFirestore(), "site_settings", "main"), { ...settings, updated_at: serverTimestamp() }, { merge: true });
       return { success: true } as T;
     }
 
@@ -250,7 +253,8 @@ export const api = {
       assertAuth();
       const [, kind, id] = m;
       const col = dashboardKindToCollection(kind!);
-      await setDoc(doc(requireFirestore(), col, id!), { ...(body as any), updated_at: serverTimestamp() }, { merge: true });
+      const payload = typeof body === "object" && body !== null ? (body as Record<string, unknown>) : {};
+      await setDoc(doc(requireFirestore(), col, id!), { ...payload, updated_at: serverTimestamp() }, { merge: true });
       return { success: true } as T;
     }
 
@@ -263,7 +267,8 @@ export const api = {
     if (b) {
       assertAuth();
       const id = b[1];
-      await updateDoc(doc(requireFirestore(), "bookings", id), { ...(body as any), updated_at: serverTimestamp() });
+      const payload = typeof body === "object" && body !== null ? (body as Record<string, unknown>) : {};
+      await updateDoc(doc(requireFirestore(), "bookings", id), { ...payload, updated_at: serverTimestamp() });
       return { success: true } as T;
     }
     // messages read

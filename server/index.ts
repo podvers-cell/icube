@@ -7,16 +7,28 @@ import { db } from "./db.js";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const isProduction = process.env.NODE_ENV === "production";
 
-app.use(cors({ origin: true, credentials: true }));
+const sessionSecret = process.env.SESSION_SECRET || (isProduction ? null : "icube-dubai-secret");
+if (isProduction && !sessionSecret) {
+  console.error("FATAL: SESSION_SECRET must be set in production.");
+  process.exit(1);
+}
+
+app.use(
+  cors({
+    origin: isProduction && process.env.APP_URL ? process.env.APP_URL.replace(/\/$/, "") : true,
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use(cookieParser());
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || "icube-dubai-secret",
+    secret: sessionSecret!,
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: process.env.NODE_ENV === "production", maxAge: 7 * 24 * 60 * 60 * 1000 },
+    cookie: { secure: isProduction, maxAge: 7 * 24 * 60 * 60 * 1000 },
   })
 );
 

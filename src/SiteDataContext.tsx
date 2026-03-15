@@ -1,8 +1,9 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 import * as api from "./api";
 import { CONTACT_EMAIL } from "./constants/contact";
+import { toUserFriendlyError, isNetworkError } from "./lib/errorMessages";
 
 type Settings = Record<string, string>;
 type Service = { id: number; title: string; description: string; icon: string; sort_order: number };
@@ -10,6 +11,8 @@ type Project = {
   id: number | string;
   title: string;
   category: string;
+  /** Client or brand name shown under title on portfolio page */
+  client?: string;
   image_url: string;
   sort_order: number;
   video_url?: string;
@@ -88,6 +91,7 @@ const FALLBACK_SETTINGS: Record<string, string> = {
   hero_bg_type: "image",
   hero_bg_image_url: "",
   hero_bg_video_url: "",
+  hero_bg_gif_url: "",
   contact_address: "Dubai Media City, Building 1\nDubai, United Arab Emirates",
   contact_email: CONTACT_EMAIL,
   contact_email_bookings: CONTACT_EMAIL,
@@ -249,6 +253,17 @@ function withFallbackArray<T>(items: T[], fallback: T[]): T[] {
   return items && items.length > 0 ? items : fallback;
 }
 
+
+const CACHE_STALE_MS = 60 * 1000; // 1 minute
+let cachedData: SiteData | null = null;
+let cacheTime = 0;
+
+/** Call after dashboard saves content so the public site sees fresh data (e.g. after saving settings or portfolio). */
+export function invalidateSiteCache(): void {
+  cacheTime = 0;
+  cachedData = null;
+}
+
 export function SiteDataProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<SiteData>({
     ...defaultData,
@@ -265,36 +280,51 @@ export function SiteDataProvider({ children }: { children: ReactNode }) {
     videos: [],
   });
 
+  const refreshRef = useRef<() => void>(() => {});
+
+  const fetchAll = useCallback(async (): Promise<void> => {
+    // Phase 1: settings first (Hero, MaintenanceGate can use them immediately)
+    const settings = await api.getSiteSettings();
+    const settingsMap = Object.keys(settings || {}).length ? settings! : FALLBACK_SETTINGS;
+    setData((d) => ({ ...d, settings: settingsMap }));
+
+    // Phase 2: rest in parallel
+    const [services, portfolio, testimonials, packages, whyUs, studioEquipment, studios, videos] = await Promise.all([
+      api.getServices(),
+      api.getPortfolio(),
+      api.getTestimonials(),
+      api.getBookingPackages(),
+      api.getWhyUs(),
+      api.getStudioEquipment(),
+      api.getStudios(),
+      api.getVideos(),
+    ]);
+    const next = {
+      ...defaultData,
+      settings: Object.keys(settingsMap).length ? settingsMap : FALLBACK_SETTINGS,
+      services: withFallbackArray(services, FALLBACK_SERVICES),
+      portfolio: withFallbackArray(portfolio, FALLBACK_PORTFOLIO),
+      testimonials: withFallbackArray(testimonials, FALLBACK_TESTIMONIALS),
+      packages: withFallbackArray(packages, FALLBACK_PACKAGES),
+      whyUs: withFallbackArray(whyUs, FALLBACK_WHY_US),
+      studioEquipment,
+      studios: withFallbackArray(studios, FALLBACK_STUDIOS),
+      videos: withFallbackArray(videos, FALLBACK_VIDEOS),
+      loading: false,
+      error: null,
+      refresh: refreshRef.current,
+    };
+    cachedData = next;
+    cacheTime = Date.now();
+    setData(next);
+  }, []);
+
   const refresh = useCallback(async () => {
     setData((d) => ({ ...d, loading: true, error: null }));
     try {
-      const [settings, services, portfolio, testimonials, packages, whyUs, studioEquipment, studios, videos] = await Promise.all([
-        api.getSiteSettings(),
-        api.getServices(),
-        api.getPortfolio(),
-        api.getTestimonials(),
-        api.getBookingPackages(),
-        api.getWhyUs(),
-        api.getStudioEquipment(),
-        api.getStudios(),
-        api.getVideos(),
-      ]);
-      setData({
-        settings: Object.keys(settings || {}).length ? settings : FALLBACK_SETTINGS,
-        services: withFallbackArray(services, FALLBACK_SERVICES),
-        portfolio: withFallbackArray(portfolio, FALLBACK_PORTFOLIO),
-        testimonials: withFallbackArray(testimonials, FALLBACK_TESTIMONIALS),
-        packages: withFallbackArray(packages, FALLBACK_PACKAGES),
-        whyUs: withFallbackArray(whyUs, FALLBACK_WHY_US),
-        studioEquipment,
-        studios: withFallbackArray(studios, FALLBACK_STUDIOS),
-        videos: withFallbackArray(videos, FALLBACK_VIDEOS),
-        loading: false,
-        error: null,
-        refresh,
-      });
+      await fetchAll();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to load content";
+      const message = toUserFriendlyError(err);
       setData((d) => ({
         ...d,
         loading: false,
@@ -310,11 +340,67 @@ export function SiteDataProvider({ children }: { children: ReactNode }) {
         videos: d.videos.length ? d.videos : FALLBACK_VIDEOS,
       }));
     }
-  }, []);
+  }, [fetchAll]);
+
+  refreshRef.current = refresh;
 
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    const now = Date.now();
+    if (cachedData && now - cacheTime < CACHE_STALE_MS) {
+      setData((d) => ({ ...cachedData!, refresh: refreshRef.current }));
+      return;
+    }
+
+    let cancelled = false;
+    const maxRetries = 2;
+    let attempt = 0;
+
+    const run = async () => {
+      setData((d) => ({ ...d, loading: true, error: null }));
+      while (attempt <= maxRetries) {
+        try {
+          await fetchAll();
+          return;
+        } catch (err) {
+          if (cancelled) return;
+          attempt++;
+          if (attempt <= maxRetries) {
+            await new Promise((r) => setTimeout(r, 1000 * attempt));
+            continue;
+          }
+          const message = toUserFriendlyError(err);
+          const useCached = isNetworkError(err) && cachedData;
+          if (useCached) {
+            setData({
+              ...cachedData,
+              loading: false,
+              error: "You're seeing saved content. Connection problem—retry for the latest.",
+              refresh: refreshRef.current,
+            } as SiteData);
+          } else {
+            setData((d) => ({
+              ...d,
+              loading: false,
+              error: message,
+              refresh,
+              settings: Object.keys(d.settings).length ? d.settings : FALLBACK_SETTINGS,
+              services: d.services.length ? d.services : FALLBACK_SERVICES,
+              portfolio: d.portfolio.length ? d.portfolio : FALLBACK_PORTFOLIO,
+              testimonials: d.testimonials.length ? d.testimonials : FALLBACK_TESTIMONIALS,
+              packages: d.packages.length ? d.packages : FALLBACK_PACKAGES,
+              whyUs: d.whyUs.length ? d.whyUs : FALLBACK_WHY_US,
+              studios: d.studios.length ? d.studios : FALLBACK_STUDIOS,
+              videos: d.videos.length ? d.videos : FALLBACK_VIDEOS,
+            }));
+          }
+        }
+      }
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchAll, refresh]);
 
   return <SiteDataContext.Provider value={data}>{children}</SiteDataContext.Provider>;
 }

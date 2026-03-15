@@ -8,6 +8,7 @@ import { useSwipeCarousel } from "../hooks/useSwipeCarousel";
 import { getIcon } from "../lib/icons";
 import AnimatedStaggerItem from "./AnimatedStaggerItem";
 import { AnimatedSectionHeader } from "./ScrollReveal";
+import SectionSkeleton from "./SectionSkeleton";
 
 const colors = ["from-red-500/20 to-transparent", "from-orange-500/20 to-transparent", "from-blue-500/20 to-transparent", "from-purple-500/20 to-transparent", "from-emerald-500/20 to-transparent"];
 
@@ -123,7 +124,20 @@ function MobileServicesCarousel({
 }
 
 export default function Services() {
-  const { services } = useSiteData();
+  const { services, loading } = useSiteData();
+
+  if (loading && services.length === 0) {
+    return (
+      <section
+        id="services"
+        className="py-28 md:py-32 bg-gradient-to-b from-icube-dark via-icube-gray/60 to-icube-dark/80 relative overflow-hidden"
+      >
+        <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
+          <SectionSkeleton lines={6} className="max-w-2xl" />
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section

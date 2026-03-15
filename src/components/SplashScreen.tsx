@@ -43,6 +43,28 @@ export function SplashScreen() {
       }, 220);
     };
 
+    // On mobile: don't wait for full page load (images, fonts, etc.) — finish as soon as DOM is ready
+    // so the site appears faster on slower mobile networks.
+    const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+    if (isMobile) {
+      if (document.readyState === "loading") {
+        const onReady = () => {
+          window.removeEventListener("DOMContentLoaded", onReady);
+          finish();
+        };
+        window.addEventListener("DOMContentLoaded", onReady);
+        return () => {
+          window.removeEventListener("DOMContentLoaded", onReady);
+          if (simIntervalRef.current) {
+            clearInterval(simIntervalRef.current);
+            simIntervalRef.current = null;
+          }
+        };
+      }
+      finish();
+      return;
+    }
+
     if (document.readyState === "complete") {
       finish();
     } else {

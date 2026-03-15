@@ -43,6 +43,7 @@ export default function Videos() {
                   type="button"
                   onClick={() => embed && setPlaying(video)}
                   className="card-flip glass-card w-full group text-left rounded-2xl overflow-hidden hover:border-icube-gold/40 transition-[border-color,box-shadow] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-icube-gold"
+                  aria-label={`Play video: ${video.title}`}
                 >
                 <div className="aspect-video bg-black/50 flex items-center justify-center relative overflow-hidden">
                   {embed ? (

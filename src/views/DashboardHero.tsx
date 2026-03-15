@@ -3,25 +3,31 @@
 import { useEffect, useRef, useState, type FormEvent, type ChangeEvent } from "react";
 import { api } from "../api";
 import { requireStorage } from "../firebase";
+import { useSiteData, invalidateSiteCache } from "../SiteDataContext";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { uploadToCloudinaryWithProgress } from "../lib/uploadCloudinary";
 
 type HeroSettings = {
-  hero_bg_type?: "image" | "video";
+  hero_bg_type?: "image" | "video" | "gif";
   hero_bg_image_url?: string;
   hero_bg_video_url?: string;
+  hero_bg_gif_url?: string;
 };
 
 export default function DashboardHero() {
+  const { refresh } = useSiteData();
   const [settings, setSettings] = useState<HeroSettings>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [uploadingGif, setUploadingGif] = useState(false);
   const [uploadProgressImage, setUploadProgressImage] = useState(0);
   const [uploadProgressVideo, setUploadProgressVideo] = useState(0);
+  const [uploadProgressGif, setUploadProgressGif] = useState(0);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const videoInputRef = useRef<HTMLInputElement | null>(null);
+  const gifInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     api
@@ -31,10 +37,11 @@ export default function DashboardHero() {
           hero_bg_type: (data.hero_bg_type as HeroSettings["hero_bg_type"]) || "image",
           hero_bg_image_url: data.hero_bg_image_url ?? "",
           hero_bg_video_url: data.hero_bg_video_url ?? "",
+          hero_bg_gif_url: data.hero_bg_gif_url ?? "",
         });
       })
       .catch(() => {
-        setSettings({ hero_bg_type: "image", hero_bg_image_url: "", hero_bg_video_url: "" });
+        setSettings({ hero_bg_type: "image", hero_bg_image_url: "", hero_bg_video_url: "", hero_bg_gif_url: "" });
       })
       .finally(() => setLoading(false));
   }, []);
@@ -48,6 +55,8 @@ export default function DashboardHero() {
     setSaving(true);
     try {
       await api.put("/dashboard/settings", settings);
+      invalidateSiteCache();
+      await refresh();
       alert("Hero background saved.");
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to save hero settings");
@@ -58,7 +67,7 @@ export default function DashboardHero() {
 
   async function handleUpload(
     e: ChangeEvent<HTMLInputElement>,
-    kind: "image" | "video",
+    kind: "image" | "video" | "gif",
   ) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -71,15 +80,21 @@ export default function DashboardHero() {
       setUploadingVideo(true);
       setUploadProgressVideo(0);
     }
+    if (kind === "gif") {
+      setUploadingGif(true);
+      setUploadProgressGif(0);
+    }
 
     try {
       // Prefer Cloudinary (dashboard → website); fallback to Firebase
       let url: string;
-      const setProgress = kind === "image" ? setUploadProgressImage : setUploadProgressVideo;
+      const setProgress =
+        kind === "image" ? setUploadProgressImage : kind === "video" ? setUploadProgressVideo : setUploadProgressGif;
+      const uploadType = kind === "gif" ? "image" : kind;
       try {
         url = await uploadToCloudinaryWithProgress(file, {
           folder: "hero",
-          type: kind,
+          type: uploadType,
           onProgress: setProgress,
         });
       } catch {
@@ -92,9 +107,12 @@ export default function DashboardHero() {
       if (kind === "image") {
         update("hero_bg_type", "image");
         update("hero_bg_image_url", url);
-      } else {
+      } else if (kind === "video") {
         update("hero_bg_type", "video");
         update("hero_bg_video_url", url);
+      } else {
+        update("hero_bg_type", "gif");
+        update("hero_bg_gif_url", url);
       }
     } catch (err) {
       alert(err instanceof Error ? err.message : "Upload failed");
@@ -106,6 +124,10 @@ export default function DashboardHero() {
       if (kind === "video") {
         setUploadingVideo(false);
         setUploadProgressVideo(0);
+      }
+      if (kind === "gif") {
+        setUploadingGif(false);
+        setUploadProgressGif(0);
       }
       e.target.value = "";
     }
@@ -119,7 +141,7 @@ export default function DashboardHero() {
     <div>
       <h1 className="text-3xl font-display font-bold text-white mb-2">Hero section</h1>
       <p className="text-sm text-gray-400 mb-8 max-w-xl">
-        Control the background of the homepage hero. You can use a high‑quality image or a looped
+        Control the background of the homepage hero. You can use a high‑quality image, a GIF, or a looped
         video, from a URL or by uploading (Cloudinary or Firebase).
       </p>
 
@@ -128,7 +150,7 @@ export default function DashboardHero() {
           <label className="block text-sm font-medium text-gray-300 mb-2">
             Background type
           </label>
-          <div className="inline-flex rounded-full bg-black/40 border border-white/10 p-1 text-xs">
+          <div className="inline-flex flex-wrap gap-1 rounded-full bg-black/40 border border-white/10 p-1 text-xs">
             <button
               type="button"
               onClick={() => update("hero_bg_type", "image")}
@@ -139,6 +161,17 @@ export default function DashboardHero() {
               }`}
             >
               Image
+            </button>
+            <button
+              type="button"
+              onClick={() => update("hero_bg_type", "gif")}
+              className={`px-4 py-1.5 rounded-full ${
+                settings.hero_bg_type === "gif"
+                  ? "bg-icube-gold text-icube-dark font-semibold"
+                  : "text-gray-300"
+              }`}
+            >
+              GIF
             </button>
             <button
               type="button"
@@ -196,6 +229,53 @@ export default function DashboardHero() {
                 <div
                   className="h-full bg-icube-gold rounded-full transition-[width] duration-200"
                   style={{ width: `${uploadProgressImage}%` }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              GIF URL (for GIF background)
+            </label>
+            <input
+              type="text"
+              value={settings.hero_bg_gif_url ?? ""}
+              onChange={(e) => update("hero_bg_gif_url", e.target.value)}
+              className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white focus:outline-none focus:border-icube-gold"
+              placeholder="https://… or upload below"
+            />
+          </div>
+          <div className="flex gap-3 items-center">
+            <button
+              type="button"
+              onClick={() => gifInputRef.current?.click()}
+              disabled={uploadingGif}
+              className="px-4 py-2 bg-white/5 border border-white/10 rounded-sm text-sm text-gray-200 hover:bg-white/10 disabled:opacity-50"
+            >
+              {uploadingGif ? `${uploadProgressGif}%` : "Upload GIF"}
+            </button>
+            <input
+              ref={gifInputRef}
+              type="file"
+              accept="image/gif,.gif"
+              className="hidden"
+              onChange={(e) => handleUpload(e, "gif")}
+            />
+            {uploadingGif && (
+              <span className="text-sm text-gray-400">
+                {uploadProgressGif}% uploaded {uploadProgressGif < 100 ? "(sending…)" : "(processing…)"}
+              </span>
+            )}
+          </div>
+          {uploadingGif && (
+            <div className="max-w-md">
+              <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-icube-gold rounded-full transition-[width] duration-200"
+                  style={{ width: `${uploadProgressGif}%` }}
                 />
               </div>
             </div>
