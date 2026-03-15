@@ -49,7 +49,6 @@ export default function PublicSite() {
   const [isMobile, setIsMobile] = useState(false);
   const [progress, setProgress] = useState(0);
   const [heroReady, setHeroReady] = useState(false);
-  const [showWhatsAppBubble, setShowWhatsAppBubble] = useState(true);
   const [showBackToTop, setShowBackToTop] = useState(false);
 
   const onHeroReady = useCallback(() => setHeroReady(true), []);
@@ -217,41 +216,8 @@ export default function PublicSite() {
         </motion.a>
       )}
 
-      {/* WhatsApp floating widget – compact bubble + pill */}
-      <div className="fixed bottom-14 right-4 z-40 flex flex-col items-end gap-0">
-        {showWhatsAppBubble && (
-          <div className="relative mb-4 opacity-100 transition-all duration-300">
-            <div className="w-56 rounded-xl bg-white text-gray-900 shadow-[0_8px_24px_rgba(0,0,0,0.25)] p-3 relative">
-              <button
-                type="button"
-                onClick={() => setShowWhatsAppBubble(false)}
-                className="absolute top-2 right-2 w-5 h-5 flex items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors text-sm"
-                aria-label="Close"
-              >
-                ×
-              </button>
-              <div className="flex gap-2 pr-5">
-                <div className="shrink-0 w-7 h-7 flex items-center justify-center">
-                  <img
-                    src="/icube-logo.svg"
-                    alt=""
-                    className="w-6 h-6 object-contain"
-                    aria-hidden
-                  />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-bold text-gray-900 text-sm">Adam</p>
-                  <p className="text-xs text-gray-600">Client Assets</p>
-                  <p className="text-xs text-gray-700 mt-1">Hi there, I'm Adam. How can I help with your assets? 😊</p>
-                </div>
-              </div>
-              <div
-                className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[8px] border-t-white"
-                aria-hidden
-              />
-            </div>
-          </div>
-        )}
+      {/* WhatsApp floating widget */}
+      <div className="fixed bottom-14 right-4 z-40 flex flex-col items-end">
         <div className="relative inline-block">
           <span className="absolute top-0 right-0 z-10 flex h-5 w-5 translate-x-1/4 -translate-y-1/4 items-center justify-center rounded-full bg-[#e53935] text-[10px] font-bold text-white shadow-md" aria-hidden>
             1
