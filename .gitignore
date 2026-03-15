@@ -9,3 +9,5 @@ coverage/
 data/
 .next/
 analyze/
+.vercel
+.env*.local
