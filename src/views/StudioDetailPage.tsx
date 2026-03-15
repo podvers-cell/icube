@@ -32,6 +32,7 @@ export default function StudioDetailPage() {
   const [activeImage, setActiveImage] = useState(0);
   const [imageLoading, setImageLoading] = useState(true);
   const [containerHeight, setContainerHeight] = useState<number | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
   const imageWrapRef = useRef<HTMLDivElement>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
   const carouselPausedRef = useRef(false);
@@ -43,11 +44,18 @@ export default function StudioDetailPage() {
     : [];
 
   useEffect(() => {
+    const check = () => setIsMobile(typeof window !== "undefined" && window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  useEffect(() => {
     if (studio) {
       setActiveImage(0);
-      setImageLoading(!!images.length);
+      setImageLoading(isMobile ? false : !!images.length);
     }
-  }, [studio?.id, images.length]);
+  }, [studio?.id, images.length, isMobile]);
 
   const handleMainImageLoad = useCallback(() => {
     setImageLoading(false);
@@ -67,9 +75,9 @@ export default function StudioDetailPage() {
 
   const handleThumbClick = useCallback((index: number) => {
     if (index === activeImage) return;
-    setImageLoading(true);
+    if (!isMobile) setImageLoading(true);
     setActiveImage(index);
-  }, [activeImage]);
+  }, [activeImage, isMobile]);
 
   const works = portfolio.filter((p) => p.visible !== false).slice(0, 8);
 
@@ -345,14 +353,14 @@ export default function StudioDetailPage() {
                             <button
                               type="button"
                               onClick={() => setPlayingProject(project)}
-                              className="play-btn-glass-wrap rounded-full w-12 h-12 flex items-center justify-center text-white hover:opacity-90 transition-opacity"
+                              className="play-btn-glass-wrap rounded-full w-10 h-10 md:w-12 md:h-12 flex items-center justify-center text-white hover:opacity-90 transition-opacity"
                               aria-label={`Play ${project.title}`}
                             >
                               <span className="play-btn-ring" aria-hidden />
                               <span className="play-btn-ring" aria-hidden />
                               <span className="play-btn-ring" aria-hidden />
-                              <div className="play-btn-glass rounded-full w-12 h-12 flex items-center justify-center absolute inset-0">
-                                <Play size={22} className="text-white ml-0.5" fill="currentColor" />
+                              <div className="play-btn-glass rounded-full w-10 h-10 md:w-12 md:h-12 flex items-center justify-center absolute inset-0">
+                                <Play className="text-white ml-0.5 w-5 h-5 md:w-[22px] md:h-[22px]" fill="currentColor" />
                               </div>
                             </button>
                           ) : null}

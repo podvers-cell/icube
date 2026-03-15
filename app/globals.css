@@ -30,13 +30,22 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Custom cursor: hide default cursor for the entire project */
-html,
-html body,
-html *,
-html *::before,
-html *::after {
-  cursor: none !important;
+/* Custom cursor: hide default cursor only when pointer can hover (desktop). On touch we don't hide so mobile works normally. */
+@media (hover: hover) {
+  html,
+  html body,
+  html *,
+  html *::before,
+  html *::after {
+    cursor: none !important;
+  }
+}
+
+/* Mobile navigation loading bar animation */
+@keyframes navigation-loading {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(200%); }
+  100% { transform: translateX(-100%); }
 }
 
 h1, h2, h3, h4, h5, h6 {

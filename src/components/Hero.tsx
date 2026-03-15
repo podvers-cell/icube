@@ -66,10 +66,22 @@ export default function Hero({ onHeroReady }: HeroProps) {
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
 
-  // Notify parent when hero background is ready (so splash can hide after video loads)
+  useEffect(() => {
+    const check = () => setIsMobile(typeof window !== "undefined" && window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  // Notify parent when hero background is ready (so splash can hide after video loads). On mobile, never wait for media.
   useEffect(() => {
     if (loading || !onHeroReady) return;
+    if (isMobile) {
+      onHeroReady();
+      return;
+    }
     const isVideo = bgType === "video" && bgVideo;
     const isGif = bgType === "gif" && bgGif;
     if (!isVideo && !isGif) {
@@ -95,7 +107,7 @@ export default function Hero({ onHeroReady }: HeroProps) {
       video.removeEventListener("canplaythrough", done);
       window.clearTimeout(fallback);
     };
-  }, [loading, bgType, bgVideo, bgGif, youtubeEmbed, onHeroReady]);
+  }, [loading, isMobile, bgType, bgVideo, bgGif, youtubeEmbed, onHeroReady]);
 
   useEffect(() => {
     if (phrases.length === 0) return;

@@ -287,12 +287,12 @@ function BentoFeaturedCard({ project, setPlayingProject }: { project: Project; s
           />
         </div>
         <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
-          <div className="play-btn-glass-wrap rounded-full w-14 h-14 lg:w-16 lg:h-16">
+          <div className="play-btn-glass-wrap rounded-full w-10 h-10 lg:w-16 lg:h-16">
             <span className="play-btn-ring" aria-hidden />
             <span className="play-btn-ring" aria-hidden />
             <span className="play-btn-ring" aria-hidden />
-            <div className="play-btn-glass rounded-full w-14 h-14 lg:w-16 lg:h-16 flex items-center justify-center text-white">
-              <Play size={28} className="ml-1" />
+            <div className="play-btn-glass rounded-full w-10 h-10 lg:w-16 lg:h-16 flex items-center justify-center text-white">
+              <Play className="w-5 h-5 ml-1 lg:w-7 lg:h-7" />
             </div>
           </div>
         </div>
@@ -334,12 +334,12 @@ function BentoSmallCard({ project, setPlayingProject }: { project: Project; setP
           />
         </div>
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="play-btn-glass-wrap rounded-full w-12 h-12">
+          <div className="play-btn-glass-wrap rounded-full w-9 h-9 md:w-12 md:h-12">
             <span className="play-btn-ring" aria-hidden />
             <span className="play-btn-ring" aria-hidden />
             <span className="play-btn-ring" aria-hidden />
-            <div className="play-btn-glass rounded-full w-12 h-12 flex items-center justify-center text-white">
-              <Play size={22} className="ml-0.5" />
+            <div className="play-btn-glass rounded-full w-9 h-9 md:w-12 md:h-12 flex items-center justify-center text-white">
+              <Play className="w-4 h-4 ml-0.5 md:w-[22px] md:h-[22px]" />
             </div>
           </div>
         </div>
@@ -378,12 +378,12 @@ function StandalonePortfolioCard({ project, setPlayingProject }: { project: Proj
         <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors" />
         {hasVideo && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="play-btn-glass-wrap rounded-full w-14 h-14">
+            <div className="play-btn-glass-wrap rounded-full w-10 h-10 md:w-14 md:h-14">
               <span className="play-btn-ring" aria-hidden />
               <span className="play-btn-ring" aria-hidden />
               <span className="play-btn-ring" aria-hidden />
-              <div className="play-btn-glass rounded-full w-14 h-14 flex items-center justify-center text-white">
-                <Play size={28} className="ml-1" />
+              <div className="play-btn-glass rounded-full w-10 h-10 md:w-14 md:h-14 flex items-center justify-center text-white">
+                <Play className="w-5 h-5 ml-1 md:w-7 md:h-7" />
               </div>
             </div>
           </div>
@@ -445,12 +445,12 @@ function PortfolioCard({
         </div>
         <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300 pointer-events-none" />
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className={`play-btn-glass-wrap rounded-full ${enhanced ? "w-24 h-24" : "w-20 h-20"}`}>
+          <div className={`play-btn-glass-wrap rounded-full ${enhanced ? "w-14 h-14 md:w-24 md:h-24" : "w-12 h-12 md:w-20 md:h-20"}`}>
             <span className="play-btn-ring" aria-hidden />
             <span className="play-btn-ring" aria-hidden />
             <span className="play-btn-ring" aria-hidden />
-            <div className={`play-btn-glass rounded-full flex items-center justify-center ${enhanced ? "w-24 h-24" : "w-20 h-20"}`}>
-              <Play size={enhanced ? 36 : 32} className="text-white ml-1" />
+            <div className={`play-btn-glass rounded-full flex items-center justify-center ${enhanced ? "w-14 h-14 md:w-24 md:h-24" : "w-12 h-12 md:w-20 md:h-20"}`}>
+              <Play className={`text-white ml-1 ${enhanced ? "w-6 h-6 md:w-9 md:h-9" : "w-5 h-5 md:w-8 md:h-8"}`} />
             </div>
           </div>
         </div>

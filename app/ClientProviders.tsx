@@ -10,11 +10,13 @@ import MaintenanceGate from "@/components/MaintenanceGate";
 import CookieConsent from "@/components/CookieConsent";
 import { SplashScreen } from "@/components/SplashScreen";
 import CustomCursorProvider from "@/components/CustomCursorProvider";
+import NavigationLoadingBar from "@/components/NavigationLoadingBar";
 
 export function ClientProviders({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider>
       <SplashScreen />
+      <NavigationLoadingBar />
       <CustomCursorProvider />
       <AuthProvider>
         <SiteDataProvider>

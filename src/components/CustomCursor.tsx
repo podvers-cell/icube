@@ -5,35 +5,65 @@ import { useEffect, useState, useRef } from "react";
 export default function CustomCursor() {
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const [visible, setVisible] = useState(false);
+  const [isTouch, setIsTouch] = useState(false);
   const rafRef = useRef<number>(0);
   const posRef = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const hasHover = window.matchMedia("(hover: hover)").matches;
+    setIsTouch(!hasHover);
+  }, []);
 
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
       posRef.current = { x: e.clientX, y: e.clientY };
       if (!visible) setVisible(true);
     };
-    const tick = () => {
-      setPos((prev) => ({
-        x: prev.x + (posRef.current.x - prev.x) * 0.2,
-        y: prev.y + (posRef.current.y - prev.y) * 0.2,
-      }));
-      rafRef.current = requestAnimationFrame(tick);
-    };
     const onLeave = () => setVisible(false);
     const onEnter = () => setVisible(true);
+
+    const onTouch = (e: TouchEvent) => {
+      if (e.touches.length > 0) {
+        const t = e.touches[0];
+        posRef.current = { x: t.clientX, y: t.clientY };
+        setPos({ x: t.clientX, y: t.clientY });
+        setVisible(true);
+      }
+    };
+    const onTouchEnd = () => {
+      setVisible(false);
+    };
 
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseleave", onLeave);
     window.addEventListener("mouseenter", onEnter);
+    window.addEventListener("touchstart", onTouch, { passive: true });
+    window.addEventListener("touchmove", onTouch, { passive: true });
+    window.addEventListener("touchend", onTouchEnd);
+    window.addEventListener("touchcancel", onTouchEnd);
+
+    const tick = () => {
+      if (!isTouch) {
+        setPos((prev) => ({
+          x: prev.x + (posRef.current.x - prev.x) * 0.2,
+          y: prev.y + (posRef.current.y - prev.y) * 0.2,
+        }));
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    };
     rafRef.current = requestAnimationFrame(tick);
+
     return () => {
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseleave", onLeave);
       window.removeEventListener("mouseenter", onEnter);
+      window.removeEventListener("touchstart", onTouch);
+      window.removeEventListener("touchmove", onTouch);
+      window.removeEventListener("touchend", onTouchEnd);
+      window.removeEventListener("touchcancel", onTouchEnd);
       cancelAnimationFrame(rafRef.current);
     };
-  }, [visible]);
+  }, [visible, isTouch]);
 
   if (!visible) return null;
 
