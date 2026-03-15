@@ -104,10 +104,10 @@ export default function Navbar() {
 
   const navBgClass = isLight
     ? isScrolled || !isHome
-      ? "bg-[#f2f0eb]/90 border-b border-stone-300/50 backdrop-blur-2xl shadow-lg shadow-black/10"
+      ? "bg-[#f2f0eb]/90 border-b border-stone-300/50 md:backdrop-blur-2xl shadow-lg shadow-black/10"
       : "bg-transparent border-b border-transparent"
     : isScrolled
-      ? "bg-black/25 border-b border-white/10 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.06)]"
+      ? "bg-black/25 border-b border-white/10 md:backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.06)]"
       : "bg-transparent border-b border-transparent";
 
   return (
@@ -116,7 +116,7 @@ export default function Navbar() {
       data-home={isHome ? "true" : "false"}
       data-theme={theme}
       style={navTextStyle}
-      className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${navBgClass} ${isLightNavBar ? "text-stone-900" : isLight ? "text-white" : ""}`}
+      className={`fixed top-0 inset-x-0 z-50 transition-[background-color,border-color,box-shadow] duration-200 ease-out ${navBgClass} ${isLightNavBar ? "text-stone-900" : isLight ? "text-white" : ""}`}
     >
       <div className="relative z-50 w-full px-4 md:px-8 lg:px-10 py-2 flex items-center justify-between gap-4 md:justify-start md:gap-6">
         {/* Logo – left */}
@@ -223,12 +223,12 @@ export default function Navbar() {
         >
           <span className="relative flex flex-col justify-center items-center w-7 h-7">
             <span
-              className={`block h-[2px] w-7 rounded-full transition-all duration-300 ${isLightNavBar ? "bg-stone-800" : "bg-white"} ${
+              className={`block h-[2px] w-7 rounded-full ${isLightNavBar ? "bg-stone-800" : "bg-white"} ${
                 isMobileMenuOpen ? "translate-y-[3px] -rotate-45" : "-translate-y-[3px]"
               }`}
             />
             <span
-              className={`block h-[2px] w-7 rounded-full transition-all duration-300 ${isLightNavBar ? "bg-stone-800" : "bg-white"} ${
+              className={`block h-[2px] w-7 rounded-full ${isLightNavBar ? "bg-stone-800" : "bg-white"} ${
                 isMobileMenuOpen ? "-translate-y-[3px] rotate-45" : "translate-y-[3px]"
               }`}
             />
@@ -236,18 +236,18 @@ export default function Navbar() {
         </button>
       </div>
 
-      {/* Mobile Nav – fixed overlay so menu is always centered in viewport at any scroll position */}
+      {/* Mobile Nav – lightweight opacity/translate only; no blur, no 3D, no heavy shadow */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, rotateX: -90 }}
-            animate={{ opacity: 1, rotateX: 0 }}
-            exit={{ opacity: 0, rotateX: 90 }}
-            transition={{ duration: 0.26, ease: [0.25, 0.46, 0.45, 0.94] }}
-            style={{ transformOrigin: "center center" }}
-            className="fixed top-0 left-0 right-0 bottom-0 z-40 bg-icube-dark/95 backdrop-blur-2xl flex flex-col items-center justify-center px-8 min-h-[100dvh] min-h-[100vh] md:hidden"
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="fixed top-0 left-0 right-0 bottom-0 z-40 bg-icube-dark flex flex-col items-center justify-center px-8 min-h-[100dvh] min-h-[100vh] md:hidden"
+            aria-hidden="false"
           >
-            <div className="w-full max-w-sm bg-black/40 border border-white/10 rounded-3xl px-6 py-8 shadow-[0_30px_80px_rgba(0,0,0,0.85)] flex flex-col items-center gap-6">
+            <div className="w-full max-w-sm bg-icube-gray border border-white/10 rounded-2xl px-6 py-8 shadow-[0_12px_40px_rgba(0,0,0,0.4)] flex flex-col items-center gap-6">
               {SHOW_THEME_TOGGLE && (
                 <ThemeToggleSwitch
                   theme={theme}
@@ -271,8 +271,8 @@ export default function Navbar() {
                         handleNavLinkClick(e, href);
                         setIsMobileMenuOpen(false);
                       }}
-                      className={`relative block text-center text-sm font-display font-medium tracking-[0.24em] uppercase py-3.5 px-4 rounded-lg transition-colors after:absolute after:left-1/2 after:-bottom-0.5 after:h-[2px] after:w-10 after:-translate-x-1/2 after:bg-icube-gold after:origin-center after:transition-transform after:duration-300 min-h-[44px] flex items-center justify-center ${
-                        active ? "text-white after:scale-x-100 bg-white/5" : "text-gray-200 hover:text-white hover:bg-white/5 after:scale-x-0 hover:after:scale-x-100"
+                      className={`relative block text-center text-sm font-display font-medium tracking-[0.24em] uppercase py-3.5 px-4 rounded-lg min-h-[44px] flex items-center justify-center transition-colors duration-150 ${
+                        active ? "text-white bg-white/5" : "text-gray-200 hover:text-white hover:bg-white/5"
                       }`}
                       aria-current={active ? "page" : undefined}
                     >

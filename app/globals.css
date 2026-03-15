@@ -82,6 +82,40 @@ body,
     background 0.45s ease;
 }
 
+/* Mobile: shorter transitions + no expensive blur for faster interaction and lower compositing cost */
+.site-wrapper nav,
+.site-wrapper nav * {
+  transition-duration: 0.2s !important;
+}
+@media (max-width: 768px) {
+  .site-wrapper,
+  .site-wrapper main,
+  .site-wrapper section,
+  .site-wrapper footer,
+  .site-wrapper button,
+  .site-wrapper a {
+    transition-duration: 0.2s !important;
+  }
+  .site-wrapper nav {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .site-wrapper nav[data-scrolled="true"] {
+    background: rgba(0, 0, 0, 0.7) !important;
+  }
+  [data-theme="light"] .site-wrapper nav[data-scrolled="true"] {
+    background: rgba(242, 240, 235, 0.98) !important;
+  }
+  .site-wrapper main > section:not(#home) {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgba(25, 30, 46, 0.96) !important;
+  }
+  [data-theme="light"] .site-wrapper main > section:not(#home) {
+    background: #e8e5df !important;
+  }
+}
+
 /* احترام تفضيل تقليل الحركة (إمكانية وصول) */
 @media (prefers-reduced-motion: reduce) {
   html {
