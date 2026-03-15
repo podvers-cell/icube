@@ -5,16 +5,23 @@ import Link from "next/link";
 import { LogOut, LayoutDashboard } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "../AuthContext";
-import { useTheme } from "../ThemeContext";
 import { AnimatePresence, motion } from "motion/react";
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
   const router = useRouter();
   const pathname = usePathname();
   const { user, logout, isAdmin = false } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+
+  useEffect(() => {
+    const read = () => setTheme((document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark"));
+    read();
+    const obs = new MutationObserver(read);
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => obs.disconnect();
+  }, []);
 
   /** On nav link click: if on home, scroll to section; if on another page, go to home with hash then home scrolls to section */
   function handleNavLinkClick(e: React.MouseEvent<HTMLAnchorElement>, href: string) {
