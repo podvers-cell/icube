@@ -117,7 +117,7 @@ export default function Navbar() {
       style={navTextStyle}
       className={`fixed top-0 inset-x-0 z-50 transition-[background-color,border-color,box-shadow] duration-200 ease-out ${navBgClass} ${isLightNavBar ? "text-stone-900" : isLight ? "text-white" : ""}`}
     >
-      <div className="relative z-50 w-full px-4 md:px-8 lg:px-10 py-2 flex items-center justify-between gap-4 md:justify-start md:gap-6">
+      <div className={`relative w-full px-4 md:px-8 lg:px-10 py-2 flex items-center justify-between gap-4 md:justify-start md:gap-6 ${isMobileMenuOpen ? "z-[60]" : "z-50"}`}>
         {/* Logo – left */}
         <Link href="/" className="flex items-center gap-2 shrink-0">
           <img
@@ -235,18 +235,24 @@ export default function Navbar() {
         </button>
       </div>
 
-      {/* Mobile Nav – lightweight opacity/translate only; no blur, no 3D, no heavy shadow */}
-      <AnimatePresence>
+      {/* Mobile Nav – full-screen overlay above content; z-[55] so it sits above nav bar (z-50), below toggle (z-[60]) */}
+      <AnimatePresence mode="wait">
         {isMobileMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.18, ease: "easeOut" }}
-            className="fixed top-0 left-0 right-0 bottom-0 z-40 bg-icube-dark flex flex-col items-center justify-center px-8 min-h-[100dvh] min-h-[100vh] md:hidden"
+            key="mobile-menu-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="fixed inset-0 z-[55] bg-icube-dark flex flex-col items-center justify-center px-8 min-h-[100dvh] min-h-[100vh] md:hidden"
             aria-hidden="false"
           >
-            <div className="w-full max-w-sm bg-icube-gray border border-white/10 rounded-2xl px-6 py-8 shadow-[0_12px_40px_rgba(0,0,0,0.4)] flex flex-col items-center gap-6">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.22, ease: [0.25, 0.46, 0.45, 0.94], delay: 0.04 }}
+              className="w-full max-w-sm bg-icube-gray border border-white/10 rounded-2xl px-6 py-8 shadow-[0_12px_40px_rgba(0,0,0,0.4)] flex flex-col items-center gap-6"
+            >
               {SHOW_THEME_TOGGLE && (
                 <ThemeToggleSwitch
                   theme={theme}
@@ -348,7 +354,7 @@ export default function Navbar() {
                   </Link>
                 </div>
               )}
-            </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

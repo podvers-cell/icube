@@ -75,13 +75,9 @@ export default function Hero({ onHeroReady }: HeroProps) {
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  // Notify parent when hero background is ready (so splash can hide after video loads). On mobile, never wait for media.
+  // Notify parent when hero background is ready (so splash can hide after video loads)
   useEffect(() => {
     if (loading || !onHeroReady) return;
-    if (isMobile) {
-      onHeroReady();
-      return;
-    }
     const isVideo = bgType === "video" && bgVideo;
     const isGif = bgType === "gif" && bgGif;
     if (!isVideo && !isGif) {
@@ -107,7 +103,7 @@ export default function Hero({ onHeroReady }: HeroProps) {
       video.removeEventListener("canplaythrough", done);
       window.clearTimeout(fallback);
     };
-  }, [loading, isMobile, bgType, bgVideo, bgGif, youtubeEmbed, onHeroReady]);
+  }, [loading, bgType, bgVideo, bgGif, youtubeEmbed, onHeroReady]);
 
   useEffect(() => {
     if (phrases.length === 0) return;
@@ -149,8 +145,8 @@ export default function Hero({ onHeroReady }: HeroProps) {
                 : undefined
           }
         />
-        {/* On mobile: skip video/GIF to speed up load; use image or gradient only */}
-        {!isMobile && bgType === "video" && bgVideo ? (
+        {/* Background: video (YouTube or file), GIF, or image */}
+        {bgType === "video" && bgVideo ? (
           youtubeEmbed ? (
             <div className="absolute inset-0 overflow-hidden w-full h-full min-h-full">
               <iframe
@@ -185,7 +181,7 @@ export default function Hero({ onHeroReady }: HeroProps) {
               </video>
             </div>
           )
-        ) : !isMobile && bgType === "gif" && bgGif ? (
+        ) : bgType === "gif" && bgGif ? (
           <img
             src={bgGif}
             alt="Hero Background"

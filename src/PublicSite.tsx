@@ -54,12 +54,11 @@ export default function PublicSite() {
   const onHeroReady = useCallback(() => setHeroReady(true), []);
 
   // Before paint: if user already saw splash in a previous visit, don't show it (navigation/return)
-  // On mobile: never block the site on data load — show content immediately
   useLayoutEffect(() => {
     if (typeof window !== "undefined") {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
-      if (!getInitialShowSplash() || mobile) setShowSplash(false);
+      if (!getInitialShowSplash()) setShowSplash(false);
     }
     setSplashChecked(true);
   }, []);
