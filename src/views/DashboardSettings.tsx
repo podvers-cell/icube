@@ -24,6 +24,7 @@ const keys = [
   "social_twitter",
   "social_tiktok",
   "social_linkedin",
+  "social_facebook",
 ];
 
 export default function DashboardSettings() {
@@ -72,6 +73,7 @@ export default function DashboardSettings() {
     social_twitter: "X (Twitter) URL",
     social_tiktok: "TikTok URL",
     social_linkedin: "LinkedIn URL",
+    social_facebook: "Facebook URL",
   };
 
   return (

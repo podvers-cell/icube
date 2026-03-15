@@ -96,14 +96,13 @@ export default function Navbar() {
     }
   }
 
-  const isHome = pathname === "/";
   const isLight = theme === "light";
-  const isLightNavBar = isLight && (isScrolled || !isHome);
+  const isLightNavBar = isLight && isScrolled;
 
   const navTextStyle = isLightNavBar ? { color: "#1c1917" } : isLight ? { color: "#ffffff" } : undefined;
 
   const navBgClass = isLight
-    ? isScrolled || !isHome
+    ? isScrolled
       ? "bg-[#f2f0eb]/90 border-b border-stone-300/50 md:backdrop-blur-2xl shadow-lg shadow-black/10"
       : "bg-transparent border-b border-transparent"
     : isScrolled
@@ -113,7 +112,7 @@ export default function Navbar() {
   return (
     <nav
       data-scrolled={isScrolled ? "true" : undefined}
-      data-home={isHome ? "true" : "false"}
+      data-home="true"
       data-theme={theme}
       style={navTextStyle}
       className={`fixed top-0 inset-x-0 z-50 transition-[background-color,border-color,box-shadow] duration-200 ease-out ${navBgClass} ${isLightNavBar ? "text-stone-900" : isLight ? "text-white" : ""}`}
@@ -140,9 +139,9 @@ export default function Navbar() {
                       href={href}
                       onClick={(e) => handleNavLinkClick(e, href)}
                       style={navTextStyle}
-                      className={`nav-menu-link relative inline-block py-2 pb-2.5 whitespace-nowrap text-[11px] font-medium tracking-[0.18em] uppercase transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-full after:bg-icube-gold after:origin-left after:transition-transform after:duration-300 after:[transition-timing-function:cubic-bezier(0.4,0,0.2,1)] hover:after:scale-x-100 ${
-                        isLightNavBar ? "text-stone-900 hover:text-stone-900" : isLight ? "text-white hover:text-white" : active ? "text-white after:scale-x-100" : "text-gray-200/80 hover:text-white after:scale-x-0"
-                      } ${active ? "after:scale-x-100" : "after:scale-x-0"}`}
+                      className={`nav-menu-link relative inline-block py-2 pb-2.5 whitespace-nowrap text-[11px] font-medium tracking-[0.18em] uppercase transition-colors duration-300 ${
+                        isLightNavBar ? "text-stone-900 hover:text-stone-900" : isLight ? "text-white hover:text-white" : active ? "text-white" : "text-gray-200/80 hover:text-white"
+                      }`}
                       aria-current={active ? "page" : undefined}
                     >
                       {link.name}

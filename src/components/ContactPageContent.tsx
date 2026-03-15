@@ -9,6 +9,7 @@ import {
   Instagram,
   Youtube,
   Linkedin,
+  Facebook,
   Send,
   MessageSquare,
 } from "lucide-react";
@@ -56,6 +57,7 @@ export default function ContactPageContent() {
   const twitter = settings.social_twitter || "#";
   const tiktok = settings.social_tiktok || "#";
   const linkedin = settings.social_linkedin || "#";
+  const facebook = settings.social_facebook || "#";
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -199,6 +201,7 @@ export default function ContactPageContent() {
                   { href: twitter, icon: XIcon, label: "X (Twitter)", hoverClass: "hover:text-white" },
                   { href: tiktok, icon: TikTokIcon, label: "TikTok", hoverClass: "hover:text-[#00f2ea]" },
                   { href: linkedin, icon: Linkedin, label: "LinkedIn", hoverClass: "hover:text-[#0A66C2]" },
+                  { href: facebook, icon: Facebook, label: "Facebook", hoverClass: "hover:text-[#1877F2]" },
                 ].map(({ href, icon: Icon, label, hoverClass }) => (
                   <a
                     key={label}

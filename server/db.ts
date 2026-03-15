@@ -147,6 +147,7 @@ const defaults: [string, string][] = [
   ["social_instagram", "#"],
   ["social_youtube", "#"],
   ["social_twitter", "#"],
+  ["social_facebook", "#"],
 ];
 
 const insertSetting = db.prepare("INSERT OR IGNORE INTO site_settings (key, value) VALUES (?, ?)");

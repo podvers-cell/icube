@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { Mail, Phone, MapPin, Instagram, Youtube, Linkedin } from "lucide-react";
+import { Mail, Phone, MapPin, Instagram, Youtube, Linkedin, Facebook } from "lucide-react";
 import { motion } from "motion/react";
 import { useSiteData } from "../SiteDataContext";
 import { useToast } from "../ToastContext";
@@ -50,6 +50,7 @@ export default function Contact() {
   const twitter = settings.social_twitter || "#";
   const tiktok = settings.social_tiktok || "#";
   const linkedin = settings.social_linkedin || "#";
+  const facebook = settings.social_facebook || "#";
 
   function validate(): boolean {
     const err: { name?: string; email?: string; message?: string } = {};
@@ -169,6 +170,9 @@ export default function Contact() {
                 </a>
                 <a href={linkedin} target="_blank" rel="noreferrer" className="flex items-center justify-center text-gray-400 hover:text-[#0A66C2] transition-all duration-300" aria-label="LinkedIn">
                   <Linkedin size={20} />
+                </a>
+                <a href={facebook} target="_blank" rel="noreferrer" className="flex items-center justify-center text-gray-400 hover:text-[#1877F2] transition-all duration-300" aria-label="Facebook">
+                  <Facebook size={20} />
                 </a>
               </div>
             </div>
