@@ -20,22 +20,25 @@ const firebaseConfig = {
   appId: env.NEXT_PUBLIC_FIREBASE_APP_ID ?? env.VITE_FIREBASE_APP_ID,
 };
 
-if (
-  !firebaseConfig.apiKey ||
-  !firebaseConfig.authDomain ||
-  !firebaseConfig.projectId ||
-  !firebaseConfig.storageBucket ||
-  !firebaseConfig.messagingSenderId ||
-  !firebaseConfig.appId
-) {
-  throw new Error(
-    "Missing Firebase env. Set NEXT_PUBLIC_FIREBASE_API_KEY, NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN, " +
-      "NEXT_PUBLIC_FIREBASE_PROJECT_ID, NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET, " +
-      "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID, NEXT_PUBLIC_FIREBASE_APP_ID in Vercel Environment Variables."
-  );
-}
+const hasValidConfig =
+  !!(firebaseConfig.apiKey && firebaseConfig.authDomain && firebaseConfig.projectId &&
+    firebaseConfig.storageBucket && firebaseConfig.messagingSenderId && firebaseConfig.appId);
 
-export const firebaseApp = initializeApp(firebaseConfig as Record<string, string>);
+// Use placeholder config when env vars are missing so the app loads (e.g. on Vercel without env set).
+// Auth/data will not work until NEXT_PUBLIC_FIREBASE_* are set in Vercel.
+const configToUse = hasValidConfig
+  ? (firebaseConfig as Record<string, string>)
+  : {
+      apiKey: "placeholder",
+      authDomain: "placeholder.firebaseapp.com",
+      projectId: "placeholder",
+      storageBucket: "placeholder.appspot.com",
+      messagingSenderId: "0",
+      appId: "1:0:web:0",
+    };
+
+export const firebaseApp = initializeApp(configToUse);
 export const firebaseAuth = getAuth(firebaseApp);
 export const firestore = getFirestore(firebaseApp);
 export const firebaseStorage = getStorage(firebaseApp);
+export const isFirebaseConfigured = hasValidConfig;
