@@ -46,6 +46,7 @@ export default function PublicSite() {
   const hash = useHash();
   const [showSplash, setShowSplash] = useState(true);
   const [splashChecked, setSplashChecked] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [progress, setProgress] = useState(0);
   const [heroReady, setHeroReady] = useState(false);
   const [showWhatsAppBubble, setShowWhatsAppBubble] = useState(true);
@@ -54,8 +55,13 @@ export default function PublicSite() {
   const onHeroReady = useCallback(() => setHeroReady(true), []);
 
   // Before paint: if user already saw splash in a previous visit, don't show it (navigation/return)
+  // On mobile: never block the site on data load — show content immediately
   useLayoutEffect(() => {
-    if (!getInitialShowSplash()) setShowSplash(false);
+    if (typeof window !== "undefined") {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (!getInitialShowSplash() || mobile) setShowSplash(false);
+    }
     setSplashChecked(true);
   }, []);
 

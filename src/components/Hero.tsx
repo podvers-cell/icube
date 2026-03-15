@@ -149,7 +149,8 @@ export default function Hero({ onHeroReady }: HeroProps) {
                 : undefined
           }
         />
-        {bgType === "video" && bgVideo ? (
+        {/* On mobile: skip video/GIF to speed up load; use image or gradient only */}
+        {!isMobile && bgType === "video" && bgVideo ? (
           youtubeEmbed ? (
             <div className="absolute inset-0 overflow-hidden w-full h-full min-h-full">
               <iframe
@@ -184,7 +185,7 @@ export default function Hero({ onHeroReady }: HeroProps) {
               </video>
             </div>
           )
-        ) : bgType === "gif" && bgGif ? (
+        ) : !isMobile && bgType === "gif" && bgGif ? (
           <img
             src={bgGif}
             alt="Hero Background"
