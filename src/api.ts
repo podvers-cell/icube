@@ -39,6 +39,8 @@ function dashboardKindToCollection(kind: string): string {
       return "why_us";
     case "studio-equipment":
       return "studio_equipment";
+    case "discount-codes":
+      return "discount_codes";
     default:
       return kind;
   }
@@ -118,6 +120,10 @@ export const api = {
       assertAuth();
       return (await listCollection("studios")) as T;
     }
+    if (path === "/dashboard/discount-codes") {
+      assertAuth();
+      return (await listByCreatedAtDesc("discount_codes")) as T;
+    }
     if (path === "/dashboard/videos") {
       assertAuth();
       return (await listCollection("videos")) as T;
@@ -142,11 +148,41 @@ export const api = {
         throw new Error(typeof msg === "string" ? msg : "Invalid booking data");
       }
       const b = parsed.data;
-      await addDoc(collection(requireFirestore(), "bookings"), {
+      const db = requireFirestore();
+      await addDoc(collection(db, "bookings"), {
         ...stripUndefined(b),
         status: "pending",
         created_at: serverTimestamp(),
       });
+
+      // If a discount code was used, increment its used_count and deactivate when max_uses reached.
+      if (b.discount_code) {
+        try {
+          const code = b.discount_code.toUpperCase();
+          const q = query(
+            collection(db, "discount_codes"),
+            where("code", "==", code)
+          );
+          const snaps = await getDocs(q);
+          if (!snaps.empty) {
+            const docSnap = snaps.docs[0];
+            const data = docSnap.data() as {
+              used_count?: number;
+              max_uses?: number;
+              active?: boolean;
+            };
+            const used = (data.used_count ?? 0) + 1;
+            const maxUses = data.max_uses ?? 1;
+            const shouldDeactivate = used >= maxUses;
+            await updateDoc(docSnap.ref, {
+              used_count: used,
+              ...(shouldDeactivate ? { active: false } : {}),
+            });
+          }
+        } catch {
+          // best-effort; booking already stored
+        }
+      }
       return { success: true } as T;
     }
     if (path === "/contact") {
@@ -235,6 +271,17 @@ export const api = {
       const ref = await addDoc(collection(requireFirestore(), "videos"), { ...v, created_at: serverTimestamp() });
       return { id: ref.id, ...v } as T;
     }
+    if (path === "/dashboard/discount-codes") {
+      assertAuth();
+      const d = docBody(body);
+      const ref = await addDoc(collection(requireFirestore(), "discount_codes"), {
+        ...d,
+        used_count: d.used_count ?? 0,
+        active: d.active ?? true,
+        created_at: serverTimestamp(),
+      });
+      return { id: ref.id, ...d } as T;
+    }
 
     throw new Error(`Unknown POST path: ${path}`);
   },
@@ -248,7 +295,7 @@ export const api = {
       return { success: true } as T;
     }
 
-    const m = path.match(/^\/dashboard\/(services|portfolio|testimonials|packages|addons|why-us|studio-equipment|studios|videos)\/([^/]+)$/);
+    const m = path.match(/^\/dashboard\/(services|portfolio|testimonials|packages|addons|why-us|studio-equipment|studios|videos|discount-codes)\/([^/]+)$/);
     if (m) {
       assertAuth();
       const [, kind, id] = m;
@@ -291,7 +338,7 @@ export const api = {
       await deleteDoc(doc(requireFirestore(), "bookings", id));
       return { success: true } as T;
     }
-    const m = path.match(/^\/dashboard\/(services|portfolio|testimonials|packages|addons|why-us|studio-equipment|studios|videos)\/([^/]+)$/);
+    const m = path.match(/^\/dashboard\/(services|portfolio|testimonials|packages|addons|why-us|studio-equipment|studios|videos|discount-codes)\/([^/]+)$/);
     if (m) {
       assertAuth();
       const [, kind, id] = m;
@@ -372,9 +419,39 @@ export type BookingPayload = {
   time_slot?: string;
   addon_ids?: string[];
   addons_total_aed?: number;
+  discount_code?: string;
+  discount_percent?: number;
 };
 export function submitBooking(data: BookingPayload) {
   return api.post<{ success: boolean }>("/booking", data);
+}
+
+export async function validateDiscountCodeOnServer(code: string): Promise<{ percent: number } | null> {
+  const db = requireFirestore();
+  const q = query(
+    collection(db, "discount_codes"),
+    where("code", "==", code.toUpperCase()),
+    where("active", "==", true)
+  );
+  const snaps = await getDocs(q);
+  if (snaps.empty) return null;
+  const docSnap = snaps.docs[0];
+  const data = docSnap.data() as {
+    percent?: number;
+    max_uses?: number;
+    used_count?: number;
+    valid_until?: string;
+  };
+  const percent = data.percent ?? 0;
+  if (!percent || percent <= 0) return null;
+  const maxUses = data.max_uses ?? 1;
+  const used = data.used_count ?? 0;
+  if (used >= maxUses) return null;
+  if (data.valid_until) {
+    const expires = new Date(data.valid_until).getTime();
+    if (!Number.isFinite(expires) || expires < Date.now()) return null;
+  }
+  return { percent };
 }
 
 /** Sends a confirmation email to the customer after booking. Call after submitBooking. */

@@ -8,7 +8,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import BookingProgress from "@/components/BookingProgress";
 import { useBooking } from "@/BookingContext";
-import { submitBooking, sendBookingConfirmationEmail } from "@/api";
+import { submitBooking, sendBookingConfirmationEmail, validateDiscountCodeOnServer } from "@/api";
 
 function formatTimeSlot(value: string): string {
   const [hStr] = value.split(":");
@@ -39,6 +39,10 @@ export default function StudioBookingCheckoutPage() {
     durationHours: number;
   } | null>(null);
 
+  const [discountCode, setDiscountCode] = useState("");
+  const [discountPercent, setDiscountPercent] = useState(0);
+  const [discountError, setDiscountError] = useState<string | null>(null);
+
   const durationHours = selectedDurationHours ?? 2;
   useEffect(() => {
     if (success) return;
@@ -49,7 +53,31 @@ export default function StudioBookingCheckoutPage() {
   }, [selectedStudio, selectedDate, selectedTimeSlot, selectedDurationHours, router, success]);
 
   const studioTotal = selectedStudio ? selectedStudio.price_aed_per_hour * durationHours : 0;
-  const totalAmount = studioTotal + totalAddonsAmount;
+  const subtotal = studioTotal + totalAddonsAmount;
+  const discountAmount = Math.round(subtotal * (discountPercent / 100));
+  const totalAmount = subtotal - discountAmount;
+
+  async function applyDiscountCode() {
+    const code = discountCode.trim().toUpperCase();
+    if (!code) {
+      setDiscountPercent(0);
+      setDiscountError(null);
+      return;
+    }
+    try {
+      const res = await validateDiscountCodeOnServer(code);
+      if (!res) {
+        setDiscountPercent(0);
+        setDiscountError("Discount code is invalid or expired.");
+        return;
+      }
+      setDiscountPercent(res.percent);
+      setDiscountError(null);
+    } catch {
+      setDiscountPercent(0);
+      setDiscountError("Discount code is invalid or expired.");
+    }
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -70,6 +98,7 @@ export default function StudioBookingCheckoutPage() {
         time_slot: selectedTimeSlot,
         addon_ids: selectedAddOns.map((a) => a.id),
         addons_total_aed: totalAddonsAmount,
+        ...(discountPercent > 0 && { discount_code: discountCode.trim().toUpperCase(), discount_percent: discountPercent }),
       };
       await submitBooking(payload);
       try {
@@ -145,6 +174,33 @@ export default function StudioBookingCheckoutPage() {
             Review your studio booking and enter your details to complete the request.
           </p>
 
+          {/* Discount code */}
+          <div className="mb-8 space-y-2">
+            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              Discount code
+            </label>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <input
+                type="text"
+                value={discountCode}
+                onChange={(e) => {
+                  setDiscountCode(e.target.value.toUpperCase());
+                  setDiscountError(null);
+                }}
+                className="flex-1 bg-icube-dark/80 border border-white/10 rounded-xl px-4 py-3.5 text-white focus:outline-none focus:border-icube-gold focus:ring-1 focus:ring-icube-gold/30"
+                placeholder="Enter discount code (e.g. ICUBE10)"
+              />
+              <button
+                type="button"
+                onClick={applyDiscountCode}
+                className="px-6 py-3.5 rounded-xl bg-icube-gold text-icube-dark font-semibold text-sm uppercase tracking-wider hover:bg-icube-gold-light transition-colors shrink-0"
+              >
+                Apply
+              </button>
+            </div>
+            {discountError && <p className="text-xs text-red-400 mt-1">{discountError}</p>}
+          </div>
+
           <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-6 mb-10">
             <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Order summary</h2>
             <div className="space-y-3">
@@ -168,6 +224,12 @@ export default function StudioBookingCheckoutPage() {
                     <span>{totalAddonsAmount} AED</span>
                   </div>
                 </>
+              )}
+              {discountPercent > 0 && (
+                <div className="border-t border-white/10 pt-3 flex justify-between text-sm text-icube-gold">
+                  <span>Discount ({discountPercent}%)</span>
+                  <span>-{discountAmount.toLocaleString()} AED</span>
+                </div>
               )}
               <div className="border-t border-white/10 pt-4 flex justify-between font-display font-bold text-lg text-white">
                 <span>Total</span>

@@ -20,6 +20,7 @@ import {
   LogOut,
   Home,
   Building2,
+  Percent,
   Menu,
   X,
 } from "lucide-react";
@@ -43,6 +44,7 @@ const nav: NavItem[] = [
   { href: "/dashboard/testimonials", end: false, label: "Testimonials", icon: MessageSquare },
   { href: "/dashboard/packages", end: false, label: "Booking Packages", icon: Package },
   { href: "/dashboard/addons", end: false, label: "Add-ons", icon: PlusCircle },
+  { href: "/dashboard/discount-codes", end: false, label: "Discount Codes", icon: Percent },
   { href: "/dashboard/bookings", end: false, label: "Bookings", icon: Calendar, countKey: "bookings" },
   { href: "/dashboard/package-bookings", end: false, label: "Package Bookings", icon: ClipboardList, countKey: "package-bookings" },
   { href: "/dashboard/messages", end: false, label: "Contact Messages", icon: Mail, countKey: "messages" },
