@@ -156,9 +156,10 @@ export const api = {
       });
 
       // If a discount code was used, increment its used_count and deactivate when max_uses reached.
-      if (b.discount_code) {
+      const rawDiscountCode = (body as { discount_code?: string } | undefined)?.discount_code;
+      if (rawDiscountCode) {
         try {
-          const code = b.discount_code.toUpperCase();
+          const code = rawDiscountCode.toUpperCase();
           const q = query(
             collection(db, "discount_codes"),
             where("code", "==", code)
