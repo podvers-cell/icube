@@ -146,7 +146,14 @@ export default function BookingCheckoutPage() {
               )}
               <div className="flex justify-between text-sm">
                 <span className="text-gray-300">{selectedPackage.name}</span>
-                <span className="text-white">{selectedPackage.price_aed} AED</span>
+                <span className="text-white flex items-baseline">
+                  <img
+                    src="/aed-symbol.svg"
+                    alt="AED"
+                    className="mr-1 h-3 w-auto inline-block align-baseline invert"
+                  />
+                  {selectedPackage.price_aed.toLocaleString()}
+                </span>
               </div>
               {selectedDate && selectedTimeSlot && (
                 <div className="flex justify-between text-sm text-gray-500">
@@ -158,18 +165,39 @@ export default function BookingCheckoutPage() {
                   {selectedAddOns.map((a) => (
                     <div key={a.id} className="flex justify-between text-sm text-gray-400">
                       <span>+ {a.name}</span>
-                      <span>{a.price_aed} AED</span>
+                      <span className="flex items-baseline">
+                        <img
+                          src="/aed-symbol.svg"
+                          alt="AED"
+                          className="mr-1 h-3 w-auto inline-block align-baseline invert"
+                        />
+                        {a.price_aed.toLocaleString()}
+                      </span>
                     </div>
                   ))}
                   <div className="border-t border-white/10 pt-3 flex justify-between font-medium text-white">
                     <span>Add-ons</span>
-                    <span>{totalAddonsAmount} AED</span>
+                    <span className="flex items-baseline">
+                      <img
+                        src="/aed-symbol.svg"
+                        alt="AED"
+                        className="mr-1 h-3 w-auto inline-block align-baseline invert"
+                      />
+                      {totalAddonsAmount.toLocaleString()}
+                    </span>
                   </div>
                 </>
               )}
               <div className="border-t border-white/10 pt-4 flex justify-between font-display font-bold text-lg text-white">
                 <span>Total</span>
-                <span className="text-icube-gold">{totalAmount} AED</span>
+                <span className="text-icube-gold flex items-baseline">
+                  <img
+                    src="/aed-symbol.svg"
+                    alt="AED"
+                    className="mr-1 h-4 w-auto inline-block align-baseline invert"
+                  />
+                  {totalAmount.toLocaleString()}
+                </span>
               </div>
             </div>
           </div>

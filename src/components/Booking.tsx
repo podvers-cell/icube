@@ -141,15 +141,29 @@ export default function Booking() {
                     </div>
 
                     {/* Price */}
-                    <div className="mb-6 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                    <div className="mb-7 flex flex-wrap items-baseline gap-x-3 gap-y-1">
                       {pkg.price_before_aed != null && pkg.price_before_aed > 0 && (
-                        <span className="text-gray-500 text-sm line-through">{pkg.price_before_aed} AED</span>
+                        <span className="flex items-baseline text-gray-400 text-base line-through">
+                          <img
+                            src="/aed-symbol.svg"
+                            alt="AED"
+                          className="mr-1 h-3 w-auto inline-block align-baseline invert"
+                          />
+                          {pkg.price_before_aed.toLocaleString()}
+                        </span>
                       )}
-                      <span className="text-3xl md:text-4xl font-display font-bold text-white tracking-tight">
-                        {pkg.price_aed > 0 ? pkg.price_aed.toLocaleString() : (pkg.price_after?.trim() || "—")}
-                      </span>
-                      <span className="text-base text-gray-400">
-                        {pkg.price_aed > 0 ? ` AED ${(pkg.price_after?.trim() || "/ session").replace(/^\s*\/?/, "").trim()}` : ""}
+                      <div className="flex items-baseline gap-2">
+                        <img
+                          src="/aed-symbol.svg"
+                          alt="AED"
+                          className="h-6 w-auto inline-block align-baseline invert"
+                        />
+                        <span className="text-4xl md:text-5xl font-display font-extrabold text-white tracking-tight">
+                          {pkg.price_aed > 0 ? pkg.price_aed.toLocaleString() : (pkg.price_after?.trim() || "—")}
+                        </span>
+                      </div>
+                      <span className="text-base md:text-lg text-gray-400">
+                        {pkg.price_aed > 0 ? (pkg.price_after?.trim() || "/ session").replace(/^\s*\/?/, "").trim() : ""}
                       </span>
                     </div>
 
