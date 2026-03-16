@@ -86,9 +86,9 @@ export default function ContactPageContent() {
 
   return (
     <div className="relative min-h-screen">
-      {/* Ambient background orbs */}
-      <div className="pointer-events-none absolute top-0 right-0 w-[500px] h-[500px] bg-icube-gold/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2" aria-hidden />
-      <div className="pointer-events-none absolute bottom-1/4 left-0 w-[400px] h-[400px] bg-icube-gold/5 rounded-full blur-[100px] -translate-x-1/2" aria-hidden />
+      {/* Ambient orbs – desktop only; large blur is expensive on mobile */}
+      <div className="pointer-events-none absolute top-0 right-0 w-[500px] h-[500px] bg-icube-gold/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2 hidden md:block" aria-hidden />
+      <div className="pointer-events-none absolute bottom-1/4 left-0 w-[400px] h-[400px] bg-icube-gold/5 rounded-full blur-[100px] -translate-x-1/2 hidden md:block" aria-hidden />
 
       <div className="relative max-w-6xl mx-auto px-5 sm:px-6 md:px-12 py-16 md:py-24 lg:py-28">
         {/* Hero header – same style as expert section (label + lines, title, accent, description) */}
@@ -125,14 +125,20 @@ export default function ContactPageContent() {
                 {
                   icon: Phone,
                   title: "Phone",
-                  content: phone2 ? (
+                  content: (
                     <>
-                      {phone}
-                      <br />
-                      {phone2}
+                      <a href={`tel:${phone}`} className="hover:text-icube-gold transition-colors">
+                        {phone}
+                      </a>
+                      {phone2 ? (
+                        <>
+                          <br />
+                          <a href={`tel:${phone2}`} className="hover:text-icube-gold transition-colors">
+                            {phone2}
+                          </a>
+                        </>
+                      ) : null}
                     </>
-                  ) : (
-                    phone
                   ),
                   sub: hours,
                 },

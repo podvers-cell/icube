@@ -113,16 +113,28 @@ export default function Hero({ onHeroReady }: HeroProps) {
     return () => window.clearInterval(id);
   }, [phrases.length]);
 
+  // Throttled scroll progress: max one setState per frame, skip tiny changes (reduces lag/heat on mobile)
   useEffect(() => {
-    function updateScrollProgress() {
-      const scrollY = window.scrollY;
-      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-      const progress = maxScroll <= 0 ? 0 : Math.min(1, scrollY / maxScroll);
-      setScrollProgress(progress);
+    let rafId: number | null = null;
+    let lastProgress = 0;
+    function onScroll() {
+      if (rafId !== null) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        const scrollY = window.scrollY;
+        const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+        const progress = maxScroll <= 0 ? 0 : Math.min(1, scrollY / maxScroll);
+        if (Math.abs(progress - lastProgress) < 0.02) return;
+        lastProgress = progress;
+        setScrollProgress(progress);
+      });
     }
-    updateScrollProgress();
-    window.addEventListener("scroll", updateScrollProgress, { passive: true });
-    return () => window.removeEventListener("scroll", updateScrollProgress);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (rafId !== null) cancelAnimationFrame(rafId);
+    };
   }, []);
 
   return (

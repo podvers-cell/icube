@@ -14,6 +14,10 @@
   --color-icube-light: #F5F5F5;
 }
 
+html {
+  scrollbar-gutter: stable;
+}
+
 html,
 body {
   margin: 0;
@@ -198,6 +202,14 @@ body,
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
+/* Mobile: no backdrop-blur to reduce GPU load and heat */
+@media (max-width: 767px) {
+  .site-wrapper .glass-card {
+    background: rgba(30, 36, 52, 0.85);
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
 
 [data-theme="light"] .site-wrapper .glass-panel {
   background: rgba(242, 240, 235, 0.75);
@@ -209,6 +221,11 @@ body,
   background: rgba(255, 255, 255, 0.6);
   border-color: rgba(0, 0, 0, 0.08);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+@media (max-width: 767px) {
+  [data-theme="light"] .site-wrapper .glass-card {
+    background: rgba(242, 240, 235, 0.92);
+  }
 }
 
 /* Site-wide glowing background (used by .site-glows in PublicSite) */

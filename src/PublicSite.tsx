@@ -125,18 +125,26 @@ export default function PublicSite() {
     }
   }, [hash]);
 
-  // Back to top visibility
+  // Back to top visibility – throttled to avoid re-renders on every scroll (mobile performance)
   useEffect(() => {
-    const onScroll = () => setShowBackToTop(window.scrollY > 500);
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        setShowBackToTop(window.scrollY > 500);
+        ticking = false;
+      });
+    };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   const mainContent = (
     <div className="site-wrapper min-h-screen bg-gradient-to-b from-icube-dark/95 via-icube-gray/90 to-[#0f1219] text-white selection:bg-icube-gold selection:text-icube-dark transition-colors duration-300">
-      {/* Glowing background orbs – gold and soft purple/blue */}
+      {/* Glowing background orbs – desktop only; blur is very expensive on mobile GPU */}
       <div
-        className="site-glows pointer-events-none fixed inset-0 z-0 overflow-hidden"
+        className="site-glows pointer-events-none fixed inset-0 z-0 overflow-hidden hidden md:block"
         aria-hidden
       >
         <div className="absolute top-0 left-1/4 w-[80vmax] h-[80vmax] -translate-x-1/2 -translate-y-1/3 rounded-full bg-icube-gold/12 blur-[120px]" />

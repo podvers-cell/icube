@@ -90,7 +90,7 @@ export default function Contact() {
       id="contact"
       className="py-28 md:py-32 bg-gradient-to-b from-icube-dark via-icube-gray/70 to-icube-dark/90 relative overflow-hidden"
     >
-      <div className="absolute -bottom-40 right-0 w-80 h-80 bg-icube-gold/5 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute -bottom-40 right-0 w-80 h-80 bg-icube-gold/5 rounded-full blur-[100px] pointer-events-none hidden md:block" aria-hidden />
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
         {/* Intro block above form: GET IN TOUCH + Let's connect + paragraph */}
         <AnimatedSectionHeader className="mb-12 md:mb-16" amount={0.25}>
@@ -139,11 +139,15 @@ export default function Contact() {
                 <div>
                   <h4 className="font-display font-semibold text-xl mb-1">Call Us</h4>
                   <p className="text-gray-400 font-light">
-                    {phone}
+                    <a href={`tel:${phone}`} className="hover:text-icube-gold transition-colors">
+                      {phone}
+                    </a>
                     {phone2 ? (
                       <>
                         <br />
-                        {phone2}
+                        <a href={`tel:${phone2}`} className="hover:text-icube-gold transition-colors">
+                          {phone2}
+                        </a>
                       </>
                     ) : null}
                     <br />

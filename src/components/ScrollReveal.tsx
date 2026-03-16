@@ -137,21 +137,20 @@ export const sectionHeaderContainerVariants = {
     },
   },
 };
+/* No filter:blur – animating blur is very expensive on mobile GPU and causes jank/heat */
 export const sectionHeaderLabelVariants = {
-  hidden: { opacity: 0, y: 16, filter: "blur(4px)" },
+  hidden: { opacity: 0, y: 16 },
   visible: {
     opacity: 1,
     y: 0,
-    filter: "blur(0px)",
     transition: { duration: 0.6, ease: sectionHeaderEase },
   },
 };
 export const sectionHeaderTitleVariants = {
-  hidden: { opacity: 0, y: 24, filter: "blur(6px)" },
+  hidden: { opacity: 0, y: 24 },
   visible: {
     opacity: 1,
     y: 0,
-    filter: "blur(0px)",
     transition: { duration: 0.65, ease: sectionHeaderEase },
   },
 };

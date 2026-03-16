@@ -53,11 +53,13 @@ export default function Testimonials() {
 
 function TestimonialCard({
   testimonial: t,
+  fillSlide,
 }: {
   testimonial: (ReturnType<typeof useSiteData>["testimonials"])[number];
+  fillSlide?: boolean;
 }) {
   return (
-    <div className="w-[85%] md:w-full mx-auto h-full">
+    <div className={fillSlide ? "w-full h-full" : "w-[85%] md:w-full mx-auto h-full"}>
     <div className="card-flip-wrap h-full">
       <motion.div
         className="card-flip glass-card group relative flex h-full flex-col overflow-hidden rounded-2xl p-8 transition-[border-color,box-shadow] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] hover:border-icube-gold/40 hover:shadow-[0_24px_56px_rgba(0,0,0,0.3),0_0_0_1px_rgba(212,175,55,0.1)]"
@@ -130,6 +132,7 @@ function MobileTestimonialsCarousel({
   };
   const swipe = useSwipeCarousel(goPrev, goNext);
   const logicalIndex = len ? index % len : 0;
+  const slideWidthPct = 78;
 
   if (!len) return null;
 
@@ -141,18 +144,23 @@ function MobileTestimonialsCarousel({
         </span>
       </div>
       <div
-        className="-mx-6 w-screen overflow-hidden touch-pan-y select-none max-w-[100vw] box-content"
+        className="-mx-4 sm:-mx-6 w-screen overflow-hidden touch-pan-y select-none max-w-[100vw] box-content"
         onTouchStart={swipe.onTouchStart}
         onTouchEnd={swipe.onTouchEnd}
       >
         <motion.div
           className="flex"
-          animate={{ x: `-${index * 100}%` }}
+          style={{ width: `${displayItems.length * slideWidthPct}%` }}
+          animate={{ x: `-${index * (100 / displayItems.length)}%` }}
           transition={noTransition ? { duration: 0 } : { duration: 0.4, ease: [0.25, 0.8, 0.25, 1] }}
         >
           {displayItems.map((t, i) => (
-            <div key={`${t.id}-${i}`} className="w-full shrink-0">
-              <TestimonialCard testimonial={t} />
+            <div
+              key={`${t.id}-${i}`}
+              style={{ width: `${100 / displayItems.length}%` }}
+              className="shrink-0 pr-2 sm:pr-3"
+            >
+              <TestimonialCard testimonial={t} fillSlide />
             </div>
           ))}
         </motion.div>

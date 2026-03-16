@@ -5,6 +5,38 @@ import { X, Play, Pause, Volume2, VolumeX, Maximize, Zap } from "lucide-react";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 import type { VideoEmbedResult } from "../lib/videoEmbed";
 
+type VideoDimensions = { width: number; height: number };
+
+async function fetchEmbedDimensions(embed: VideoEmbedResult, signal?: AbortSignal): Promise<VideoDimensions | null> {
+  try {
+    if (embed.provider === "youtube") {
+      const res = await fetch(
+        `https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(`https://www.youtube.com/watch?v=${embed.videoId}`)}`,
+        { signal }
+      );
+      if (!res.ok) return null;
+      const json = (await res.json()) as { width?: number; height?: number };
+      if (Number.isFinite(json.width) && Number.isFinite(json.height) && (json.width ?? 0) > 0 && (json.height ?? 0) > 0) {
+        return { width: json.width!, height: json.height! };
+      }
+      return null;
+    }
+
+    const res = await fetch(
+      `https://vimeo.com/api/oembed.json?url=${encodeURIComponent(`https://vimeo.com/${embed.videoId}`)}`,
+      { signal }
+    );
+    if (!res.ok) return null;
+    const json = (await res.json()) as { width?: number; height?: number };
+    if (Number.isFinite(json.width) && Number.isFinite(json.height) && (json.width ?? 0) > 0 && (json.height ?? 0) > 0) {
+      return { width: json.width!, height: json.height! };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export type VideoPlayerProjectInfo = {
   subtitle?: string;
   category?: string;
@@ -106,6 +138,7 @@ export function VideoPlayerModal({
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(100);
   const [isMuted, setIsMuted] = useState(false);
+  const [videoDims, setVideoDims] = useState<VideoDimensions | null>(null);
 
   const tickRef = useRef<number | null>(null);
 
@@ -132,6 +165,17 @@ export function VideoPlayerModal({
   useEffect(() => {
     return () => stopTick();
   }, [stopTick]);
+
+  // Fetch actual video aspect (portrait vs landscape) so modal matches the video.
+  useEffect(() => {
+    if (!embed) return;
+    const controller = new AbortController();
+    setVideoDims(null);
+    fetchEmbedDimensions(embed, controller.signal).then((d) => {
+      if (!controller.signal.aborted) setVideoDims(d);
+    });
+    return () => controller.abort();
+  }, [embed?.provider, embed?.videoId]);
 
   // YouTube: poll duration when ready (in case it was 0 on first load)
   useEffect(() => {
@@ -320,15 +364,37 @@ export function VideoPlayerModal({
   };
 
   const handleFullscreen = () => {
-    if (document.fullscreenElement) {
-      document.exitFullscreen();
-    } else {
-      containerRef.current?.requestFullscreen?.();
+    if (!containerRef.current) return;
+
+    // خرج من وضع ملء الشاشة إن كان مفعّلًا
+    const docAny = document as Document & {
+      webkitFullscreenElement?: Element | null;
+      webkitExitFullscreen?: () => Promise<void>;
+    };
+    if (document.fullscreenElement || docAny.webkitFullscreenElement) {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      } else if (docAny.webkitExitFullscreen) {
+        docAny.webkitExitFullscreen().catch(() => {});
+      }
+      return;
+    }
+
+    // دخول ملء الشاشة على نفس كارت الفيديو داخل الموقع (حيثما كان مدعومًا)
+    const elAny = containerRef.current as HTMLElement & {
+      webkitRequestFullscreen?: () => Promise<void>;
+    };
+    if (elAny.requestFullscreen) {
+      elAny.requestFullscreen().catch(() => {});
+    } else if (elAny.webkitRequestFullscreen) {
+      elAny.webkitRequestFullscreen().catch(() => {});
     }
   };
 
   const hasProjectInfo = projectInfo && (projectInfo.subtitle || projectInfo.category || projectInfo.description || (projectInfo.deliverables?.length) || projectInfo.year || projectInfo.camera || projectInfo.output);
   const tags = projectInfo?.category ? [projectInfo.category] : [];
+  const aspect = videoDims?.width && videoDims?.height ? `${videoDims.width} / ${videoDims.height}` : "16 / 9";
+  const isPortrait = (videoDims?.height ?? 0) > (videoDims?.width ?? 0);
 
   return (
     <div
@@ -337,7 +403,10 @@ export function VideoPlayerModal({
     >
       <div
         ref={containerRef}
-        className="relative w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl flex flex-col border border-white/10 bg-[#1a1d26]"
+        className="relative w-full rounded-2xl overflow-hidden shadow-2xl flex flex-col border border-white/10 bg-[#1a1d26]"
+        style={{
+          maxWidth: isPortrait ? "min(92vw, 420px)" : "min(96vw, 56rem)",
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close – top right of card */}
@@ -350,8 +419,14 @@ export function VideoPlayerModal({
           <X size={20} />
         </button>
 
-        {/* Video area – with centered play overlay when paused */}
-        <div className="relative w-full aspect-video min-h-0 bg-black overflow-hidden">
+        {/* Video area – aspect matches the actual video */}
+        <div
+          className="relative w-full min-h-0 bg-black overflow-hidden"
+          style={{
+            aspectRatio: aspect,
+            maxHeight: "85svh",
+          }}
+        >
           {embed.provider === "youtube" && <div ref={ytDivRef} className="absolute inset-0 w-full h-full" />}
           {embed.provider === "vimeo" && (
             <iframe
@@ -378,87 +453,7 @@ export function VideoPlayerModal({
           )}
         </div>
 
-        {/* Project details – title, subtitle, tags, The Project, Deliverables, Details */}
-        {hasProjectInfo ? (
-          <div className="flex flex-col lg:flex-row gap-8 p-6 md:p-8 border-t border-white/10">
-            <div className="flex-1 min-w-0 space-y-6">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <h2 className="text-2xl md:text-3xl font-display font-bold text-white tracking-tight">{title}</h2>
-                  {projectInfo?.subtitle && (
-                    <p className="mt-1 text-white/80 text-base">{projectInfo.subtitle}</p>
-                  )}
-                </div>
-                {tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {tags.map((tag) => (
-                      <span key={tag} className="px-3 py-1.5 rounded-full bg-white/10 text-white text-xs font-medium uppercase tracking-wider">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {projectInfo?.description && (
-                <div>
-                  <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-white/90 mb-2">
-                    <Zap size={14} className="text-icube-gold" />
-                    The Project
-                  </h3>
-                  <p className="text-white/90 text-sm leading-relaxed">{projectInfo.description}</p>
-                </div>
-              )}
-
-              {projectInfo?.deliverables && projectInfo.deliverables.length > 0 && (
-                <div>
-                  <h3 className="text-sm font-semibold uppercase tracking-wider text-white/90 mb-2">Deliverables</h3>
-                  <ul className="list-disc list-inside text-white/90 text-sm space-y-1">
-                    {projectInfo.deliverables.map((d, i) => (
-                      <li key={i}>{d}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-
-            {(projectInfo?.year || projectInfo?.category || projectInfo?.camera || projectInfo?.output) && (
-              <div className="lg:w-52 shrink-0">
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-white/90 mb-3">Details</h3>
-                <dl className="space-y-2 text-sm">
-                  {projectInfo.year && (
-                    <>
-                      <dt className="text-gray-400">Year</dt>
-                      <dd className="text-white font-medium">{projectInfo.year}</dd>
-                    </>
-                  )}
-                  {projectInfo.category && (
-                    <>
-                      <dt className="text-gray-400">Category</dt>
-                      <dd className="text-white font-medium">{projectInfo.category}</dd>
-                    </>
-                  )}
-                  {projectInfo.camera && (
-                    <>
-                      <dt className="text-gray-400">Camera</dt>
-                      <dd className="text-white font-medium">{projectInfo.camera}</dd>
-                    </>
-                  )}
-                  {projectInfo.output && (
-                    <>
-                      <dt className="text-gray-400">Output</dt>
-                      <dd className="text-white font-medium">{projectInfo.output}</dd>
-                    </>
-                  )}
-                </dl>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="px-6 py-3 border-t border-white/10">
-            <h2 className="text-xl font-display font-bold text-white truncate">{title}</h2>
-          </div>
-        )}
+        {/* تم إخفاء قسم البيانات، التفاصيل، واسم المقطع بالكامل من البلاير */}
 
         {/* Control bar */}
         <div className="z-30 flex items-center gap-3 px-4 py-3 border-t border-white/10 bg-black/30">
@@ -484,7 +479,8 @@ export function VideoPlayerModal({
             className="video-progress-range flex-1 h-1.5 rounded-full appearance-none bg-white/20 cursor-pointer min-w-0"
           />
           <span className="text-white/90 text-xs tabular-nums shrink-0 min-w-[2.5rem]">{formatTime(duration)}</span>
-          <div className="flex items-center gap-1.5 shrink-0">
+          {/* التحكم بالصوت مخفي على الموبايل فقط */}
+          <div className="hidden md:flex items-center gap-1.5 shrink-0">
             <button
               type="button"
               onClick={toggleMute}
@@ -502,10 +498,11 @@ export function VideoPlayerModal({
               className="w-14 h-1 rounded-full appearance-none bg-white/20 accent-icube-gold cursor-pointer"
             />
           </div>
+          {/* زر ملء الشاشة: يظهر على الديسكتوب/التابلت فقط، وعلى الموبايل استخدم زر التكبير الأصلي داخل YouTube/Vimeo */}
           <button
             type="button"
             onClick={handleFullscreen}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-white/90 hover:text-white hover:bg-white/5 transition-colors shrink-0"
+            className="hidden md:flex w-8 h-8 items-center justify-center rounded-lg text-white/90 hover:text-white hover:bg-white/5 transition-colors shrink-0"
             aria-label="Fullscreen"
           >
             <Maximize size={18} />

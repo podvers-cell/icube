@@ -1,19 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { LogOut, LayoutDashboard } from "lucide-react";
 import ThemeToggleSwitch from "./ThemeToggleSwitch";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "../AuthContext";
 import { useTheme } from "../ThemeContext";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useDragControls } from "motion/react";
 
 const SHOW_THEME_TOGGLE = false;
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const dragControls = useDragControls();
   const router = useRouter();
   const pathname = usePathname();
   const { user, logout, isAdmin = false } = useAuth();
@@ -56,13 +57,31 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Lock body scroll when mobile menu is open so menu stays centered in viewport
+  const menuRestoreRef = useRef<(() => void) | null>(null);
+  const menuRestoreTimeoutRef = useRef<number | null>(null);
   useEffect(() => {
     if (isMobileMenuOpen) {
-      const prev = document.body.style.overflow;
+      if (menuRestoreTimeoutRef.current !== null) {
+        window.clearTimeout(menuRestoreTimeoutRef.current);
+        menuRestoreTimeoutRef.current = null;
+      }
+      const scrollbarW = window.innerWidth - document.documentElement.clientWidth;
+      const prevOverflow = document.body.style.overflow;
+      const prevPaddingRight = document.body.style.paddingRight;
       document.body.style.overflow = "hidden";
+      if (scrollbarW > 0) document.body.style.paddingRight = `${scrollbarW}px`;
+      const restore = () => {
+        document.body.style.overflow = prevOverflow;
+        document.body.style.paddingRight = prevPaddingRight;
+        menuRestoreRef.current = null;
+        if (menuRestoreTimeoutRef.current !== null) {
+          window.clearTimeout(menuRestoreTimeoutRef.current);
+          menuRestoreTimeoutRef.current = null;
+        }
+      };
+      menuRestoreRef.current = restore;
       return () => {
-        document.body.style.overflow = prev;
+        menuRestoreTimeoutRef.current = window.setTimeout(restore, 380);
       };
     }
   }, [isMobileMenuOpen]);
@@ -117,7 +136,7 @@ export default function Navbar() {
       style={navTextStyle}
       className={`fixed top-0 inset-x-0 z-50 transition-[background-color,border-color,box-shadow] duration-200 ease-out ${navBgClass} ${isLightNavBar ? "text-stone-900" : isLight ? "text-white" : ""}`}
     >
-      <div className={`relative w-full px-4 md:px-8 lg:px-10 py-2 flex items-center justify-between gap-4 md:justify-start md:gap-6 ${isMobileMenuOpen ? "z-[60]" : "z-50"}`}>
+      <div className="relative z-[60] w-full px-4 md:px-8 lg:px-10 py-2 flex items-center justify-between gap-4 md:justify-start md:gap-6">
         {/* Logo – left */}
         <Link href="/" className="flex items-center gap-2 shrink-0">
           <img
@@ -235,24 +254,45 @@ export default function Navbar() {
         </button>
       </div>
 
-      {/* Mobile Nav – full-screen overlay above content; z-[55] so it sits above nav bar (z-50), below toggle (z-[60]) */}
-      <AnimatePresence mode="wait">
+      {/* Mobile Nav – استعادة body من onExitComplete فقط لتفادي الومضة */}
+      <AnimatePresence
+        mode="wait"
+        onExitComplete={() => {
+          menuRestoreRef.current?.();
+        }}
+      >
         {isMobileMenuOpen && (
           <motion.div
             key="mobile-menu-overlay"
-            initial={{ opacity: 0 }}
+            initial={false}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="fixed inset-0 z-[55] bg-icube-dark flex flex-col items-center justify-center px-8 min-h-[100dvh] min-h-[100vh] md:hidden"
+            transition={{ duration: 0.32, ease: "easeOut" }}
+            className="fixed inset-0 z-[50] bg-black/60 flex flex-col items-stretch justify-end pb-6 min-h-[100dvh] min-h-[100vh] md:hidden"
             aria-hidden="false"
           >
             <motion.div
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.22, ease: [0.25, 0.46, 0.45, 0.94], delay: 0.04 }}
-              className="w-full max-w-sm bg-icube-gray border border-white/10 rounded-2xl px-6 py-8 shadow-[0_12px_40px_rgba(0,0,0,0.4)] flex flex-col items-center gap-6"
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "tween", duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }}
+              drag="y"
+              dragControls={dragControls}
+              dragConstraints={{ top: 0, bottom: 0 }}
+              dragElastic={{ top: 0, bottom: 0.4 }}
+              onDragEnd={(_e, { offset, velocity }) => {
+                if (offset.y > 60 || velocity.y > 200) setIsMobileMenuOpen(false);
+              }}
+              className="relative w-full max-h-[80vh] overflow-y-auto bg-icube-dark/70 backdrop-blur-xl border border-white/15 rounded-2xl pt-10 px-6 pb-8 shadow-[0_-8px_40px_rgba(0,0,0,0.4)] flex flex-col items-center gap-6"
             >
+              {/* مقبض السحب: ابدأ السحب من هنا ثم اسحب لأسفل للإغلاق */}
+              <div
+                onPointerDown={(e) => dragControls.start(e)}
+                className="absolute top-0 left-0 right-0 flex justify-center py-3 touch-none cursor-grab active:cursor-grabbing"
+                aria-hidden
+              >
+                <span className="w-12 h-1 rounded-full bg-white/30" />
+              </div>
               {SHOW_THEME_TOGGLE && (
                 <ThemeToggleSwitch
                   theme={theme}
