@@ -21,7 +21,7 @@ export default function BookingCheckoutPage() {
     totalAddonsAmount,
     clearBooking,
   } = useBooking();
-  const [form, setForm] = useState({ first_name: "", last_name: "", email: "", project_details: "" });
+  const [form, setForm] = useState({ first_name: "", last_name: "", email: "", phone: "", project_details: "" });
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [successSummary, setSuccessSummary] = useState<{
@@ -78,6 +78,7 @@ export default function BookingCheckoutPage() {
         first_name: form.first_name,
         last_name: form.last_name,
         email: form.email,
+        phone: form.phone || undefined,
         project_details: form.project_details || undefined,
         package_id: selectedPackage.id,
         studio_id: selectedStudio?.id,
@@ -293,18 +294,32 @@ export default function BookingCheckoutPage() {
                 />
               </div>
             </div>
-            <div className="space-y-2">
-              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                Email
-              </label>
-              <input
-                type="email"
-                required
-                value={form.email}
-                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                className="w-full bg-icube-dark/80 border border-white/10 rounded-xl px-4 py-3.5 text-white focus:outline-none focus:border-icube-gold focus:ring-1 focus:ring-icube-gold/30"
-                placeholder="you@example.com"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div className="space-y-2">
+                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={form.email}
+                  onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                  className="w-full bg-icube-dark/80 border border-white/10 rounded-xl px-4 py-3.5 text-white focus:outline-none focus:border-icube-gold focus:ring-1 focus:ring-icube-gold/30"
+                  placeholder="you@example.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  Phone <span className="text-gray-500 font-normal">(optional)</span>
+                </label>
+                <input
+                  type="tel"
+                  value={form.phone}
+                  onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                  className="w-full bg-icube-dark/80 border border-white/10 rounded-xl px-4 py-3.5 text-white focus:outline-none focus:border-icube-gold focus:ring-1 focus:ring-icube-gold/30"
+                  placeholder="+971 50 123 4567"
+                />
+              </div>
             </div>
             <div className="space-y-2">
               <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider">

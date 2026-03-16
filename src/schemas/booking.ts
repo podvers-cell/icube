@@ -15,6 +15,8 @@ export const bookingPayloadSchema = z.object({
   time_slot: z.string().max(20).optional(),
   addon_ids: z.array(z.string().max(100)).max(20).optional(),
   addons_total_aed: z.number().min(0).optional(),
+  discount_code: z.string().max(50).optional(),
+  discount_percent: z.number().min(0).max(100).optional(),
 });
 
 export type BookingPayloadSchema = z.infer<typeof bookingPayloadSchema>;

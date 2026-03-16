@@ -317,12 +317,35 @@ export default function DashboardBookings() {
                     const pkgId = selected.package_id != null ? Number(selected.package_id) : null;
                     const pkgPrice = pkgId != null && !isNaN(pkgId) ? packages.find((p) => p.id === pkgId)?.price_aed ?? null : null;
                     const base = studioTotal ?? pkgPrice ?? null;
-                    if (base == null && addonsTotal <= 0) return null;
-                    const total = (base ?? 0) + addonsTotal;
+                    if (base == null && addonsTotal <= 0 && !selected.discount_percent) return null;
+                    const subtotal = (base ?? 0) + addonsTotal;
+                    const discountPercent = selected.discount_percent ?? 0;
+                    const discountAmount =
+                      discountPercent > 0 ? Math.round(subtotal * (discountPercent / 100)) : 0;
+                    const total = subtotal - discountAmount;
                     return (
-                      <div className="border-t border-white/10 pt-4 flex items-center justify-between">
-                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total amount</p>
-                        <p className="text-icube-gold font-semibold">{total} AED</p>
+                      <div className="border-t border-white/10 pt-4 space-y-1">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                            Subtotal
+                          </p>
+                          <p className="text-white font-medium">{subtotal} AED</p>
+                        </div>
+                        {discountPercent > 0 && (
+                          <div className="flex items-center justify-between text-sm text-icube-gold">
+                            <p>
+                              Discount
+                              {selected.discount_code ? ` (${selected.discount_code}, ${discountPercent}%)` : ` (${discountPercent}%)`}
+                            </p>
+                            <p>-{discountAmount} AED</p>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                            Total amount
+                          </p>
+                          <p className="text-icube-gold font-semibold">{total} AED</p>
+                        </div>
                       </div>
                     );
                   })()}

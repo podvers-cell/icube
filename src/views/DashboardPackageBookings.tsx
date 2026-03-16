@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { X } from "lucide-react";
 import { api, getBookingPackages, sendBookingConfirmedEmail } from "../api";
 
-type BookingPackage = { id: number; name: string; price_aed: number };
+type BookingPackage = { id: string; name: string; price_aed: number };
 
 type Booking = {
   id: string;
@@ -45,8 +45,7 @@ function formatSubmitted(createdAt: Booking["created_at"]): string {
 
 function getPackageName(b: Booking, packages: BookingPackage[]): string {
   if (!b.package_id) return "—";
-  const pkgId = Number(b.package_id);
-  const pkg = packages.find((p) => p.id === pkgId);
+  const pkg = packages.find((p) => p.id === b.package_id);
   return pkg ? pkg.name : (b.package_name || b.package_id);
 }
 
@@ -63,7 +62,15 @@ export default function DashboardPackageBookings() {
   useEffect(() => load(), []);
   useEffect(() => {
     getBookingPackages()
-      .then((p) => setPackages((p || []).map((x) => ({ id: Number((x as any).id), name: (x as any).name, price_aed: Number((x as any).price_aed) }))))
+      .then((p) =>
+        setPackages(
+          (p || []).map((x) => ({
+            id: String((x as any).id),
+            name: (x as any).name,
+            price_aed: Number((x as any).price_aed),
+          }))
+        )
+      )
       .catch(() => {});
   }, []);
 
