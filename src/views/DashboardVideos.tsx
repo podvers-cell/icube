@@ -25,7 +25,7 @@ export default function DashboardVideos() {
       return;
     }
     if (!isValidVideoUrl(editing.url.trim())) {
-      alert("Unsupported link. Use YouTube or Vimeo URL only.");
+      alert("Unsupported link. Use YouTube, Vimeo, Instagram, or a direct video URL (mp4/webm/mov).");
       return;
     }
     try {
@@ -150,7 +150,9 @@ export default function DashboardVideos() {
               className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white"
               placeholder="YouTube or Vimeo URL"
             />
-            <p className="text-xs text-gray-500">Example: https://www.youtube.com/watch?v=... or https://vimeo.com/...</p>
+            <p className="text-xs text-gray-500">
+              Example: YouTube / Vimeo / Instagram, or a direct mp4 URL (e.g. Cloudinary).
+            </p>
             <div className="flex gap-2">
               <button type="submit" className="px-4 py-2 bg-icube-gold text-icube-dark font-semibold rounded-sm">
                 Save

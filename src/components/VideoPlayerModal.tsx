@@ -9,6 +9,7 @@ type VideoDimensions = { width: number; height: number };
 
 async function fetchEmbedDimensions(embed: VideoEmbedResult, signal?: AbortSignal): Promise<VideoDimensions | null> {
   try {
+    if (embed.provider !== "youtube" && embed.provider !== "vimeo") return null;
     if (embed.provider === "youtube") {
       const res = await fetch(
         `https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(`https://www.youtube.com/watch?v=${embed.videoId}`)}`,
@@ -131,6 +132,7 @@ export function VideoPlayerModal({
   const vimeoIframeRef = useRef<HTMLIFrameElement>(null);
   const playerRef = useRef<PlayerApi | null>(null);
   const vimeoPlayerRef = useRef<VimeoPlayer | null>(null);
+  const fileVideoRef = useRef<HTMLVideoElement | null>(null);
 
   const [ready, setReady] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -265,11 +267,11 @@ export function VideoPlayerModal({
       };
     }
 
-    // Vimeo
-    const iframe = vimeoIframeRef.current;
-    if (!iframe || embed.provider !== "vimeo") return;
+    if (embed.provider === "vimeo") {
+      const iframe = vimeoIframeRef.current;
+      if (!iframe) return;
 
-    const loadVimeo = () => {
+      const loadVimeo = () => {
       const Vimeo = (window as unknown as { Vimeo: { Player: new (el: HTMLIFrameElement) => VimeoPlayer } }).Vimeo;
       if (!Vimeo?.Player) return;
       const vp = new Vimeo.Player(iframe);
@@ -300,17 +302,55 @@ export function VideoPlayerModal({
       });
     };
 
-    if (window.Vimeo?.Player) {
-      loadVimeo();
+      if (window.Vimeo?.Player) {
+        loadVimeo();
+        return () => { playerRef.current = null; vimeoPlayerRef.current = null; };
+      }
+      const script = document.createElement("script");
+      script.src = "https://player.vimeo.com/api/player.js";
+      script.async = true;
+      script.onload = loadVimeo;
+      document.head.appendChild(script);
       return () => { playerRef.current = null; vimeoPlayerRef.current = null; };
     }
-    const script = document.createElement("script");
-    script.src = "https://player.vimeo.com/api/player.js";
-    script.async = true;
-    script.onload = loadVimeo;
-    document.head.appendChild(script);
-    return () => { playerRef.current = null; vimeoPlayerRef.current = null; };
-  }, [embed?.provider, embed?.videoId]);
+
+    // Direct file (Cloudinary, mp4, webm...)
+    if (embed.provider === "file") {
+      const video = fileVideoRef.current;
+      if (!video) return;
+      playerRef.current = {
+        play: () => { video.play(); setIsPlaying(true); },
+        pause: () => { video.pause(); setIsPlaying(false); },
+        getPlaying: () => !video.paused,
+        getCurrentTime: () => video.currentTime || 0,
+        getDuration: () => video.duration || 0,
+        seekTo: (t) => { video.currentTime = t; },
+        getVolume: () => Math.round((video.volume ?? 1) * 100),
+        setVolume: (v) => { video.volume = v / 100; setVolume(v); },
+        getMuted: () => video.muted,
+        setMuted: (m) => { video.muted = m; setIsMuted(m); },
+      };
+      const onLoaded = () => {
+        if (Number.isFinite(video.duration)) setDuration(video.duration);
+        if (video.videoWidth && video.videoHeight) {
+          setVideoDims({ width: video.videoWidth, height: video.videoHeight });
+        }
+        setReady(true);
+      };
+      const onTime = () => setCurrentTime(video.currentTime);
+      video.addEventListener("loadedmetadata", onLoaded);
+      video.addEventListener("timeupdate", onTime);
+      video.play().then(() => {
+        setIsPlaying(true);
+        startTick();
+      }).catch(() => {});
+      return () => {
+        video.removeEventListener("loadedmetadata", onLoaded);
+        video.removeEventListener("timeupdate", onTime);
+        playerRef.current = null;
+      };
+    }
+  }, [embed?.provider, embed?.videoId, startTick, stopTick]);
 
   // Vimeo: poll currentTime and duration so timer and indicator update
   useEffect(() => {
@@ -393,8 +433,14 @@ export function VideoPlayerModal({
 
   const hasProjectInfo = projectInfo && (projectInfo.subtitle || projectInfo.category || projectInfo.description || (projectInfo.deliverables?.length) || projectInfo.year || projectInfo.camera || projectInfo.output);
   const tags = projectInfo?.category ? [projectInfo.category] : [];
-  const aspect = videoDims?.width && videoDims?.height ? `${videoDims.width} / ${videoDims.height}` : "16 / 9";
-  const isPortrait = (videoDims?.height ?? 0) > (videoDims?.width ?? 0);
+  const forcePortrait = embed.orientation === "portrait";
+  const aspect =
+    forcePortrait || (videoDims?.width && videoDims?.height && videoDims.height > videoDims.width * 1.2)
+      ? "9 / 16"
+      : videoDims?.width && videoDims?.height
+        ? `${videoDims.width} / ${videoDims.height}`
+        : "16 / 9";
+  const isPortrait = forcePortrait || (videoDims?.height ?? 0) > (videoDims?.width ?? 0);
 
   return (
     <div
@@ -435,6 +481,23 @@ export function VideoPlayerModal({
               title={title}
               className="absolute inset-0 w-full h-full"
               allow="autoplay; fullscreen; picture-in-picture"
+              allowFullScreen
+            />
+          )}
+          {embed.provider === "file" && (
+            <video
+              ref={fileVideoRef}
+              src={embed.embedUrl}
+              className="absolute inset-0 w-full h-full object-cover"
+              playsInline
+            />
+          )}
+          {embed.provider === "instagram" && (
+            <iframe
+              src={embed.embedUrl}
+              title={title}
+              className="absolute inset-0 w-full h-full"
+              allow="autoplay; encrypted-media; picture-in-picture"
               allowFullScreen
             />
           )}
