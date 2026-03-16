@@ -23,6 +23,8 @@ type Booking = {
   time_slot?: string | null;
   addon_ids?: string[];
   addons_total_aed?: number;
+  discount_code?: string | null;
+  discount_percent?: number | null;
   status: string;
   created_at: string | { seconds: number; nanoseconds?: number } | { _seconds: number; _nanoseconds?: number };
 };
