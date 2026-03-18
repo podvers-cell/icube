@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { useSwipeCarousel } from "../hooks/useSwipeCarousel";
 import { useSiteData } from "../SiteDataContext";
 import { useBooking } from "../BookingContext";
@@ -27,6 +27,13 @@ export default function Studio() {
   const { studios } = useSiteData();
   const { setSelectedStudio, setSelectedPackage } = useBooking();
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [desktopPage, setDesktopPage] = useState(0);
+  const desktopCardsPerPage = 3;
+  const desktopTotalPages = Math.max(1, Math.ceil(studios.length / desktopCardsPerPage));
+  const canGoPrev = desktopPage > 0;
+  const canGoNext = desktopPage < desktopTotalPages - 1;
+  const desktopStartIndex = desktopPage * desktopCardsPerPage;
+  const desktopPageStudios = studios.slice(desktopStartIndex, desktopStartIndex + desktopCardsPerPage);
 
   function StudioCard({
     studio,
@@ -48,8 +55,8 @@ export default function Studio() {
     const s = studio;
     const useNextImage = isOptimizedImageUrl(s.cover_image_url);
     return (
-      <div className="w-[85%] md:w-full mx-auto">
-      <article className="studio-card glass-card flex flex-col rounded-2xl overflow-hidden transition-all duration-300">
+      <div className="w-[95%] md:w-full mx-auto h-full">
+      <article className="studio-card glass-card flex flex-col h-full rounded-2xl overflow-hidden transition-all duration-300">
         <Link
           href={`/studio/${s.id}`}
           className="relative block w-full aspect-[4/3] overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-icube-gold focus-visible:ring-offset-2 focus-visible:ring-offset-icube-dark"
@@ -100,19 +107,29 @@ export default function Studio() {
                 className={`shrink-0 transition-transform duration-200 ${expandedId === s.id ? "rotate-180" : ""}`}
               />
             </button>
-            {expandedId === s.id && (
-              <div className="overflow-hidden">
-                <ul className="pt-0 pb-3 space-y-2 text-sm text-gray-400">
-                  <li>
-                    <span className="text-white/80">Capacity:</span> {s.capacity} people
-                  </li>
-                  <li>
-                    <span className="text-white/80">Size:</span> {s.size_sqm} m²
-                  </li>
-                  <li className="text-gray-400 leading-relaxed">{s.details}</li>
-                </ul>
-              </div>
-            )}
+            <AnimatePresence initial={false}>
+              {expandedId === s.id && (
+                <motion.div
+                  key="studio-details"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.28, ease: [0.25, 0.8, 0.25, 1] }}
+                  className="overflow-hidden"
+                  aria-live="polite"
+                >
+                  <ul className="pt-0 pb-3 space-y-2 text-sm text-gray-400">
+                    <li>
+                      <span className="text-white/80">Capacity:</span> {s.capacity} people
+                    </li>
+                    <li>
+                      <span className="text-white/80">Size:</span> {s.size_sqm} m²
+                    </li>
+                    <li className="text-gray-400 leading-relaxed">{s.details}</li>
+                  </ul>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           <button
@@ -262,21 +279,60 @@ export default function Studio() {
           />
         </div>
 
-        {/* Desktop / tablet grid */}
-        <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {studios.map((s, index) => (
-            <AnimatedStaggerItem key={s.id} index={index}>
-              <StudioCard
-                studio={s}
-                expandedId={expandedId}
-                setExpandedId={setExpandedId}
-                setSelectedStudio={setSelectedStudio}
-                setSelectedPackage={setSelectedPackage}
-                router={router}
-                isPriority={index === 0}
-              />
-            </AnimatedStaggerItem>
-          ))}
+        {/* Desktop: 3 cards per row with left/right arrows */}
+        <div className="hidden md:block">
+          <div className="relative flex items-stretch">
+            <button
+              type="button"
+              onClick={() => setDesktopPage((p) => Math.max(0, p - 1))}
+              disabled={!canGoPrev}
+              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-10 z-10 w-11 h-11 rounded-full bg-icube-dark/90 border border-white/20 text-white flex items-center justify-center hover:bg-icube-gold hover:text-icube-dark hover:border-icube-gold disabled:opacity-40 disabled:pointer-events-none transition-colors shadow-lg"
+              aria-label="Previous studios"
+            >
+              <ChevronLeft size={24} />
+            </button>
+            <div className="flex-1 overflow-visible px-4">
+              <div className="grid grid-cols-3 gap-4 max-w-[110%] mx-auto">
+                {desktopPageStudios.map((s, index) => (
+                  <AnimatedStaggerItem key={s.id} index={desktopStartIndex + index}>
+                    <StudioCard
+                      studio={s}
+                      expandedId={expandedId}
+                      setExpandedId={setExpandedId}
+                      setSelectedStudio={setSelectedStudio}
+                      setSelectedPackage={setSelectedPackage}
+                      router={router}
+                      isPriority={desktopStartIndex + index === 0}
+                    />
+                  </AnimatedStaggerItem>
+                ))}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setDesktopPage((p) => Math.min(desktopTotalPages - 1, p + 1))}
+              disabled={!canGoNext}
+              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-10 z-10 w-11 h-11 rounded-full bg-icube-dark/90 border border-white/20 text-white flex items-center justify-center hover:bg-icube-gold hover:text-icube-dark hover:border-icube-gold disabled:opacity-40 disabled:pointer-events-none transition-colors shadow-lg"
+              aria-label="Next studios"
+            >
+              <ChevronRight size={24} />
+            </button>
+          </div>
+          {desktopTotalPages > 1 && (
+            <div className="flex justify-center gap-2 mt-6">
+              {Array.from({ length: desktopTotalPages }).map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setDesktopPage(i)}
+                  className={`h-1.5 rounded-full transition-all duration-200 ${
+                    i === desktopPage ? "bg-icube-gold w-6" : "bg-white/20 w-1.5"
+                  }`}
+                  aria-label={`Page ${i + 1}`}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </section>

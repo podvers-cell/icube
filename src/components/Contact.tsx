@@ -126,9 +126,17 @@ export default function Contact() {
                 <div>
                   <h4 className="font-display font-semibold text-xl mb-1">Email Us</h4>
                   <p className="text-gray-400 font-light">
-                    {email}
-                    <br />
-                    {emailBookings}
+                    <a href={`mailto:${email}`} className="hover:text-icube-gold transition-colors">
+                      {email}
+                    </a>
+                    {emailBookings ? (
+                      <span className="block mt-1 text-gray-500 text-sm">
+                        Bookings:{" "}
+                        <a href={`mailto:${emailBookings}`} className="text-icube-gold/90 hover:text-icube-gold transition-colors">
+                          {emailBookings}
+                        </a>
+                      </span>
+                    ) : null}
                   </p>
                 </div>
               </div>

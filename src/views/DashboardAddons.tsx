@@ -57,6 +57,9 @@ export default function DashboardAddons() {
               id: "",
               name: "",
               description: "",
+              ideal_for: "",
+              included_features: "",
+              price_before_aed: null,
               price_aed: 0,
               sort_order: list.length,
             })
@@ -76,6 +79,9 @@ export default function DashboardAddons() {
                 id: "",
                 name: "",
                 description: "",
+                ideal_for: "",
+                included_features: "",
+                price_before_aed: null,
                 price_aed: 0,
                 sort_order: 0,
               })
@@ -92,10 +98,20 @@ export default function DashboardAddons() {
               <div className="flex justify-between items-start gap-3">
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold text-white">{a.name}</p>
-                  <p className="text-icube-gold text-xl font-bold">{a.price_aed} AED</p>
+                  <div className="mt-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                    {a.price_before_aed != null && a.price_before_aed > 0 && (
+                      <span className="text-gray-400 text-sm line-through">{a.price_before_aed} AED</span>
+                    )}
+                    <span className="text-icube-gold text-xl font-bold">{a.price_aed} AED</span>
+                  </div>
                   {a.description && (
                     <p className="text-gray-500 text-sm mt-1 line-clamp-2">{a.description}</p>
                   )}
+                  {a.ideal_for && a.ideal_for.trim() ? (
+                    <p className="text-gray-400 text-xs mt-2">
+                      <span className="text-gray-500">Ideal for:</span> {a.ideal_for.trim()}
+                    </p>
+                  ) : null}
                 </div>
                 <div className="flex flex-col gap-2 shrink-0">
                   <button
@@ -153,7 +169,30 @@ export default function DashboardAddons() {
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
-                Price (AED)
+                Ideal for (optional)
+              </label>
+              <input
+                value={editing.ideal_for ?? ""}
+                onChange={(e) => setEditing((x) => (x ? { ...x, ideal_for: e.target.value } : null))}
+                className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white"
+                placeholder="e.g. Podcasts, interviews, product shoots"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+                Included features (optional)
+              </label>
+              <textarea
+                value={editing.included_features ?? ""}
+                onChange={(e) => setEditing((x) => (x ? { ...x, included_features: e.target.value } : null))}
+                rows={4}
+                className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white"
+                placeholder={'One per line (or JSON array)\n- Feature 1\n- Feature 2'}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+                After price (AED)
               </label>
               <input
                 type="number"
@@ -164,6 +203,29 @@ export default function DashboardAddons() {
                 className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white"
                 placeholder="0"
                 required
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+                Before price (optional)
+              </label>
+              <input
+                type="number"
+                min={0}
+                step={1}
+                value={editing.price_before_aed ?? ""}
+                onChange={(e) =>
+                  setEditing((x) =>
+                    x
+                      ? {
+                          ...x,
+                          price_before_aed: e.target.value === "" ? null : Number(e.target.value),
+                        }
+                      : null
+                  )
+                }
+                className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white"
+                placeholder="e.g. 300"
               />
             </div>
             <div>

@@ -356,7 +356,17 @@ export async function getSiteSettings() {
   return api.get<Record<string, string>>("/site/settings");
 }
 export async function getServices() {
-  return api.get<{ id: number; title: string; description: string; icon: string; sort_order: number }[]>("/services");
+  return api.get<
+    {
+      id: string;
+      title: string;
+      description: string;
+      icon: string;
+      sort_order: number;
+      case_study_stats?: string;
+      case_study_infographics?: string;
+    }[]
+  >("/services");
 }
 export type PortfolioProject = {
   id: number | string;
@@ -506,7 +516,20 @@ export async function sendBookingConfirmedEmail(data: BookingConfirmedPayload): 
   }
 }
 
-export type BookingAddon = { id: string; name: string; description?: string; price_aed: number; sort_order?: number };
+export type BookingAddon = {
+  id: string;
+  name: string;
+  description?: string;
+  /** Optional short label like "Ideal for: ..." shown in UI */
+  ideal_for?: string | null;
+  /** Optional included features text (JSON array string or newline-separated) */
+  included_features?: string | null;
+  /** Optional "was" price shown as strikethrough in UI */
+  price_before_aed?: number | null;
+  /** After price (current) used for totals */
+  price_aed: number;
+  sort_order?: number;
+};
 export async function getBookingAddons(): Promise<BookingAddon[]> {
   try {
     const list = await api.get<BookingAddon[]>("/booking-addons");

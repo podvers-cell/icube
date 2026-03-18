@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus, Check, ChevronLeft, ArrowRight } from "lucide-react";
+import { Plus, Check, ChevronLeft, ArrowRight, ChevronDown } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import BookingProgress from "@/components/BookingProgress";
@@ -18,12 +18,28 @@ const FALLBACK_ADDONS: BookingAddon[] = [
   { id: "addon-5", name: "Green screen", description: "Green screen backdrop and keying", price_aed: 300, sort_order: 5 },
 ];
 
+function parseIncludedFeatures(raw: string | null | undefined): string[] {
+  const s = (raw ?? "").trim();
+  if (!s) return [];
+  try {
+    const parsed = JSON.parse(s);
+    if (Array.isArray(parsed)) return parsed.map((x) => String(x).trim()).filter(Boolean);
+  } catch {
+    // ignore
+  }
+  return s
+    .split("\n")
+    .map((x) => x.trim().replace(/^[-•]\s*/, ""))
+    .filter(Boolean);
+}
+
 export default function StudioBookingAddonsPage() {
   const router = useRouter();
   const { selectedStudio, selectedDurationHours, selectedDate, selectedTimeSlot, selectedAddOns, addAddon, removeAddon, totalAddonsAmount } = useBooking();
   const durationHours = selectedDurationHours ?? 2;
   const [addons, setAddons] = useState<BookingAddon[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -102,12 +118,20 @@ export default function StudioBookingAddonsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {addons.map((a) => {
                   const selected = isSelected(a.id);
+                  const expanded = expandedId === a.id;
                   return (
-                    <button
+                    <div
                       key={a.id}
-                      type="button"
+                      role="button"
+                      tabIndex={0}
                       onClick={() => toggle(a)}
-                      className={`rounded-2xl border p-6 text-left transition-all duration-200 flex flex-col ${
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          toggle(a);
+                        }
+                      }}
+                      className={`rounded-2xl border p-6 text-left transition-all duration-200 flex flex-col cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-icube-gold focus-visible:ring-offset-2 focus-visible:ring-offset-icube-dark ${
                         selected
                           ? "border-icube-gold bg-icube-gold/10"
                           : "border-white/10 bg-white/[0.04] hover:border-white/20 hover:bg-white/[0.06]"
@@ -115,11 +139,68 @@ export default function StudioBookingAddonsPage() {
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0 flex-1">
-                          <h3 className="font-display font-semibold text-white mb-1">{a.name}</h3>
-                          {a.description && (
-                            <p className="text-gray-400 text-sm font-light">{a.description}</p>
-                          )}
-                          <p className="text-icube-gold font-semibold mt-2">{a.price_aed} AED</p>
+                          <div className="flex items-start justify-between gap-3">
+                            <h3 className="font-display font-semibold text-white">{a.name}</h3>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setExpandedId((cur) => (cur === a.id ? null : a.id));
+                              }}
+                              className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-icube-gold transition-colors shrink-0"
+                              aria-expanded={expanded}
+                              aria-label={expanded ? "Hide details" : "Show details"}
+                            >
+                              Details
+                              <ChevronDown size={16} className={`transition-transform ${expanded ? "rotate-180" : ""}`} />
+                            </button>
+                          </div>
+
+                          <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                            {a.price_before_aed != null && a.price_before_aed > 0 && (
+                              <span className="text-gray-500 text-xs line-through">{a.price_before_aed} AED</span>
+                            )}
+                            <span className="text-icube-gold font-semibold">{a.price_aed} AED</span>
+                          </div>
+
+                          <div
+                            className={`mt-3 overflow-hidden transition-[max-height,opacity] duration-300 ease-out ${
+                              expanded ? "max-h-[420px] opacity-100" : "max-h-0 opacity-0"
+                            }`}
+                          >
+                            <div className="pt-3 border-t border-white/10 space-y-3">
+                              <div>
+                                <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Description</p>
+                                <p className="text-gray-400 text-sm font-light">{a.description?.trim() || "—"}</p>
+                              </div>
+
+                              {(() => {
+                                const features = parseIncludedFeatures(a.included_features);
+                                if (features.length === 0) return null;
+                                return (
+                                  <div className="pt-3 border-t border-white/10">
+                                    <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Included</p>
+                                    <ul className="text-gray-400 text-sm font-light space-y-1">
+                                      {features.slice(0, 4).map((f, idx) => (
+                                        <li key={idx} className="flex gap-2">
+                                          <span className="text-gray-500">•</span>
+                                          <span className="min-w-0">{f}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                );
+                              })()}
+
+                              {a.ideal_for && a.ideal_for.trim() ? (
+                                <div className="pt-3 border-t border-white/10">
+                                  <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Ideal for</p>
+                                  <p className="text-gray-400 text-sm font-light">{a.ideal_for.trim()}</p>
+                                </div>
+                              ) : null}
+                            </div>
+                          </div>
                         </div>
                         <div
                           className={`w-10 h-10 rounded-xl border-2 flex items-center justify-center shrink-0 transition-colors ${
@@ -129,7 +210,7 @@ export default function StudioBookingAddonsPage() {
                           {selected ? <Check size={20} /> : <Plus size={20} className="text-gray-400" />}
                         </div>
                       </div>
-                    </button>
+                    </div>
                   );
                 })}
               </div>

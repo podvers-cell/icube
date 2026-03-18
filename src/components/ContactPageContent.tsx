@@ -150,12 +150,6 @@ export default function ContactPageContent() {
                       <a href={`mailto:${email}`} className="hover:text-icube-gold transition-colors">
                         {email}
                       </a>
-                      <span className="block mt-1 text-gray-500 text-xs">
-                        Bookings:{" "}
-                        <a href={`mailto:${emailBookings}`} className="text-icube-gold/90 hover:text-icube-gold">
-                          {emailBookings}
-                        </a>
-                      </span>
                     </>
                   ),
                 },

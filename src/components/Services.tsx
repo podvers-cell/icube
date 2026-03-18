@@ -40,7 +40,7 @@ function ServiceCard({
           {service.title}
         </h3>
         <p className="text-gray-400 font-light leading-relaxed text-sm mb-6">{service.description}</p>
-        <Link href="/contact" className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-white/90 group-hover:text-icube-gold transition-colors border-b border-transparent group-hover:border-icube-gold pb-0.5">
+        <Link href={`/services/${service.id}`} className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-white/90 group-hover:text-icube-gold transition-colors border-b border-transparent group-hover:border-icube-gold pb-0.5">
           Learn More <span className="group-hover:translate-x-1 transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">→</span>
         </Link>
       </div>

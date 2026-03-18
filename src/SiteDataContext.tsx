@@ -6,7 +6,17 @@ import { CONTACT_EMAIL } from "./constants/contact";
 import { toUserFriendlyError, isNetworkError } from "./lib/errorMessages";
 
 type Settings = Record<string, string>;
-type Service = { id: number; title: string; description: string; icon: string; sort_order: number };
+type Service = {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  sort_order: number;
+  /** JSON array string of stats to show on case study page */
+  case_study_stats?: string;
+  /** JSON array string of infographic cards to show on case study page */
+  case_study_infographics?: string;
+};
 type Project = {
   id: number | string;
   title: string;
@@ -102,21 +112,21 @@ const FALLBACK_SETTINGS: Record<string, string> = {
 
 const FALLBACK_SERVICES: Service[] = [
   {
-    id: 1,
+    id: "1",
     title: "Podcast & talk shows",
     description: "End‑to‑end podcast and talk show production with multi‑camera setup, studio lighting, and live monitoring.",
     icon: "mic",
     sort_order: 1,
   },
   {
-    id: 2,
+    id: "2",
     title: "Brand & social content",
     description: "Short‑form reels, interviews, and branded content tailored for Instagram, TikTok, and YouTube.",
     icon: "clapperboard",
     sort_order: 2,
   },
   {
-    id: 3,
+    id: "3",
     title: "Commercial video",
     description: "Full production for campaigns, TVCs, and corporate films across Dubai and the wider GCC.",
     icon: "camera",

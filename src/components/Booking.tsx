@@ -52,7 +52,7 @@ export default function Booking() {
       price_aed: priceForCheckout,
       duration: pkg.duration,
     });
-    router.push("/packages/checkout");
+    router.push("/packages/date-time");
   }
 
   async function handleCustomSubmit(e: FormEvent) {

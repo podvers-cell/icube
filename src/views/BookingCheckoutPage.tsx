@@ -40,12 +40,15 @@ export default function BookingCheckoutPage() {
       router.replace("/packages");
       return;
     }
-  }, [selectedPackage, router, success]);
+    if (!selectedDate || !selectedTimeSlot) {
+      router.replace("/packages/date-time");
+      return;
+    }
+  }, [selectedPackage, selectedDate, selectedTimeSlot, router, success]);
 
   const subtotal = selectedPackage ? selectedPackage.price_aed + totalAddonsAmount : 0;
   const discountAmount = Math.round(subtotal * (discountPercent / 100));
   const totalAmount = subtotal - discountAmount;
-  const isDirectCheckout = !selectedDate && !selectedTimeSlot;
 
   async function applyDiscountCode() {
     const code = discountCode.trim().toUpperCase();
@@ -71,7 +74,7 @@ export default function BookingCheckoutPage() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!selectedPackage) return;
+    if (!selectedPackage || !selectedDate || !selectedTimeSlot) return;
     setSubmitting(true);
     try {
       const payload = {
@@ -83,8 +86,8 @@ export default function BookingCheckoutPage() {
         package_id: selectedPackage.id,
         studio_id: selectedStudio?.id,
         studio_name: selectedStudio?.name,
-        ...(selectedDate && { booking_date: selectedDate }),
-        ...(selectedTimeSlot && { time_slot: selectedTimeSlot }),
+        booking_date: selectedDate,
+        time_slot: selectedTimeSlot,
         ...(selectedAddOns.length > 0 && { addon_ids: selectedAddOns.map((a) => a.id), addons_total_aed: totalAddonsAmount }),
         ...(discountPercent > 0 && { discount_code: discountCode.trim().toUpperCase(), discount_percent: discountPercent }),
       };
@@ -96,8 +99,8 @@ export default function BookingCheckoutPage() {
       }
       setSuccessSummary({
         packageName: selectedPackage.name,
-        ...(selectedDate && { bookingDate: selectedDate }),
-        ...(selectedTimeSlot && { timeSlot: selectedTimeSlot }),
+        bookingDate: selectedDate,
+        timeSlot: selectedTimeSlot,
       });
       setSuccess(true);
       clearBooking();
@@ -150,11 +153,11 @@ export default function BookingCheckoutPage() {
         <div className="max-w-2xl mx-auto px-5 sm:px-6 md:px-12">
           <BookingProgress currentStep={3} steps={["Date & time", "Add-ons", "Checkout"]} />
           <Link
-            href={isDirectCheckout ? "/packages" : "/packages/add-ons"}
+            href="/packages/add-ons"
             className="inline-flex items-center gap-2 text-gray-400 hover:text-icube-gold text-sm font-medium mb-8 transition-colors"
           >
             <ChevronLeft size={18} />
-            {isDirectCheckout ? "Back to packages" : "Back to add-ons"}
+            Back to add-ons
           </Link>
 
           <h1 className="text-3xl md:text-4xl font-display font-bold tracking-tight text-white mb-2">
