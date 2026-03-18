@@ -138,68 +138,28 @@ export default function StudioBookingAddonsPage() {
                       }`}
                     >
                       <div className="flex items-start justify-between gap-4">
+                        {a.image_url && String(a.image_url).trim() ? (
+                          <div className="overflow-hidden rounded-xl border border-white/10 bg-black/30 aspect-square w-24 sm:w-28 flex items-center justify-center shrink-0">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={String(a.image_url)}
+                              alt={a.name}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                              referrerPolicy="no-referrer"
+                            />
+                          </div>
+                        ) : null}
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-start justify-between gap-3">
-                            <h3 className="font-display font-semibold text-white">{a.name}</h3>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                setExpandedId((cur) => (cur === a.id ? null : a.id));
-                              }}
-                              className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-icube-gold transition-colors shrink-0"
-                              aria-expanded={expanded}
-                              aria-label={expanded ? "Hide details" : "Show details"}
-                            >
-                              Details
-                              <ChevronDown size={16} className={`transition-transform ${expanded ? "rotate-180" : ""}`} />
-                            </button>
+                          <div className="flex items-start justify-between gap-3 min-h-[28px]">
+                            <h3 className="font-display font-semibold text-white line-clamp-1">{a.name}</h3>
                           </div>
 
-                          <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                          <div className="mt-3 flex flex-wrap items-baseline gap-x-2 gap-y-1">
                             {a.price_before_aed != null && a.price_before_aed > 0 && (
                               <span className="text-gray-500 text-xs line-through">{a.price_before_aed} AED</span>
                             )}
-                            <span className="text-icube-gold font-semibold">{a.price_aed} AED</span>
-                          </div>
-
-                          <div
-                            className={`mt-3 overflow-hidden transition-[max-height,opacity] duration-300 ease-out ${
-                              expanded ? "max-h-[420px] opacity-100" : "max-h-0 opacity-0"
-                            }`}
-                          >
-                            <div className="pt-3 border-t border-white/10 space-y-3">
-                              <div>
-                                <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Description</p>
-                                <p className="text-gray-400 text-sm font-light">{a.description?.trim() || "—"}</p>
-                              </div>
-
-                              {(() => {
-                                const features = parseIncludedFeatures(a.included_features);
-                                if (features.length === 0) return null;
-                                return (
-                                  <div className="pt-3 border-t border-white/10">
-                                    <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Included</p>
-                                    <ul className="text-gray-400 text-sm font-light space-y-1">
-                                      {features.slice(0, 4).map((f, idx) => (
-                                        <li key={idx} className="flex gap-2">
-                                          <span className="text-gray-500">•</span>
-                                          <span className="min-w-0">{f}</span>
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                );
-                              })()}
-
-                              {a.ideal_for && a.ideal_for.trim() ? (
-                                <div className="pt-3 border-t border-white/10">
-                                  <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Ideal for</p>
-                                  <p className="text-gray-400 text-sm font-light">{a.ideal_for.trim()}</p>
-                                </div>
-                              ) : null}
-                            </div>
+                            <span className="text-icube-gold font-bold text-lg leading-none">{a.price_aed} AED</span>
                           </div>
                         </div>
                         <div
@@ -208,6 +168,60 @@ export default function StudioBookingAddonsPage() {
                           }`}
                         >
                           {selected ? <Check size={20} /> : <Plus size={20} className="text-gray-400" />}
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setExpandedId((cur) => (cur === a.id ? null : a.id));
+                        }}
+                        className="mt-4 ml-auto inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-gray-400 hover:text-icube-gold transition-colors"
+                        aria-expanded={expanded}
+                        aria-label={expanded ? "Hide details" : "Show details"}
+                      >
+                        Details
+                        <ChevronDown size={16} className={`transition-transform ${expanded ? "rotate-180" : ""}`} />
+                      </button>
+
+                      {/* Details collapses from bottom */}
+                      <div
+                        className={`overflow-hidden transition-[max-height,opacity] duration-300 ease-out ${
+                          expanded ? "max-h-[420px] opacity-100" : "max-h-0 opacity-0"
+                        }`}
+                      >
+                        <div className="mt-4 pt-4 border-t border-white/10 space-y-3">
+                          <div>
+                            <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Description</p>
+                            <p className="text-gray-400 text-sm font-light">{a.description?.trim() || "—"}</p>
+                          </div>
+
+                          {(() => {
+                            const features = parseIncludedFeatures(a.included_features);
+                            if (features.length === 0) return null;
+                            return (
+                              <div className="pt-3 border-t border-white/10">
+                                <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Included</p>
+                                <ul className="text-gray-400 text-sm font-light space-y-1">
+                                  {features.slice(0, 4).map((f, idx) => (
+                                    <li key={idx} className="flex gap-2">
+                                      <span className="text-gray-500">•</span>
+                                      <span className="min-w-0">{f}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            );
+                          })()}
+
+                          {a.ideal_for && a.ideal_for.trim() ? (
+                            <div className="pt-3 border-t border-white/10">
+                              <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Ideal for</p>
+                              <p className="text-gray-400 text-sm font-light">{a.ideal_for.trim()}</p>
+                            </div>
+                          ) : null}
                         </div>
                       </div>
                     </div>

@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Pencil, Trash2, Plus } from "lucide-react";
 import { api } from "../api";
 import type { BookingAddon } from "../api";
+import CloudinaryUploadField from "../components/CloudinaryUploadField";
 
 type AddonForm = BookingAddon & { id: string };
 
@@ -57,6 +58,7 @@ export default function DashboardAddons() {
               id: "",
               name: "",
               description: "",
+              image_url: "",
               ideal_for: "",
               included_features: "",
               price_before_aed: null,
@@ -79,6 +81,7 @@ export default function DashboardAddons() {
                 id: "",
                 name: "",
                 description: "",
+                image_url: "",
                 ideal_for: "",
                 included_features: "",
                 price_before_aed: null,
@@ -139,10 +142,13 @@ export default function DashboardAddons() {
 
       {editing && (
         <form onSubmit={save} className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-icube-gray border border-white/10 rounded-sm p-6 max-w-lg w-full space-y-4">
-            <h2 className="text-xl font-display font-bold text-white">
-              {isCreating ? "Add Add-on (AED)" : "Edit Add-on (AED)"}
-            </h2>
+          <div className="bg-icube-gray border border-white/10 rounded-sm max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-white/10">
+              <h2 className="text-xl font-display font-bold text-white">
+                {isCreating ? "Add Add-on (AED)" : "Edit Add-on (AED)"}
+              </h2>
+            </div>
+            <div className="p-6 overflow-y-auto space-y-4">
             <div>
               <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
                 Name
@@ -166,6 +172,30 @@ export default function DashboardAddons() {
                 className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white"
                 placeholder="Short description for the booking page"
               />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+                Image URL (optional)
+              </label>
+              <CloudinaryUploadField
+                value={String(editing.image_url ?? "")}
+                onChange={(url) => setEditing((x) => (x ? { ...x, image_url: url } : null))}
+                type="image"
+                folder="addons/images"
+                placeholder="https://..."
+              />
+              {editing.image_url && String(editing.image_url).trim() ? (
+                <div className="mt-3 rounded-sm overflow-hidden border border-white/10 bg-black/20">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={String(editing.image_url)}
+                    alt=""
+                    className="w-full h-36 object-cover"
+                    loading="lazy"
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+              ) : null}
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
@@ -241,7 +271,8 @@ export default function DashboardAddons() {
                 placeholder="0 = first"
               />
             </div>
-            <div className="flex gap-2">
+            </div>
+            <div className="p-6 border-t border-white/10 flex gap-2 bg-icube-gray/80">
               <button type="submit" className="px-4 py-2 bg-icube-gold text-icube-dark font-semibold rounded-sm">
                 Save
               </button>

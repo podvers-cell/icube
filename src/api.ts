@@ -520,6 +520,8 @@ export type BookingAddon = {
   id: string;
   name: string;
   description?: string;
+  /** Optional image shown on add-on cards */
+  image_url?: string | null;
   /** Optional short label like "Ideal for: ..." shown in UI */
   ideal_for?: string | null;
   /** Optional included features text (JSON array string or newline-separated) */

@@ -7,7 +7,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useSiteData } from "@/SiteDataContext";
 import { getIcon } from "@/lib/icons";
-import { doc, getDoc } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 import { requireFirestore } from "@/firebase";
 
 type StatCard = {
@@ -38,9 +38,8 @@ export default function ServiceCaseStudyPage({ serviceId }: { serviceId: string 
   const [directService, setDirectService] = useState<any | null>(null);
 
   const service = useMemo(() => {
-    const idNum = Number(serviceId);
     return (
-      services.find((s) => String(s.id) === String(serviceId) || (!isNaN(idNum) && s.id === idNum)) ??
+      services.find((s) => String(s.id) === String(serviceId)) ??
       directService
     );
   }, [services, serviceId, directService]);
@@ -49,20 +48,39 @@ export default function ServiceCaseStudyPage({ serviceId }: { serviceId: string 
     let cancelled = false;
     // If the service isn't in SiteData (e.g. query failed / fallback), try loading it by doc id.
     if (!serviceId) return;
-    const idNum = Number(serviceId);
-    const existsInList = services.some((s) => String(s.id) === String(serviceId) || (!isNaN(idNum) && s.id === idNum));
+    const existsInList = services.some((s) => String(s.id) === String(serviceId));
     if (existsInList) return;
     if (directStatus !== "idle") return; // already tried
     (async () => {
       if (!cancelled) setDirectStatus("loading");
       try {
-        const snap = await getDoc(doc(requireFirestore(), "services", serviceId));
-        if (!snap.exists()) {
-          if (!cancelled) setDirectService(null);
+        const db = requireFirestore();
+        const snap = await getDoc(doc(db, "services", serviceId));
+        if (snap.exists()) {
+          if (!cancelled) setDirectService({ ...(snap.data() as any), id: snap.id });
           return;
         }
-        if (cancelled) return;
-        setDirectService({ ...(snap.data() as any), id: snap.id });
+
+        // Fallback for legacy data: try finding by numeric field id or legacy_id string.
+        const numeric = Number(serviceId);
+        if (!isNaN(numeric)) {
+          const q1 = query(collection(db, "services"), where("id", "==", numeric));
+          const snaps1 = await getDocs(q1);
+          const first = snaps1.docs[0];
+          if (first?.exists()) {
+            if (!cancelled) setDirectService({ ...(first.data() as any), id: first.id });
+            return;
+          }
+        }
+        const q2 = query(collection(db, "services"), where("legacy_id", "==", serviceId));
+        const snaps2 = await getDocs(q2);
+        const first2 = snaps2.docs[0];
+        if (first2?.exists()) {
+          if (!cancelled) setDirectService({ ...(first2.data() as any), id: first2.id });
+          return;
+        }
+
+        if (!cancelled) setDirectService(null);
       } catch {
         if (!cancelled) setDirectService(null);
       } finally {
@@ -102,6 +120,7 @@ export default function ServiceCaseStudyPage({ serviceId }: { serviceId: string 
       .map((s) => ({
         title: String(s.label ?? "").trim(),
         description: [String(s.value ?? "").trim(), (s.sub ?? "").trim()].filter(Boolean).join(" · "),
+        image_url: "",
       }));
   }, [service?.case_study_infographics, stats]);
 
