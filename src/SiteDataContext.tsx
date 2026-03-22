@@ -39,6 +39,8 @@ type Package = {
   duration: string;
   features: string;
   is_popular: number;
+  /** When 1, package uses the dark “Premium” card style on the site. */
+  is_premium?: number;
   sort_order: number;
   description?: string;
   best_for_label?: string;

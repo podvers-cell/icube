@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Calendar, CheckCircle2 } from "lucide-react";
+import { Calendar, CheckCircle2, Medal } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useSiteData } from "../SiteDataContext";
 import { submitBooking, sendBookingConfirmationEmail } from "../api";
@@ -94,8 +94,12 @@ export default function Booking() {
     return sortedPkgs.filter((p) => normalizeCategory(p.category) === activeCategory);
   }, [activeCategory, sortedPkgs]);
 
-  // Keep the existing "premium badge" feel stable across categories.
-  const premiumPkgId = sortedPkgs[2]?.id ?? null;
+  /** Explicit premium from dashboard; if none set anywhere, keep legacy: 3rd sorted package. */
+  const anyPremiumMarked = useMemo(() => sortedPkgs.some((p) => !!p.is_premium), [sortedPkgs]);
+  const fallbackPremiumPkgId = useMemo(
+    () => (anyPremiumMarked ? null : sortedPkgs[2]?.id ?? null),
+    [anyPremiumMarked, sortedPkgs]
+  );
 
   function handleCategoryTabClick(nextCategory: string) {
     setActiveCategory(nextCategory);
@@ -212,52 +216,63 @@ export default function Booking() {
             {visiblePkgs.length === 0 ? (
               <div className="py-16 text-center text-gray-400">No packages found in this category.</div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 items-start">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 items-stretch">
           {visiblePkgs.map((pkg) => {
               const features = parseFeatures(pkg.features);
               const isPopular = !!pkg.is_popular;
-              const isPremiumCard = pkg.id === premiumPkgId;
+              const isPremiumCard =
+                !!pkg.is_premium || (fallbackPremiumPkgId != null && pkg.id === fallbackPremiumPkgId);
               const variant: "starter" | "pro" | "premium" = isPremiumCard ? "premium" : isPopular ? "pro" : "starter";
               const aedIconClass = variant === "premium" ? "invert" : "";
               const cardTitleClass = variant === "starter" ? "text-[#171717]" : variant === "pro" ? "text-[#111111]" : "text-[#FFFFFF]";
-              const subtitleClass = variant === "premium" ? "text-gray-400" : "text-gray-600";
+              const subtitleClass = variant === "premium" ? "text-gray-300" : "text-gray-600";
               const priceColorClass = variant === "starter" ? "text-[#B8945B]" : variant === "pro" ? "text-[#A97B3D]" : "text-[#E5C88E]";
               const priceAfterClass = variant === "premium" ? "text-gray-400" : "text-[#171717]/60";
-              const dividerClass = variant === "premium" ? "border-white/10" : "border-[#171717]/10";
-              const checkIconClass = variant === "premium" ? "text-white/90" : "text-[#171717]/70";
-              const featureBaseClass = variant === "premium" ? "text-gray-300" : "text-[#171717]/70";
-              const featureHoverClass = variant === "premium" ? "group-hover/card:text-white/90" : "group-hover/card:text-[#111111]";
-              const beforePriceClass = variant === "premium" ? "text-gray-400" : "text-[#171717]/40";
-              const badgePremiumClass = "bg-[#D2B076] text-[#111111] shadow-[0_0_20px_rgba(210,176,118,0.35)]";
+              const dividerClass = variant === "premium" ? "border-[#D2B076]/25" : "border-[#171717]/10";
+              const checkIconClass = variant === "premium" ? "text-white" : "text-[#171717]/70";
+              const featureBaseClass = variant === "premium" ? "text-white" : "text-[#171717]/70";
+              const featureHoverClass = variant === "premium" ? "group-hover/card:text-white" : "group-hover/card:text-[#111111]";
+              const beforePriceClass = variant === "premium" ? "text-gray-500" : "text-[#171717]/40";
               const badgeProClass = "bg-[#F6EBD8] text-[#7B5A2A] shadow-[0_0_20px_rgba(246,235,216,0.35)]";
-              const categoryTextClass = variant === "premium" ? "text-white/70" : "text-[#111111]/60";
+              const categoryTextClass = variant === "premium" ? "text-white/90 tracking-[0.22em]" : "text-[#111111]/60";
               const ctaClass =
                 variant === "starter"
                   ? "bg-[#171717] text-[#FFFFFF] hover:bg-[#111111] hover:text-[#FFFFFF]"
                   : variant === "pro"
                     ? "bg-[#C9A46A] text-[#111111] hover:bg-[#A97B3D] hover:text-[#111111]"
-                    : "bg-[#D2B076] text-[#111111] hover:bg-[#D2B076]/90 hover:text-[#111111]";
-              const cardBg = variant === "starter" ? "#FAF7F2" : variant === "pro" ? "#FFFFFF" : "#151515";
+                    : "bg-[#D2B076] text-[#111111] font-bold hover:bg-[#E5C88E] hover:text-[#0a0a0a] shadow-[0_0_28px_rgba(210,176,118,0.45)]";
+              const cardBg = variant === "starter" ? "#FAF7F2" : variant === "pro" ? "#FFFFFF" : "#0a0a0a";
               const cardBorder = variant === "starter" ? "#E7DED1" : variant === "pro" ? "#C9A46A" : "#D2B076";
               const subtitle = pkg.description?.trim() || pkg.best_for_label?.trim() || null;
+              /** Gold-tinted AED symbol on black premium card (SVG is black fill). */
+              const premiumAedStyle = isPremiumCard
+                ? {
+                    filter:
+                      "brightness(0) saturate(100%) invert(79%) sepia(28%) saturate(520%) hue-rotate(358deg) brightness(1.02) contrast(92%)",
+                  }
+                : undefined;
               return (
                 <div
                   key={pkg.id}
-                  className={`package-card group/card relative flex flex-col rounded-2xl border transition-all duration-300 ease-out ${
+                  className={`package-card group/card relative flex h-full min-h-0 flex-col rounded-2xl border transition-all duration-300 ease-out ${
                     isPremiumCard
-                      ? "bg-[#151515] border-[#D2B076] shadow-[0_8px_32px_rgba(0,0,0,0.35)] hover:shadow-[0_24px_60px_rgba(0,0,0,0.35)]"
+                      ? "border-[#D2B076] shadow-[0_0_0_1px_rgba(210,176,118,0.55),0_0_32px_rgba(210,176,118,0.22),0_12px_48px_rgba(0,0,0,0.55)] hover:shadow-[0_0_0_1px_rgba(210,176,118,0.75),0_0_44px_rgba(210,176,118,0.32),0_20px_64px_rgba(0,0,0,0.6)]"
                       : isPopular
                         ? "bg-[#FFFFFF] border-[#C9A46A] shadow-[0_8px_32px_rgba(0,0,0,0.18)] hover:shadow-[0_24px_60px_rgba(0,0,0,0.25)]"
                         : "bg-[#FAF7F2] border-[#E7DED1] shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:shadow-[0_24px_60px_rgba(0,0,0,0.18)]"
                   }`}
-                  style={{ backgroundColor: cardBg, borderColor: cardBorder }}
+                  style={
+                    isPremiumCard
+                      ? { backgroundColor: "#0a0a0a", borderColor: "#D2B076" }
+                      : { backgroundColor: cardBg, borderColor: cardBorder }
+                  }
                 >
                   {isPremiumCard && (
                     <div
-                      className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center justify-center bg-icube-gold text-icube-dark text-[10px] font-semibold uppercase tracking-[0.2em] py-1.5 px-4 rounded-full shadow-[0_0_20px_rgba(212,175,55,0.4)] z-10"
-                      style={{ backgroundColor: "#D2B076", color: "#111111" }}
+                      className="absolute -top-3 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center rounded-md px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.28em] text-[#111111] shadow-[0_0_28px_rgba(210,176,118,0.55),0_4px_14px_rgba(0,0,0,0.35)]"
+                      style={{ backgroundColor: "#D2B076" }}
                     >
-                      Premium
+                      PREMIUM
                     </div>
                   )}
                   {!isPremiumCard && isPopular && (
@@ -269,15 +284,25 @@ export default function Booking() {
                     </div>
                   )}
 
-                  <div className="p-8 flex flex-col flex-1">
+                  <div className="flex min-h-0 flex-1 flex-col p-8">
                     <div className="mb-4">
                       <div className={`text-xs uppercase tracking-widest font-semibold ${categoryTextClass}`}>
                         {formatCategoryLabel(normalizeCategory(pkg.category))}
                       </div>
                     </div>
                     <div className="mb-5">
-                      <h3 className={`text-xl font-display font-bold tracking-tight ${cardTitleClass}`}>
-                        {pkg.name}
+                      <h3
+                        className={`text-xl font-display font-bold tracking-tight flex items-center gap-2.5 ${cardTitleClass}`}
+                      >
+                        {isPremiumCard && (
+                          <Medal
+                            className="shrink-0 text-[#E5C88E]"
+                            size={22}
+                            strokeWidth={1.65}
+                            aria-hidden
+                          />
+                        )}
+                        <span>{pkg.name}</span>
                       </h3>
                       {subtitle && (
                         <p className={`mt-2 text-sm leading-relaxed ${subtitleClass}`}>
@@ -293,7 +318,8 @@ export default function Booking() {
                           <img
                             src="/aed-symbol.svg"
                             alt="AED"
-                          className={`mr-1 h-3 w-auto inline-block align-baseline ${aedIconClass}`}
+                            className={`mr-1 h-3 w-auto inline-block align-baseline ${isPremiumCard ? "" : aedIconClass}`}
+                            style={premiumAedStyle}
                           />
                           {pkg.price_before_aed.toLocaleString()}
                         </span>
@@ -302,7 +328,8 @@ export default function Booking() {
                         <img
                           src="/aed-symbol.svg"
                           alt="AED"
-                          className={`h-6 w-auto inline-block align-baseline ${aedIconClass}`}
+                          className={`h-6 w-auto inline-block align-baseline ${isPremiumCard ? "" : aedIconClass}`}
+                          style={premiumAedStyle}
                         />
                         <span className={`text-4xl md:text-5xl font-display font-extrabold tracking-tight ${priceColorClass}`}>
                           {pkg.price_aed > 0 ? pkg.price_aed.toLocaleString() : (pkg.price_after?.trim() || "—")}
@@ -314,7 +341,7 @@ export default function Booking() {
                     </div>
 
                     {/* Features – all checkmarks glow when hovering anywhere on card */}
-                    <ul className={`mt-2 pt-6 space-y-3.5 border-t ${dividerClass} flex-1`}>
+                    <ul className={`mt-2 min-h-0 flex-1 space-y-3.5 border-t pt-6 ${dividerClass}`}>
                       {features.map((feature, j) => (
                         <li
                           key={j}
@@ -335,9 +362,11 @@ export default function Booking() {
                     <button
                       type="button"
                       onClick={() => handlePackageSelect(pkg)}
-                      className={`mt-6 w-full py-3.5 rounded-xl font-semibold text-sm uppercase tracking-wider transition-all duration-300 ${ctaClass} shadow-[0_0_20px_rgba(0,0,0,0.12)]`}
+                      className={`mt-6 w-full shrink-0 py-3.5 rounded-xl font-semibold text-sm uppercase tracking-[0.2em] transition-all duration-300 ${
+                        isPremiumCard ? ctaClass : `${ctaClass} shadow-[0_0_20px_rgba(0,0,0,0.12)]`
+                      }`}
                     >
-                      Book now
+                      {isPremiumCard ? "BOOK NOW" : "Book now"}
                     </button>
                   </div>
                 </div>

@@ -392,6 +392,7 @@ export async function getBookingPackages() {
     duration: string;
     features: string;
     is_popular: number;
+    is_premium?: number;
     sort_order: number;
     description?: string;
     best_for_label?: string;

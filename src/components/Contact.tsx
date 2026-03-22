@@ -41,7 +41,6 @@ export default function Contact() {
 
   const address = settings.contact_address || "Dubai Media City, Building 1\nDubai, United Arab Emirates";
   const email = settings.contact_email || CONTACT_EMAIL;
-  const emailBookings = settings.contact_email_bookings || "bookings@icube.ae";
   const phone = settings.contact_phone || "+971 4 123 4567";
   const phone2 = settings.contact_phone_2 || "";
   const hours = settings.contact_hours || "Sun–Thu, 9am – 6pm GST";
@@ -129,14 +128,6 @@ export default function Contact() {
                     <a href={`mailto:${email}`} className="hover:text-icube-gold transition-colors">
                       {email}
                     </a>
-                    {emailBookings ? (
-                      <span className="block mt-1 text-gray-500 text-sm">
-                        Bookings:{" "}
-                        <a href={`mailto:${emailBookings}`} className="text-icube-gold/90 hover:text-icube-gold transition-colors">
-                          {emailBookings}
-                        </a>
-                      </span>
-                    ) : null}
                   </p>
                 </div>
               </div>

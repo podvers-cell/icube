@@ -13,6 +13,8 @@ type Pkg = {
   duration: string;
   features: string;
   is_popular: number;
+  /** 1 = dark Premium card on public packages page */
+  is_premium?: number;
   sort_order: number;
   description?: string;
   best_for_label?: string;
@@ -83,6 +85,7 @@ export default function DashboardPackages() {
               duration: "",
               features: "[]",
               is_popular: 0,
+              is_premium: 0,
               sort_order: list.length,
               description: "",
               best_for_label: "",
@@ -109,6 +112,7 @@ export default function DashboardPackages() {
                 duration: "",
                 features: "[]",
                 is_popular: 0,
+                is_premium: 0,
                 sort_order: 0,
                 description: "",
                 best_for_label: "",
@@ -166,6 +170,16 @@ export default function DashboardPackages() {
                             <span className="text-xs uppercase tracking-wider text-gray-400">
                               {(p.category?.trim() ? p.category.trim() : "uncategorized").replace(/-/g, " ")}
                             </span>
+                            {!!p.is_premium && (
+                              <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-[#D2B076]/25 text-[#E5C88E] border border-[#D2B076]/40">
+                                Premium
+                              </span>
+                            )}
+                            {!!p.is_popular && !p.is_premium && (
+                              <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-icube-gold/20 text-icube-gold">
+                                Popular
+                              </span>
+                            )}
                           </div>
                           <div className="flex items-baseline gap-2 flex-wrap mt-2">
                             {p.price_before_aed != null && p.price_before_aed > 0 && (
@@ -280,6 +294,21 @@ export default function DashboardPackages() {
                 onChange={(e) => setEditing((x) => (x ? { ...x, is_popular: e.target.checked ? 1 : 0 } : null))}
               />
               Most popular choice
+            </label>
+            {/* 5b. Premium card style */}
+            <label className="flex items-start gap-2 text-gray-300">
+              <input
+                type="checkbox"
+                className="mt-1 shrink-0"
+                checked={!!editing.is_premium}
+                onChange={(e) => setEditing((x) => (x ? { ...x, is_premium: e.target.checked ? 1 : 0 } : null))}
+              />
+              <span>
+                <span className="font-medium text-white">Premium package</span>
+                <span className="block text-gray-500 text-xs mt-0.5">
+                  Uses the dark gold-accent card on the public Packages page. If none is checked, the 3rd package (by display order) keeps the old default.
+                </span>
+              </span>
             </label>
             {/* 6. Description */}
             <textarea
