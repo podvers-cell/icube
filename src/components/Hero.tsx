@@ -215,7 +215,7 @@ export default function Hero({ onHeroReady }: HeroProps) {
       </div>
 
       <motion.div
-        className="relative z-20 max-w-7xl mx-auto px-5 sm:px-6 md:px-12 w-full flex flex-col items-center text-center gap-6 sm:gap-7 md:gap-8"
+        className="relative z-20 max-w-7xl mx-auto px-6 sm:px-10 md:px-14 lg:px-16 w-full flex flex-col items-center text-center gap-6 sm:gap-7 md:gap-8"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, delay: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
@@ -226,10 +226,13 @@ export default function Hero({ onHeroReady }: HeroProps) {
           transition={reduceMotion ? {} : { duration: 5, repeat: Infinity, ease: "easeInOut" }}
         >
         {phrases.length > 0 && (
-          <div className="min-h-[3.5rem] sm:min-h-[4rem] md:mb-4 md:min-h-[7rem] flex items-center justify-center overflow-hidden">
+          <div className="min-h-[3.5rem] sm:min-h-[4rem] md:mb-4 md:min-h-[7rem] flex w-full max-w-[min(100%,52rem)] items-center justify-center overflow-visible px-4 py-6 sm:px-8 sm:py-8 md:px-12 md:py-10">
             <h1
-              className="text-4xl md:text-7xl lg:text-9xl font-display font-extrabold tracking-tight text-white leading-tight px-1 relative"
-              style={{ textShadow: "0 0 32px rgba(212,175,55,0.65)" }}
+              className="text-4xl md:text-7xl lg:text-9xl font-display font-extrabold tracking-tight text-white leading-tight relative text-balance"
+              style={{
+                textShadow:
+                  "0 0 12px rgba(212,175,55,0.22), 0 0 28px rgba(212,175,55,0.12)",
+              }}
             >
               <AnimatePresence mode="wait" initial={false}>
                 <motion.span
