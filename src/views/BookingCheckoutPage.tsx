@@ -114,7 +114,7 @@ export default function BookingCheckoutPage() {
   if (success) {
     if (!successSummary) return null;
     return (
-      <div className="site-wrapper min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray to-[#111521] text-white selection:bg-icube-gold selection:text-icube-dark transition-colors duration-300">
+      <div className="site-wrapper min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray to-icube-dark/80 text-white selection:bg-icube-gold selection:text-icube-dark transition-colors duration-300">
         <Navbar />
         <main className="relative py-24 md:py-28 flex flex-col items-center justify-center min-h-[60vh]">
           <div className="max-w-lg mx-auto px-5 text-center">
@@ -147,7 +147,7 @@ export default function BookingCheckoutPage() {
   if (!selectedPackage) return null;
 
   return (
-    <div className="site-wrapper min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray to-[#111521] text-white selection:bg-icube-gold selection:text-icube-dark transition-colors duration-300">
+    <div className="site-wrapper min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray to-icube-dark/80 text-white selection:bg-icube-gold selection:text-icube-dark transition-colors duration-300">
       <Navbar />
       <main className="relative py-24 md:py-28">
         <div className="max-w-2xl mx-auto px-5 sm:px-6 md:px-12">

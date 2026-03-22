@@ -9,8 +9,10 @@
   --color-icube-gold: #D4AF37;
   --color-icube-gold-light: #E8C547;
   --color-icube-bronze: #B8860B;
-  --color-icube-dark: #191e2e;
-  --color-icube-gray: #262d3f;
+  /* Dark gray theme (replaces previous dark tone) */
+  --color-icube-dark: #1f1f1f;
+  --color-icube-dark-rgb: 31 31 31;
+  --color-icube-gray: #242424;
   --color-icube-light: #F5F5F5;
 }
 
@@ -113,7 +115,7 @@ body,
   .site-wrapper main > section:not(#home) {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    background: rgba(25, 30, 46, 0.96) !important;
+    background: rgba(var(--color-icube-dark-rgb), 0.96) !important;
   }
   [data-theme="light"] .site-wrapper main > section:not(#home) {
     background: #e8e5df !important;
@@ -189,14 +191,14 @@ body,
 
 /* Glass panels – frosted glass effect */
 .site-wrapper .glass-panel {
-  background: rgba(25, 30, 46, 0.45);
+  background: rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 .site-wrapper .glass-card {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -205,7 +207,7 @@ body,
 /* Mobile: no backdrop-blur to reduce GPU load and heat */
 @media (max-width: 767px) {
   .site-wrapper .glass-card {
-    background: rgba(30, 36, 52, 0.85);
+    background: rgba(var(--color-icube-dark-rgb), 0.85);
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
   }
@@ -468,7 +470,7 @@ a:focus-visible {
 
 /* Glassy sections (all except hero) */
 .site-wrapper main > section:not(#home) {
-  background: rgba(25, 30, 46, 0.5);
+  background: rgba(var(--color-icube-dark-rgb), 0.5);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border-left: 1px solid rgba(255, 255, 255, 0.05);
@@ -476,7 +478,12 @@ a:focus-visible {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 .site-wrapper main > section:not(#home).section-with-gradient {
-  background: linear-gradient(to bottom, rgba(25, 30, 46, 0.6), rgba(38, 45, 63, 0.5), rgba(25, 30, 46, 0.6));
+  background: linear-gradient(
+    to bottom,
+    rgba(var(--color-icube-dark-rgb), 0.6),
+    rgba(var(--color-icube-dark-rgb), 0.5),
+    rgba(var(--color-icube-dark-rgb), 0.6)
+  );
 }
 
 [data-theme="light"] .site-wrapper main > section:not(#home) {
@@ -647,6 +654,29 @@ select:focus-visible {
 }
 .site-wrapper nav .nav-menu-link:hover {
   color: #ffffff !important;
+}
+
+/* Navbar underline animation */
+.site-wrapper nav .nav-menu-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 100%;
+  transform: scaleX(0);
+  transform-origin: left;
+  border-radius: 9999px;
+  background: rgba(212, 175, 55, 0.85);
+  opacity: 0.9;
+  transition: transform 260ms ease, opacity 260ms ease;
+  pointer-events: none;
+}
+.site-wrapper nav .nav-menu-link:hover::after,
+.site-wrapper nav .nav-menu-link:focus-visible::after,
+.site-wrapper nav .nav-menu-link[aria-current="page"]::after {
+  transform: scaleX(1);
+  opacity: 1;
 }
 /* Light bar only: Sign in hover gold */
 [data-theme="light"] .site-wrapper nav[class*="fixed"][data-home="false"] a[href="/login"]:hover,

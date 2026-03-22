@@ -385,7 +385,18 @@ export async function getTestimonials() {
   return api.get<{ id: number; quote: string; author: string; role: string; image_url: string; sort_order: number }[]>("/testimonials");
 }
 export async function getBookingPackages() {
-  return api.get<{ id: number; name: string; price_aed: number; duration: string; features: string; is_popular: number; sort_order: number }[]>("/booking-packages");
+  return api.get<{
+    id: number | string;
+    name: string;
+    price_aed: number;
+    duration: string;
+    features: string;
+    is_popular: number;
+    sort_order: number;
+    description?: string;
+    best_for_label?: string;
+    category?: string;
+  }[]>("/booking-packages");
 }
 export async function getWhyUs() {
   return api.get<{ id: number; icon: string; title: string; description: string; sort_order: number }[]>("/why-us");

@@ -77,7 +77,7 @@ export default function BookingAddonsPage() {
   if (!selectedPackage || !selectedDate || !selectedTimeSlot) return null;
 
   return (
-    <div className="site-wrapper min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray to-[#111521] text-white selection:bg-icube-gold selection:text-icube-dark transition-colors duration-300">
+    <div className="site-wrapper min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray to-icube-dark/80 text-white selection:bg-icube-gold selection:text-icube-dark transition-colors duration-300">
       <Navbar />
       <main className="relative py-24 md:py-28">
         <div className="max-w-4xl mx-auto px-5 sm:px-6 md:px-12">

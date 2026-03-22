@@ -10,7 +10,14 @@ import AnimatedStaggerItem from "./AnimatedStaggerItem";
 import { AnimatedSectionHeader } from "./ScrollReveal";
 import SectionSkeleton from "./SectionSkeleton";
 
-const colors = ["from-red-500/20 to-transparent", "from-orange-500/20 to-transparent", "from-blue-500/20 to-transparent", "from-purple-500/20 to-transparent", "from-emerald-500/20 to-transparent"];
+// No purple accents: keep gradients neutral/gold/green
+const colors = [
+  "from-icube-gold/20 to-transparent",
+  "from-icube-gold-light/20 to-transparent",
+  "from-icube-gray/20 to-transparent",
+  "from-emerald-500/15 to-transparent",
+  "from-red-500/20 to-transparent",
+];
 
 function ServiceCard({
   service,

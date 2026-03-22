@@ -245,7 +245,7 @@ export default function Studio() {
   return (
     <section
       id="studio"
-      className="py-28 md:py-32 bg-gradient-to-b from-icube-gray via-icube-dark/90 to-icube-gray/80 relative overflow-hidden"
+      className="py-28 md:py-32 bg-gradient-to-b from-icube-dark/95 via-icube-gray/75 to-icube-dark/90 relative overflow-hidden"
     >
       <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-icube-gold/5 rounded-full blur-[120px] pointer-events-none" />
 

@@ -141,7 +141,7 @@ export default function PublicSite() {
   }, []);
 
   const mainContent = (
-    <div className="site-wrapper min-h-screen bg-gradient-to-b from-icube-dark/95 via-icube-gray/90 to-[#0f1219] text-white selection:bg-icube-gold selection:text-icube-dark transition-colors duration-300">
+    <div className="site-wrapper min-h-screen bg-gradient-to-b from-icube-dark/95 via-icube-gray/90 to-icube-dark/80 text-white selection:bg-icube-gold selection:text-icube-dark transition-colors duration-300">
       {/* Glowing background orbs – desktop only; blur is very expensive on mobile GPU */}
       <div
         className="site-glows pointer-events-none fixed inset-0 z-0 overflow-hidden hidden md:block"
@@ -149,8 +149,8 @@ export default function PublicSite() {
       >
         <div className="absolute top-0 left-1/4 w-[80vmax] h-[80vmax] -translate-x-1/2 -translate-y-1/3 rounded-full bg-icube-gold/12 blur-[120px]" />
         <div className="absolute top-1/3 right-0 w-[60vmax] h-[60vmax] translate-x-1/3 -translate-y-1/4 rounded-full bg-icube-gold/10 blur-[100px]" />
-        <div className="absolute bottom-1/4 left-0 w-[70vmax] h-[70vmax] -translate-x-1/4 translate-y-1/4 rounded-full bg-purple-500/10 blur-[110px]" />
-        <div className="absolute bottom-0 right-1/3 w-[50vmax] h-[50vmax] translate-y-1/3 rounded-full bg-blue-500/10 blur-[90px]" />
+        <div className="absolute bottom-1/4 left-0 w-[70vmax] h-[70vmax] -translate-x-1/4 translate-y-1/4 rounded-full bg-icube-gray/10 blur-[110px]" />
+        <div className="absolute bottom-0 right-1/3 w-[50vmax] h-[50vmax] translate-y-1/3 rounded-full bg-icube-gray/10 blur-[90px]" />
         <div className="absolute top-1/2 left-1/2 w-[40vmax] h-[40vmax] -translate-x-1/2 -translate-y-1/2 rounded-full bg-icube-gold/06 blur-[80px]" />
       </div>
       <a

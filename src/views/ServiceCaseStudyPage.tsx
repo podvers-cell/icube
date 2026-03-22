@@ -129,7 +129,7 @@ export default function ServiceCaseStudyPage({ serviceId }: { serviceId: string 
   const isWaiting = (!service && loading) || (!service && directStatus === "loading");
   if (isWaiting) {
     return (
-      <div className="site-wrapper min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray to-[#111521] text-white">
+    <div className="site-wrapper min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray to-icube-dark/80 text-white">
         <Navbar />
         <main className="py-28">
           <div className="max-w-6xl mx-auto px-6 md:px-12">
@@ -143,7 +143,7 @@ export default function ServiceCaseStudyPage({ serviceId }: { serviceId: string 
 
   if (!service) {
     return (
-      <div className="site-wrapper min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray to-[#111521] text-white">
+    <div className="site-wrapper min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray to-icube-dark/80 text-white">
         <Navbar />
         <main className="py-28">
           <div className="max-w-6xl mx-auto px-6 md:px-12">
@@ -160,7 +160,7 @@ export default function ServiceCaseStudyPage({ serviceId }: { serviceId: string 
   }
 
   return (
-    <div className="site-wrapper min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray to-[#111521] text-white selection:bg-icube-gold selection:text-icube-dark">
+    <div className="site-wrapper min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray to-icube-dark/80 text-white selection:bg-icube-gold selection:text-icube-dark">
       <Navbar />
 
       <main className="relative pt-24 md:pt-28 pb-20">

@@ -126,7 +126,7 @@ export default function DashboardLayoutNext({ children }: { children: React.Reac
   }, [mobileNavOpen]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#181e30] via-[#21283c] to-[#2b3450] text-white">
+    <div className="min-h-screen bg-gradient-to-br from-icube-dark/95 via-icube-gray/90 to-icube-dark/80 text-white">
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-10 flex gap-5 lg:gap-8">
         {/* Mobile nav toggle – visible only when sidebar is hidden */}
         <div className="sm:hidden fixed top-4 left-4 z-50 flex items-center gap-3">

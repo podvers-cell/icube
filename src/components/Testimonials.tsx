@@ -15,7 +15,7 @@ export default function Testimonials() {
   return (
     <section
       id="testimonials"
-      className="py-28 md:py-32 bg-gradient-to-b from-icube-gray via-icube-dark/80 to-icube-gray relative overflow-hidden"
+      className="py-28 md:py-32 bg-gradient-to-b from-icube-dark/95 via-icube-gray/75 to-icube-dark/90 relative overflow-hidden"
     >
       <div className="absolute -bottom-32 left-1/2 -translate-x-1/2 w-96 h-96 bg-icube-gold/5 rounded-full blur-[120px] pointer-events-none" />
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">

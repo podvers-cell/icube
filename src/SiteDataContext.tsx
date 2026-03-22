@@ -31,7 +31,7 @@ type Project = {
 };
 type Testimonial = { id: number; quote: string; author: string; role: string; image_url: string; sort_order: number };
 type Package = {
-  id: number;
+  id: number | string;
   name: string;
   price_before_aed?: number;
   price_aed: number;
@@ -42,6 +42,8 @@ type Package = {
   sort_order: number;
   description?: string;
   best_for_label?: string;
+  /** Category slug used for filtering in the Packages page (e.g. "podcast-packages"). */
+  category?: string;
 };
 type Why = { id: number; icon: string; title: string; description: string; sort_order: number };
 type Equipment = { id: number; label: string; description: string; sort_order: number };
@@ -185,6 +187,7 @@ const FALLBACK_PACKAGES: Package[] = [
     features: JSON.stringify(["Up to 2 guests", "2 camera angles", "Basic colour grade", "Audio mix & export"]),
     is_popular: 0,
     sort_order: 1,
+    category: "podcast-packages",
   },
   {
     id: 2,
@@ -199,6 +202,7 @@ const FALLBACK_PACKAGES: Package[] = [
     ]),
     is_popular: 1,
     sort_order: 2,
+    category: "studio-rental-packages",
   },
 ];
 

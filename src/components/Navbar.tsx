@@ -316,7 +316,7 @@ export default function Navbar() {
                         handleNavLinkClick(e, href);
                         setIsMobileMenuOpen(false);
                       }}
-                      className={`relative block text-center text-sm font-display font-medium tracking-[0.24em] uppercase py-3.5 px-4 rounded-lg min-h-[44px] flex items-center justify-center transition-colors duration-150 ${
+                      className={`nav-menu-link relative block text-center text-sm font-display font-medium tracking-[0.24em] uppercase py-3.5 px-4 rounded-lg min-h-[44px] flex items-center justify-center transition-colors duration-150 ${
                         active ? "text-white bg-white/5" : "text-gray-200 hover:text-white hover:bg-white/5"
                       }`}
                       aria-current={active ? "page" : undefined}
