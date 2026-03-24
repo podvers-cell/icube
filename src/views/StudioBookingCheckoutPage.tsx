@@ -101,7 +101,7 @@ export default function StudioBookingCheckoutPage() {
         ...(discountPercent > 0 && { discount_code: discountCode.trim().toUpperCase(), discount_percent: discountPercent }),
       };
 
-      await submitBooking(payload);
+      const bookingRes = await submitBooking(payload);
       try {
         await sendBookingConfirmationEmail(payload);
       } catch {
@@ -118,6 +118,7 @@ export default function StudioBookingCheckoutPage() {
           slot: selectedTimeSlot,
           durationHours,
           customerEmail: form.email,
+          bookingId: bookingRes.booking_id,
         }),
       });
       const payBody = (await payRes.json().catch(() => ({}))) as { redirect_url?: string; error?: string };

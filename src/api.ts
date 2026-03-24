@@ -150,9 +150,10 @@ export const api = {
       }
       const b = parsed.data;
       const db = requireFirestore();
-      await addDoc(collection(db, "bookings"), {
+      const bookingRef = await addDoc(collection(db, "bookings"), {
         ...stripUndefined(b),
         status: "pending",
+        payment_status: "initiated",
         created_at: serverTimestamp(),
       });
 
@@ -185,7 +186,7 @@ export const api = {
           // best-effort; booking already stored
         }
       }
-      return { success: true } as T;
+      return { success: true, booking_id: bookingRef.id } as T;
     }
     if (path === "/contact") {
       const parsed = contactFormSchema.safeParse(body);
@@ -457,7 +458,7 @@ export type BookingPayload = {
   discount_percent?: number;
 };
 export function submitBooking(data: BookingPayload) {
-  return api.post<{ success: boolean }>("/booking", data);
+  return api.post<{ success: boolean; booking_id: string }>("/booking", data);
 }
 
 export async function validateDiscountCodeOnServer(code: string): Promise<{ percent: number } | null> {

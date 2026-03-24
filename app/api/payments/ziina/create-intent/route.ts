@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { requireFirestore } from "@/firebase";
 
 type CreateIntentBody = {
   bookingType?: "package" | "studio";
@@ -8,6 +10,7 @@ type CreateIntentBody = {
   slot?: string;
   durationHours?: number;
   customerEmail?: string;
+  bookingId?: string;
 };
 
 function getBaseUrl(request: Request): string {
@@ -64,6 +67,7 @@ export async function POST(request: Request) {
     });
 
     const ziinaBody = (await ziinaRes.json().catch(() => ({}))) as {
+      id?: string;
       redirect_url?: string;
       message?: string;
       error?: { message?: string };
@@ -75,7 +79,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: providerError }, { status: 502 });
     }
 
-    return NextResponse.json({ redirect_url: ziinaBody.redirect_url });
+    if (body.bookingId && ziinaBody.id) {
+      try {
+        await updateDoc(doc(requireFirestore(), "bookings", body.bookingId), {
+          ziina_intent_id: ziinaBody.id,
+          payment_status: "requires_payment_instrument",
+          payment_provider: "ziina",
+          updated_at: serverTimestamp(),
+        });
+      } catch {
+        // Keep checkout flow alive; webhook may still reconcile by other fields.
+      }
+    }
+
+    return NextResponse.json({ redirect_url: ziinaBody.redirect_url, payment_intent_id: ziinaBody.id || null });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unexpected server error.";
     return NextResponse.json({ error: message }, { status: 500 });
