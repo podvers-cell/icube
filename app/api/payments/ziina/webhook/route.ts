@@ -5,10 +5,32 @@ export async function POST(req: Request) {
     console.log("🔥 ZIINA WEBHOOK HIT");
 
     const rawBody = await req.text();
-    console.log("📦 RAW BODY:", rawBody);
-
     const payload = JSON.parse(rawBody);
-    console.log("📩 PARSED:", payload);
+
+    const event = payload?.event;
+    const data = payload?.data;
+
+    console.log("📩 Event:", event);
+    console.log("💳 Payment ID:", data?.id);
+    console.log("📊 Status:", data?.status);
+
+    // أهم شرط
+    if (event === "payment_intent.status.updated") {
+      const paymentId = data?.id;
+      const status = data?.status;
+
+      // هنا تربط مع Firebase
+      if (status === "completed") {
+        console.log("✅ PAYMENT SUCCESS");
+
+        // مثال:
+        // await updateOrder(paymentId, { status: "paid" });
+      }
+
+      if (status === "failed") {
+        console.log("❌ PAYMENT FAILED");
+      }
+    }
 
     return NextResponse.json({ ok: true });
   } catch (err) {
