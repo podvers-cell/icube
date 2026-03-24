@@ -72,7 +72,7 @@ export default function BookingCheckoutPage() {
     }
   }
 
-  async function handleSubmit(e: FormEvent) {
+  async function handlePayNow(e: FormEvent) {
     e.preventDefault();
     if (!selectedPackage || !selectedDate || !selectedTimeSlot) return;
     setSubmitting(true);
@@ -91,19 +91,31 @@ export default function BookingCheckoutPage() {
         ...(selectedAddOns.length > 0 && { addon_ids: selectedAddOns.map((a) => a.id), addons_total_aed: totalAddonsAmount }),
         ...(discountPercent > 0 && { discount_code: discountCode.trim().toUpperCase(), discount_percent: discountPercent }),
       };
+
       await submitBooking(payload);
       try {
         await sendBookingConfirmationEmail(payload);
       } catch {
         // Booking saved; email is best-effort
       }
-      setSuccessSummary({
-        packageName: selectedPackage.name,
-        bookingDate: selectedDate,
-        timeSlot: selectedTimeSlot,
+      const payRes = await fetch("/api/payments/ziina/create-intent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bookingType: "package",
+          amountAed: totalAmount,
+          name: selectedPackage.name,
+          date: selectedDate,
+          slot: selectedTimeSlot,
+          customerEmail: form.email,
+        }),
       });
-      setSuccess(true);
+      const payBody = (await payRes.json().catch(() => ({}))) as { redirect_url?: string; error?: string };
+      if (!payRes.ok || !payBody.redirect_url) {
+        throw new Error(payBody.error || "Could not initialize payment.");
+      }
       clearBooking();
+      window.location.href = payBody.redirect_url;
     } catch (err) {
       alert(err instanceof Error ? err.message : "Booking failed. Please try again.");
     } finally {
@@ -268,7 +280,7 @@ export default function BookingCheckoutPage() {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handlePayNow} className="space-y-5">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div className="space-y-2">
                 <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider">
@@ -339,15 +351,15 @@ export default function BookingCheckoutPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full py-4 rounded-xl bg-icube-gold text-icube-dark font-semibold uppercase tracking-wider hover:bg-icube-gold-light transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full py-4 rounded-xl border border-icube-gold/45 bg-icube-gold/10 text-icube-gold-light font-semibold uppercase tracking-wider hover:bg-icube-gold/20 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {submitting ? (
                 <>
                   <Loader2 size={20} className="animate-spin" />
-                  Submitting…
+                  Processing…
                 </>
               ) : (
-                "Submit booking request"
+                "Pay now"
               )}
             </button>
           </form>

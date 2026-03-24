@@ -12,10 +12,10 @@ type Service = {
   description: string;
   icon: string;
   sort_order: number;
-  /** JSON array string of stats to show on case study page */
-  case_study_stats?: string;
-  /** JSON array string of infographic cards to show on case study page */
-  case_study_infographics?: string;
+  /** Short intro paragraph at the top of service details page. */
+  case_study_intro?: string;
+  /** JSON array string of case studies for this service. */
+  case_studies?: string;
 };
 type Project = {
   id: number | string;

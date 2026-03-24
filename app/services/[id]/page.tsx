@@ -3,10 +3,13 @@ import ServiceCaseStudyPage from "@/views/ServiceCaseStudyPage";
 
 export const metadata: Metadata = {
   title: "Service Case Study | ICUBE Media Studio",
-  description: "Explore service details, stats, and project infographics.",
+  description: "Explore service details and project case studies.",
 };
 
-export default function Page({ params }: { params: { id: string } }) {
-  return <ServiceCaseStudyPage serviceId={params.id} />;
+type Props = { params: Promise<{ id: string }> };
+
+export default async function Page({ params }: Props) {
+  const { id } = await params;
+  return <ServiceCaseStudyPage serviceId={id} />;
 }
 

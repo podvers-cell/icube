@@ -1,6 +1,7 @@
 import {
   collection,
   deleteDoc,
+  deleteField,
   doc,
   getDoc,
   getDocs,
@@ -302,7 +303,17 @@ export const api = {
       const [, kind, id] = m;
       const col = dashboardKindToCollection(kind!);
       const payload = typeof body === "object" && body !== null ? (body as Record<string, unknown>) : {};
-      await setDoc(doc(requireFirestore(), col, id!), { ...payload, updated_at: serverTimestamp() }, { merge: true });
+      if (kind === "services" && payload.remove_legacy_case_study_fields) {
+        const { remove_legacy_case_study_fields: _remove, ...rest } = payload;
+        await updateDoc(doc(requireFirestore(), col, id!), {
+          ...rest,
+          case_study_stats: deleteField(),
+          case_study_infographics: deleteField(),
+          updated_at: serverTimestamp(),
+        });
+      } else {
+        await setDoc(doc(requireFirestore(), col, id!), { ...payload, updated_at: serverTimestamp() }, { merge: true });
+      }
       return { success: true } as T;
     }
 
@@ -363,8 +374,8 @@ export async function getServices() {
       description: string;
       icon: string;
       sort_order: number;
-      case_study_stats?: string;
-      case_study_infographics?: string;
+      case_study_intro?: string;
+      case_studies?: string;
     }[]
   >("/services");
 }

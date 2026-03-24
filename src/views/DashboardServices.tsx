@@ -1,11 +1,19 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, RefreshCcw, Trash2 } from "lucide-react";
 import { api } from "../api";
 
-type CaseStudyStat = { label: string; value: string | number; sub?: string };
-type CaseStudyInfographic = { title: string; description?: string; image_url?: string };
+type CaseStudyItem = {
+  title: string;
+  client?: string;
+  challenge?: string;
+  solution?: string;
+  outcome?: string;
+  image_url?: string;
+  video_url?: string;
+  metrics?: string[];
+};
 
 type Service = {
   id: string;
@@ -13,51 +21,48 @@ type Service = {
   description: string;
   icon: string;
   sort_order: number;
-  case_study_stats?: string;
-  case_study_infographics?: string;
+  case_study_intro?: string;
+  case_studies?: string;
 };
 
-type ServiceForm = Omit<Service, "case_study_stats" | "case_study_infographics"> & {
-  case_study_stats: CaseStudyStat[];
-  case_study_infographics: CaseStudyInfographic[];
+type ServiceForm = Omit<Service, "case_studies"> & {
+  case_studies: CaseStudyItem[];
 };
 
 const ICONS = ["Mic", "MonitorPlay", "Share2", "Video", "Clapperboard"];
 
-const DEMO_STATS: CaseStudyStat[] = [
-  { label: "Deliverables", value: 24, sub: "Reels & cuts" },
-  { label: "Shoot time", value: "6h", sub: "On-set production" },
-  { label: "Turnaround", value: "72h", sub: "Edit & delivery" },
-  { label: "Platforms", value: 4, sub: "IG / TikTok / YouTube / X" },
-];
-
-const DEMO_INFOGRAPHICS: CaseStudyInfographic[] = [
+const DEMO_CASE_STUDIES: CaseStudyItem[] = [
   {
-    title: "Audience growth",
-    description: "+38% in 30 days after launch",
-    image_url: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1400&auto=format&fit=crop",
-  },
-  {
-    title: "Content breakdown",
-    description: "Hooks, captions, pacing, and cut patterns used",
-    image_url: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=1400&auto=format&fit=crop",
+    title: "Podcast launch campaign",
+    client: "Tech brand in Dubai",
+    challenge: "Needed consistent weekly episodes with fast publishing cadence.",
+    solution: "Built a 3-camera production workflow and reusable post templates.",
+    outcome: "Delivered 12 episodes in 6 weeks with stable publishing quality.",
+    image_url: "https://images.unsplash.com/photo-1516280440614-37939bbacd81?q=80&w=1400&auto=format&fit=crop",
+    metrics: ["12 Episodes", "6 Weeks", "3 Cameras"],
   },
 ];
 
-function safeParseArray<T>(raw: string | undefined, fallback: T[]): T[] {
-  if (!raw?.trim()) return fallback;
-  try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as T[]) : fallback;
-  } catch {
-    return fallback;
+function safeParseArray<T>(raw: unknown, fallback: T[]): T[] {
+  if (Array.isArray(raw)) return raw as T[];
+  if (typeof raw === "string") {
+    if (!raw.trim()) return fallback;
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? (parsed as T[]) : fallback;
+    } catch {
+      return fallback;
+    }
   }
+  return fallback;
 }
 
 export default function DashboardServices() {
   const [list, setList] = useState<Service[]>([]);
   const [editing, setEditing] = useState<ServiceForm | null>(null);
   const [creating, setCreating] = useState(false);
+  const [cleaningLegacy, setCleaningLegacy] = useState(false);
+  const [saveNotice, setSaveNotice] = useState<string>("");
 
   function load() {
     api.get<Service[]>("/dashboard/services").then(setList).catch(() => {});
@@ -68,9 +73,9 @@ export default function DashboardServices() {
     if (!editing) return null;
     return {
       ...editing,
-      case_study_stats: JSON.stringify(editing.case_study_stats ?? []),
-      case_study_infographics: JSON.stringify(editing.case_study_infographics ?? []),
-    } as Service;
+      case_studies: JSON.stringify(editing.case_studies ?? []),
+      remove_legacy_case_study_fields: true,
+    };
   }, [editing]);
 
   async function save(e: FormEvent) {
@@ -83,15 +88,17 @@ export default function DashboardServices() {
           description: editingPayload.description,
           icon: editingPayload.icon,
           sort_order: editingPayload.sort_order ?? list.length,
-          case_study_stats: editingPayload.case_study_stats,
-          case_study_infographics: editingPayload.case_study_infographics,
+          case_study_intro: editingPayload.case_study_intro ?? "",
+          case_studies: editingPayload.case_studies,
         });
       } else {
-        await api.put(`/dashboard/services/${editingPayload.id}`, editingPayload);
+        await api.put(`/dashboard/services/${editing.id}`, editingPayload);
       }
       setEditing(null);
       setCreating(false);
       load();
+      setSaveNotice("Saved to Firebase successfully. Service page content updated.");
+      setTimeout(() => setSaveNotice(""), 3000);
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed");
     }
@@ -105,8 +112,8 @@ export default function DashboardServices() {
       description: "",
       icon: ICONS[0],
       sort_order: list.length,
-      case_study_stats: DEMO_STATS,
-      case_study_infographics: DEMO_INFOGRAPHICS,
+      case_study_intro: "",
+      case_studies: DEMO_CASE_STUDIES,
     });
   }
 
@@ -120,41 +127,73 @@ export default function DashboardServices() {
     }
   }
 
+  async function cleanupLegacyFields() {
+    if (!list.length) return;
+    if (!confirm("This will remove old case study fields from all service documents in Firebase. Continue?")) return;
+    setCleaningLegacy(true);
+    try {
+      for (const s of list) {
+        await api.put(`/dashboard/services/${s.id}`, {
+          title: s.title,
+          description: s.description,
+          icon: s.icon,
+          sort_order: s.sort_order,
+          case_study_intro: s.case_study_intro ?? "",
+          case_studies: s.case_studies ?? "[]",
+          remove_legacy_case_study_fields: true,
+        });
+      }
+      alert("Legacy case study fields removed from Firebase services collection.");
+      load();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Legacy cleanup failed");
+    } finally {
+      setCleaningLegacy(false);
+    }
+  }
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-display font-bold text-white">Services</h1>
-          <p className="text-gray-500 text-sm mt-1">Create and manage the production services shown on the public website.</p>
+          <p className="mt-1 text-sm text-gray-500">Manage service cards and the new case study details page content.</p>
         </div>
-        <button
-          onClick={openCreate}
-          className="px-4 py-2 bg-icube-gold text-icube-dark font-semibold rounded-sm hover:bg-icube-gold-light"
-        >
-          Add Service
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={cleanupLegacyFields}
+            disabled={cleaningLegacy || list.length === 0}
+            className="inline-flex items-center gap-2 rounded-sm border border-white/15 px-4 py-2 text-sm font-semibold text-white hover:border-icube-gold hover:text-icube-gold disabled:opacity-50"
+          >
+            <RefreshCcw size={14} className={cleaningLegacy ? "animate-spin" : ""} />
+            Clean legacy case-study fields
+          </button>
+          <button onClick={openCreate} className="rounded-sm bg-icube-gold px-4 py-2 font-semibold text-icube-dark hover:bg-icube-gold-light">
+            Add Service
+          </button>
+        </div>
       </div>
+      {saveNotice ? (
+        <div className="mb-4 rounded-sm border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
+          {saveNotice}
+        </div>
+      ) : null}
 
       {list.length === 0 ? (
-        <div className="bg-icube-gray border border-dashed border-white/15 rounded-sm p-8 text-center text-gray-400">
+        <div className="rounded-sm border border-dashed border-white/15 bg-icube-gray p-8 text-center text-gray-400">
           <p className="mb-3">No services yet.</p>
-          <button
-            onClick={openCreate}
-            className="px-4 py-2 bg-icube-gold text-icube-dark font-semibold rounded-sm hover:bg-icube-gold-light"
-          >
+          <button onClick={openCreate} className="rounded-sm bg-icube-gold px-4 py-2 font-semibold text-icube-dark hover:bg-icube-gold-light">
             Create the first service
           </button>
         </div>
       ) : (
         <div className="space-y-4">
           {list.map((s) => (
-            <div
-              key={s.id}
-              className="bg-icube-gray border border-white/10 rounded-sm p-4 flex items-center justify-between"
-            >
+            <div key={s.id} className="flex items-center justify-between rounded-sm border border-white/10 bg-icube-gray p-4">
               <div>
                 <p className="font-semibold text-white">{s.title}</p>
-                <p className="text-gray-500 text-sm line-clamp-1">{s.description}</p>
+                <p className="line-clamp-1 text-sm text-gray-500">{s.description}</p>
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -167,11 +206,11 @@ export default function DashboardServices() {
                       description: s.description,
                       icon: s.icon,
                       sort_order: s.sort_order,
-                      case_study_stats: safeParseArray<CaseStudyStat>(s.case_study_stats, DEMO_STATS),
-                      case_study_infographics: safeParseArray<CaseStudyInfographic>(s.case_study_infographics, DEMO_INFOGRAPHICS),
+                      case_study_intro: s.case_study_intro ?? "",
+                      case_studies: safeParseArray<CaseStudyItem>(s.case_studies, DEMO_CASE_STUDIES),
                     });
                   }}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/5 border border-white/15 text-gray-300 hover:border-icube-gold hover:text-icube-gold transition-colors"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white/5 text-gray-300 transition-colors hover:border-icube-gold hover:text-icube-gold"
                   aria-label="Edit service"
                 >
                   <Pencil size={15} />
@@ -179,7 +218,7 @@ export default function DashboardServices() {
                 <button
                   type="button"
                   onClick={() => remove(s.id)}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-red-500/5 border border-red-500/30 text-red-400 hover:bg-red-500/15 transition-colors"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-red-500/30 bg-red-500/5 text-red-400 transition-colors hover:bg-red-500/15"
                   aria-label="Delete service"
                 >
                   <Trash2 size={15} />
@@ -191,133 +230,81 @@ export default function DashboardServices() {
       )}
 
       {editing && (
-        <form onSubmit={save} className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-icube-gray border border-white/10 rounded-sm max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col">
-            <div className="p-6 border-b border-white/10">
-              <h2 className="text-xl font-display font-bold text-white">
-                {creating ? "Add Service" : "Edit Service"}
-              </h2>
+        <form onSubmit={save} className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+          <div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-sm border border-white/10 bg-icube-gray">
+            <div className="border-b border-white/10 p-6">
+              <h2 className="text-xl font-display font-bold text-white">{creating ? "Add Service" : "Edit Service"}</h2>
             </div>
-            <div className="p-6 overflow-y-auto space-y-4">
-            <input
-              value={editing.title}
-              onChange={(e) => setEditing((x) => (x ? { ...x, title: e.target.value } : null))}
-              className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white"
-              placeholder="Title"
-            />
-            <textarea
-              value={editing.description}
-              onChange={(e) => setEditing((x) => (x ? { ...x, description: e.target.value } : null))}
-              rows={3}
-              className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white"
-              placeholder="Description"
-            />
-            <div className="border-t border-white/10 pt-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold text-white">Case study stats</p>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setEditing((x) =>
-                      x ? { ...x, case_study_stats: [...(x.case_study_stats || []), { label: "", value: "", sub: "" }] } : null
-                    )
-                  }
-                  className="text-xs font-semibold uppercase tracking-wider text-icube-gold hover:text-icube-gold-light"
-                >
-                  + Add stat
-                </button>
-              </div>
-              <div className="space-y-2">
-                {(editing.case_study_stats || []).map((st, idx) => (
-                  <div key={idx} className="grid grid-cols-1 sm:grid-cols-12 gap-2">
-                    <input
-                      value={st.label}
-                      onChange={(e) =>
-                        setEditing((x) =>
-                          x
-                            ? {
-                                ...x,
-                                case_study_stats: x.case_study_stats.map((s, i) => (i === idx ? { ...s, label: e.target.value } : s)),
-                              }
-                            : null
-                        )
-                      }
-                      className="sm:col-span-4 bg-black/50 border border-white/10 p-3 rounded-sm text-white"
-                      placeholder="Label (e.g. Deliverables)"
-                    />
-                    <input
-                      value={String(st.value ?? "")}
-                      onChange={(e) =>
-                        setEditing((x) =>
-                          x
-                            ? {
-                                ...x,
-                                case_study_stats: x.case_study_stats.map((s, i) => (i === idx ? { ...s, value: e.target.value } : s)),
-                              }
-                            : null
-                        )
-                      }
-                      className="sm:col-span-3 bg-black/50 border border-white/10 p-3 rounded-sm text-white"
-                      placeholder="Value (e.g. 24)"
-                    />
-                    <input
-                      value={st.sub ?? ""}
-                      onChange={(e) =>
-                        setEditing((x) =>
-                          x
-                            ? {
-                                ...x,
-                                case_study_stats: x.case_study_stats.map((s, i) => (i === idx ? { ...s, sub: e.target.value } : s)),
-                              }
-                            : null
-                        )
-                      }
-                      className="sm:col-span-4 bg-black/50 border border-white/10 p-3 rounded-sm text-white"
-                      placeholder="Sub text (optional)"
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setEditing((x) =>
-                          x ? { ...x, case_study_stats: x.case_study_stats.filter((_, i) => i !== idx) } : null
-                        )
-                      }
-                      className="sm:col-span-1 px-3 py-2 rounded-sm bg-red-500/10 border border-red-500/30 text-red-300 hover:bg-red-500/20"
-                      aria-label="Remove stat"
+            <div className="space-y-4 overflow-y-auto p-6">
+              <section className="space-y-3 rounded-sm border border-white/10 bg-black/20 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">Service card data</p>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-300">Service title (shown on the card)</label>
+                  <input
+                    value={editing.title}
+                    onChange={(e) => setEditing((x) => (x ? { ...x, title: e.target.value } : null))}
+                    className="w-full rounded-sm border border-white/10 bg-black/50 p-3 text-white"
+                    placeholder="Example: Podcast Production"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-300">Card description (short summary)</label>
+                  <textarea
+                    value={editing.description}
+                    onChange={(e) => setEditing((x) => (x ? { ...x, description: e.target.value } : null))}
+                    rows={3}
+                    className="w-full rounded-sm border border-white/10 bg-black/50 p-3 text-white"
+                    placeholder="Short summary displayed in Services cards."
+                  />
+                </div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-300">Icon</label>
+                    <select
+                      value={editing.icon}
+                      onChange={(e) => setEditing((x) => (x ? { ...x, icon: e.target.value } : null))}
+                      className="w-full rounded-sm border border-white/10 bg-black/50 p-3 text-white"
                     >
-                      ×
-                    </button>
+                      {ICONS.map((i) => (
+                        <option key={i} value={i}>{i}</option>
+                      ))}
+                    </select>
                   </div>
-                ))}
-              </div>
-            </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-300">Sort order (smaller shows first)</label>
+                    <input
+                      type="number"
+                      value={editing.sort_order}
+                      onChange={(e) =>
+                        setEditing((x) => (x ? { ...x, sort_order: Number(e.target.value || 0) } : null))
+                      }
+                      className="w-full rounded-sm border border-white/10 bg-black/50 p-3 text-white"
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+              </section>
 
-            <div className="border-t border-white/10 pt-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold text-white">Case study infographics</p>
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setEditing((x) => {
-                        if (!x) return null;
-                        const stats = x.case_study_stats || [];
-                        const auto = stats
-                          .filter((s) => (s.label ?? "").trim())
-                          .map((s) => ({
-                            title: String(s.label ?? "").trim(),
-                            description: [s.value != null && String(s.value).trim() ? String(s.value).trim() : "", (s.sub ?? "").trim()]
-                              .filter(Boolean)
-                              .join(" · "),
-                            image_url: "",
-                          }));
-                        return { ...x, case_study_infographics: auto.length ? auto : x.case_study_infographics };
-                      })
-                    }
-                    className="text-xs font-semibold uppercase tracking-wider text-gray-300 hover:text-icube-gold transition-colors"
-                  >
-                    Auto-generate
-                  </button>
+              <section className="space-y-2 rounded-sm border border-white/10 bg-black/20 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">Service details page intro</p>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-300">Intro paragraph (top of `/services/[id]` page)</label>
+                  <textarea
+                    value={editing.case_study_intro ?? ""}
+                    onChange={(e) => setEditing((x) => (x ? { ...x, case_study_intro: e.target.value } : null))}
+                    rows={3}
+                    className="w-full rounded-sm border border-white/10 bg-black/50 p-3 text-white"
+                    placeholder="Add a brief intro for this service details page."
+                  />
+                </div>
+              </section>
+
+              <div className="space-y-3 border-t border-white/10 pt-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-white">Case studies</p>
+                    <p className="text-xs text-gray-400">Each case study appears as a block in the public service page.</p>
+                  </div>
                   <button
                     type="button"
                     onClick={() =>
@@ -325,9 +312,9 @@ export default function DashboardServices() {
                         x
                           ? {
                               ...x,
-                              case_study_infographics: [
-                                ...(x.case_study_infographics || []),
-                                { title: "", description: "", image_url: "" },
+                              case_studies: [
+                                ...(x.case_studies || []),
+                                { title: "", client: "", challenge: "", solution: "", outcome: "", image_url: "", video_url: "", metrics: [] },
                               ],
                             }
                           : null
@@ -335,98 +322,155 @@ export default function DashboardServices() {
                     }
                     className="text-xs font-semibold uppercase tracking-wider text-icube-gold hover:text-icube-gold-light"
                   >
-                    + Add infographic
+                    + Add case study
                   </button>
                 </div>
-              </div>
-              <div className="space-y-3">
-                {(editing.case_study_infographics || []).map((ig, idx) => (
-                  <div key={idx} className="rounded-sm border border-white/10 bg-black/20 p-3 space-y-2">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Infographic {idx + 1}</p>
+
+                {(editing.case_studies || []).map((cs, idx) => (
+                  <div key={idx} className="space-y-2 rounded-sm border border-white/10 bg-black/20 p-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Case study {idx + 1}</p>
                       <button
                         type="button"
                         onClick={() =>
                           setEditing((x) =>
-                            x ? { ...x, case_study_infographics: x.case_study_infographics.filter((_, i) => i !== idx) } : null
+                            x ? { ...x, case_studies: x.case_studies.filter((_, i) => i != idx) } : null
                           )
                         }
-                        className="px-3 py-1.5 rounded-sm bg-red-500/10 border border-red-500/30 text-red-300 hover:bg-red-500/20 text-xs"
+                        className="rounded-sm border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs text-red-300 hover:bg-red-500/20"
                       >
                         Remove
                       </button>
                     </div>
-                    <input
-                      value={ig.title}
-                      onChange={(e) =>
-                        setEditing((x) =>
-                          x
-                            ? {
-                                ...x,
-                                case_study_infographics: x.case_study_infographics.map((v, i) => (i === idx ? { ...v, title: e.target.value } : v)),
-                              }
-                            : null
-                        )
-                      }
-                      className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white"
-                      placeholder="Title"
-                    />
-                    <input
-                      value={ig.image_url ?? ""}
-                      onChange={(e) =>
-                        setEditing((x) =>
-                          x
-                            ? {
-                                ...x,
-                                case_study_infographics: x.case_study_infographics.map((v, i) =>
-                                  i === idx ? { ...v, image_url: e.target.value } : v
-                                ),
-                              }
-                            : null
-                        )
-                      }
-                      className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white"
-                      placeholder="Image URL (optional)"
-                    />
-                    <textarea
-                      value={ig.description ?? ""}
-                      onChange={(e) =>
-                        setEditing((x) =>
-                          x
-                            ? {
-                                ...x,
-                                case_study_infographics: x.case_study_infographics.map((v, i) =>
-                                  i === idx ? { ...v, description: e.target.value } : v
-                                ),
-                              }
-                            : null
-                        )
-                      }
-                      rows={2}
-                      className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white"
-                      placeholder="Description (optional)"
-                    />
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-gray-300">Case title</label>
+                      <input
+                        value={cs.title}
+                        onChange={(e) =>
+                          setEditing((x) =>
+                            x ? { ...x, case_studies: x.case_studies.map((v, i) => (i === idx ? { ...v, title: e.target.value } : v)) } : null
+                          )
+                        }
+                        className="w-full rounded-sm border border-white/10 bg-black/50 p-3 text-white"
+                        placeholder="Example: Product Launch Campaign"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-gray-300">Client name</label>
+                      <input
+                        value={cs.client ?? ""}
+                        onChange={(e) =>
+                          setEditing((x) =>
+                            x ? { ...x, case_studies: x.case_studies.map((v, i) => (i === idx ? { ...v, client: e.target.value } : v)) } : null
+                          )
+                        }
+                        className="w-full rounded-sm border border-white/10 bg-black/50 p-3 text-white"
+                        placeholder="Example: Brand / Company"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-gray-300">Challenge</label>
+                      <textarea
+                        value={cs.challenge ?? ""}
+                        onChange={(e) =>
+                          setEditing((x) =>
+                            x ? { ...x, case_studies: x.case_studies.map((v, i) => (i === idx ? { ...v, challenge: e.target.value } : v)) } : null
+                          )
+                        }
+                        rows={2}
+                        className="w-full rounded-sm border border-white/10 bg-black/50 p-3 text-white"
+                        placeholder="What problem did the client have?"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-gray-300">Solution</label>
+                      <textarea
+                        value={cs.solution ?? ""}
+                        onChange={(e) =>
+                          setEditing((x) =>
+                            x ? { ...x, case_studies: x.case_studies.map((v, i) => (i === idx ? { ...v, solution: e.target.value } : v)) } : null
+                          )
+                        }
+                        rows={2}
+                        className="w-full rounded-sm border border-white/10 bg-black/50 p-3 text-white"
+                        placeholder="How did your team execute the service?"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-gray-300">Outcome</label>
+                      <textarea
+                        value={cs.outcome ?? ""}
+                        onChange={(e) =>
+                          setEditing((x) =>
+                            x ? { ...x, case_studies: x.case_studies.map((v, i) => (i === idx ? { ...v, outcome: e.target.value } : v)) } : null
+                          )
+                        }
+                        rows={2}
+                        className="w-full rounded-sm border border-white/10 bg-black/50 p-3 text-white"
+                        placeholder="What was the result?"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-gray-300">Case image URL</label>
+                      <input
+                        value={cs.image_url ?? ""}
+                        onChange={(e) =>
+                          setEditing((x) =>
+                            x ? { ...x, case_studies: x.case_studies.map((v, i) => (i === idx ? { ...v, image_url: e.target.value } : v)) } : null
+                          )
+                        }
+                        className="w-full rounded-sm border border-white/10 bg-black/50 p-3 text-white"
+                        placeholder="https://..."
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-gray-300">Case video URL (YouTube/Vimeo or direct link)</label>
+                      <input
+                        value={cs.video_url ?? ""}
+                        onChange={(e) =>
+                          setEditing((x) =>
+                            x ? { ...x, case_studies: x.case_studies.map((v, i) => (i === idx ? { ...v, video_url: e.target.value } : v)) } : null
+                          )
+                        }
+                        className="w-full rounded-sm border border-white/10 bg-black/50 p-3 text-white"
+                        placeholder="https://..."
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-gray-300">Metrics (comma separated)</label>
+                      <input
+                        value={(cs.metrics || []).join(", ")}
+                        onChange={(e) =>
+                          setEditing((x) =>
+                            x
+                              ? {
+                                  ...x,
+                                  case_studies: x.case_studies.map((v, i) =>
+                                    i === idx
+                                      ? {
+                                          ...v,
+                                          metrics: e.target.value
+                                            .split(",")
+                                            .map((m) => m.trim())
+                                            .filter(Boolean),
+                                        }
+                                      : v
+                                  ),
+                                }
+                              : null
+                          )
+                        }
+                        className="w-full rounded-sm border border-white/10 bg-black/50 p-3 text-white"
+                        placeholder="Example: 12 Videos, 4 Weeks, 2M Views"
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
-            <select
-              value={editing.icon}
-              onChange={(e) => setEditing((x) => (x ? { ...x, icon: e.target.value } : null))}
-              className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white"
-            >
-              {ICONS.map((i) => (
-                <option key={i} value={i}>{i}</option>
-              ))}
-            </select>
-            </div>
-            <div className="p-6 border-t border-white/10 flex gap-2 bg-icube-gray/80">
-              <button type="submit" className="px-4 py-2 bg-icube-gold text-icube-dark font-semibold rounded-sm">
-                Save
-              </button>
-              <button type="button" onClick={() => setEditing(null)} className="px-4 py-2 bg-white/10 text-white rounded-sm">
-                Cancel
-              </button>
+            <div className="flex gap-2 border-t border-white/10 bg-icube-gray/80 p-6">
+              <button type="submit" className="rounded-sm bg-icube-gold px-4 py-2 font-semibold text-icube-dark">Save</button>
+              <button type="button" onClick={() => setEditing(null)} className="rounded-sm bg-white/10 px-4 py-2 text-white">Cancel</button>
             </div>
           </div>
         </form>
