@@ -59,6 +59,31 @@ export function isSlotPastInRegion(
   return nowMinutes >= slotMinutes;
 }
 
+/**
+ * Returns true if the given slot is too soon, within a minimum lead time window.
+ * Only applies when dateStr is today in the region.
+ *
+ * Example: now 14:46, lead 180m → earliest allowed is 17:46.
+ * A slot at 17:00 is disabled; 18:00 is allowed.
+ *
+ * Edge case: if now+lead crosses midnight, all remaining slots today are blocked.
+ */
+export function isSlotTooSoonInRegion(
+  dateStr: string,
+  slotValue: string,
+  leadMinutes: number = 180,
+  timeZone: string = DEFAULT_TIMEZONE
+): boolean {
+  if (!isTodayInRegion(dateStr, timeZone)) return false;
+  const [h, m] = slotValue.split(":").map((x) => parseInt(x, 10));
+  const slotMinutes = (h ?? 0) * 60 + (m ?? 0);
+  const { hours, minutes } = getNowInRegion(timeZone);
+  const nowMinutes = hours * 60 + minutes;
+  const earliest = nowMinutes + leadMinutes;
+  if (earliest >= 24 * 60) return true;
+  return slotMinutes < earliest;
+}
+
 /** Max selectable date (e.g. 60 days from today in region). */
 export function getDateInputMax(daysAhead: number = 60): string {
   const formatter = new Intl.DateTimeFormat("en-CA", {

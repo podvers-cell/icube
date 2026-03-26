@@ -11,11 +11,11 @@ import { useBooking } from "@/BookingContext";
 import { getBookingAddons, type BookingAddon } from "@/api";
 
 const FALLBACK_ADDONS: BookingAddon[] = [
-  { id: "addon-1", name: "Extra camera operator", description: "Additional camera for multi-angle coverage", price_aed: 350, sort_order: 1 },
-  { id: "addon-2", name: "Professional makeup", description: "On-site makeup artist for talent", price_aed: 500, sort_order: 2 },
-  { id: "addon-3", name: "Teleprompter", description: "Teleprompter setup and operator", price_aed: 200, sort_order: 3 },
-  { id: "addon-4", name: "Rush edit (24h)", description: "Priority editing and delivery within 24 hours", price_aed: 800, sort_order: 4 },
-  { id: "addon-5", name: "Green screen", description: "Green screen backdrop and keying", price_aed: 300, sort_order: 5 },
+  { id: "addon-1", name: "Extra camera operator", description: "Additional camera for multi-angle coverage", price_aed: 350, sort_order: 1, is_popular: 1 },
+  { id: "addon-2", name: "Professional makeup", description: "On-site makeup artist for talent", price_aed: 500, sort_order: 2, is_popular: 0 },
+  { id: "addon-3", name: "Teleprompter", description: "Teleprompter setup and operator", price_aed: 200, sort_order: 3, is_popular: 0 },
+  { id: "addon-4", name: "Rush edit (24h)", description: "Priority editing and delivery within 24 hours", price_aed: 800, sort_order: 4, is_popular: 0 },
+  { id: "addon-5", name: "Green screen", description: "Green screen backdrop and keying", price_aed: 300, sort_order: 5, is_popular: 0 },
 ];
 
 function parseIncludedFeatures(raw: string | null | undefined): string[] {
@@ -58,6 +58,13 @@ export default function StudioBookingAddonsPage() {
     };
   }, []);
 
+  const sortedAddons = [...addons].sort((a, b) => {
+    const ap = Number((a as any).is_popular ?? 0);
+    const bp = Number((b as any).is_popular ?? 0);
+    if (bp !== ap) return bp - ap;
+    return Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0);
+  });
+
   useEffect(() => {
     if (!selectedStudio || !selectedDate || !selectedTimeSlot || !selectedDurationHours) {
       router.replace("/#studio");
@@ -76,6 +83,7 @@ export default function StudioBookingAddonsPage() {
   };
 
   const studioTotal = selectedStudio ? selectedStudio.price_aed_per_hour * durationHours : 0;
+  const grandTotal = studioTotal + totalAddonsAmount;
 
   if (!selectedStudio || !selectedDate || !selectedTimeSlot || !selectedDurationHours) return null;
 
@@ -83,7 +91,7 @@ export default function StudioBookingAddonsPage() {
     <div className="site-wrapper min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray to-icube-dark/80 text-white selection:bg-icube-gold selection:text-icube-dark transition-colors duration-300">
       <Navbar />
       <main className="relative py-24 md:py-28">
-        <div className="max-w-4xl mx-auto px-5 sm:px-6 md:px-12">
+        <div className="max-w-6xl mx-auto px-5 sm:px-6 md:px-12">
           <BookingProgress currentStep={2} steps={["Date & time", "Add-ons", "Checkout"]} />
           <Link
             href="/studio/booking/date-time"
@@ -111,80 +119,162 @@ export default function StudioBookingAddonsPage() {
             </div>
           </div>
 
+          {/* Top totals + checkout (keep bottom CTA too) */}
+          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Total</span>
+                <span className="text-white font-semibold">
+                  {grandTotal.toLocaleString()} <span className="text-gray-500 text-sm font-normal">AED</span>
+                </span>
+                {totalAddonsAmount > 0 ? (
+                  <span className="text-gray-500 text-sm">
+                    (Studio {studioTotal.toLocaleString()} + Add-ons {totalAddonsAmount.toLocaleString()})
+                  </span>
+                ) : (
+                  <span className="text-gray-500 text-sm">(Studio {studioTotal.toLocaleString()})</span>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={handleContinue}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-icube-gold px-6 py-3.5 font-semibold uppercase tracking-wider text-icube-dark hover:bg-icube-gold-light transition-colors"
+              >
+                Checkout
+                <ArrowRight size={18} />
+              </button>
+            </div>
+          </div>
+
           {loading ? (
             <div className="text-gray-400 py-12">Loading add-ons…</div>
           ) : (
             <section className="mb-10">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {addons.map((a) => {
+                {sortedAddons.map((a) => {
                   const selected = isSelected(a.id);
                   const expanded = expandedId === a.id;
+                  const isPopular = !!a.is_popular;
                   return (
                     <div
                       key={a.id}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => toggle(a)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          toggle(a);
-                        }
-                      }}
-                      className={`rounded-2xl border p-6 text-left transition-all duration-200 flex flex-col cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-icube-gold focus-visible:ring-offset-2 focus-visible:ring-offset-icube-dark ${
+                      className={`group relative overflow-visible rounded-2xl border transition-all duration-300 ${
                         selected
-                          ? "border-icube-gold bg-icube-gold/10"
-                          : "border-white/10 bg-white/[0.04] hover:border-white/20 hover:bg-white/[0.06]"
+                          ? "border-icube-gold/70 bg-icube-gold/10 shadow-[0_20px_60px_rgba(0,0,0,0.35),0_0_0_1px_rgba(212,175,55,0.15)]"
+                          : isPopular
+                            ? "border-icube-gold/35 bg-white/[0.05] shadow-[0_18px_56px_rgba(0,0,0,0.28)] hover:border-icube-gold/55 hover:bg-white/[0.06]"
+                            : "border-white/10 bg-white/[0.04] hover:border-white/20 hover:bg-white/[0.06]"
                       }`}
                     >
-                      <div className="flex items-start justify-between gap-4">
-                        {a.image_url && String(a.image_url).trim() ? (
-                          <div className="overflow-hidden rounded-xl border border-white/10 bg-black/30 aspect-square w-24 sm:w-28 flex items-center justify-center shrink-0">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={String(a.image_url)}
-                              alt={a.name}
-                              className="w-full h-full object-cover"
-                              loading="lazy"
-                              referrerPolicy="no-referrer"
-                            />
+                      {isPopular ? (
+                        <div
+                          className="pointer-events-none absolute -top-24 -right-24 h-56 w-56 rounded-full bg-icube-gold/12 blur-[80px]"
+                          aria-hidden
+                        />
+                      ) : null}
+
+                      <div className="relative p-6">
+                        {isPopular ? (
+                          <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+                            <span className="inline-flex items-center justify-center bg-white text-icube-dark text-[10px] font-semibold uppercase tracking-[0.2em] py-1.5 px-4 rounded-full shadow-[0_0_20px_rgba(255,255,255,0.25)]"
+                              style={{ backgroundColor: "#F6EBD8", color: "#7B5A2A" }}
+                            >
+                              Most Popular
+                            </span>
                           </div>
                         ) : null}
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-start justify-between gap-3 min-h-[28px]">
-                            <h3 className="font-display font-semibold text-white line-clamp-1">{a.name}</h3>
+                        <div className="flex items-start gap-4">
+                          <div className="relative overflow-hidden rounded-xl border border-white/10 bg-black/30 aspect-square w-24 sm:w-28 shrink-0">
+                            {a.image_url && String(a.image_url).trim() ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={String(a.image_url)}
+                                alt={a.name}
+                                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
+                                loading="lazy"
+                                referrerPolicy="no-referrer"
+                              />
+                            ) : (
+                              <div className="h-full w-full flex items-center justify-center text-[11px] uppercase tracking-widest text-gray-500">
+                                Add-on
+                              </div>
+                            )}
+                            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-black/55 to-transparent" aria-hidden />
                           </div>
 
-                          <div className="mt-3 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                            {a.price_before_aed != null && a.price_before_aed > 0 && (
-                              <span className="text-gray-500 text-xs line-through">{a.price_before_aed} AED</span>
-                            )}
-                            <span className="text-icube-gold font-bold text-lg leading-none">{a.price_aed} AED</span>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-start justify-between gap-3">
+                              <h3 className="min-w-0 font-display font-semibold text-white leading-tight line-clamp-1">{a.name}</h3>
+                            </div>
+                            {a.description?.trim() ? (
+                              <p className="mt-2 text-sm text-gray-400 font-light line-clamp-3">
+                                {a.description.trim()}
+                              </p>
+                            ) : null}
+
+                            <div className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                              {a.price_before_aed != null && a.price_before_aed > 0 ? (
+                                <span className="text-sm font-semibold line-through text-gray-500">
+                                  {a.price_before_aed} AED
+                                </span>
+                              ) : null}
+                              <span className="text-icube-gold font-display font-bold text-lg leading-none">
+                                {a.price_aed} <span className="text-gray-400 text-xs font-sans">AED</span>
+                              </span>
+                            </div>
                           </div>
                         </div>
-                        <div
-                          className={`w-10 h-10 rounded-xl border-2 flex items-center justify-center shrink-0 transition-colors ${
-                            selected ? "border-icube-gold bg-icube-gold text-icube-dark" : "border-white/20"
-                          }`}
-                        >
-                          {selected ? <Check size={20} /> : <Plus size={20} className="text-gray-400" />}
+
+                        {a.ideal_for?.trim() ? (
+                          <div className="mt-4 w-full border-t border-white/10 pt-4 text-xs text-gray-400">
+                            <span className="text-gray-500 font-semibold uppercase tracking-wider mr-1">Ideal for:</span>
+                            <span className="text-gray-300 whitespace-normal break-words">{a.ideal_for.trim()}</span>
+                          </div>
+                        ) : null}
+
+                        <div className="mt-5 flex items-center justify-between gap-3">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setExpandedId((cur) => (cur === a.id ? null : a.id));
+                            }}
+                            className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-gray-400 hover:text-icube-gold transition-colors"
+                            aria-expanded={expanded}
+                            aria-label={expanded ? "Hide details" : "Show details"}
+                          >
+                            Details
+                            <ChevronDown size={16} className={`transition-transform ${expanded ? "rotate-180" : ""}`} />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              toggle(a);
+                            }}
+                            className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] transition-colors ${
+                              selected
+                                ? "bg-icube-gold text-icube-dark hover:bg-icube-gold-light"
+                                : "border border-white/15 bg-white/5 text-white hover:border-icube-gold/40 hover:bg-icube-gold/10"
+                            }`}
+                          >
+                            {selected ? (
+                              <>
+                                <Check size={16} />
+                                Selected
+                              </>
+                            ) : (
+                              <>
+                                <Plus size={16} />
+                                Add
+                              </>
+                            )}
+                          </button>
                         </div>
                       </div>
-
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setExpandedId((cur) => (cur === a.id ? null : a.id));
-                        }}
-                        className="mt-4 ml-auto inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-gray-400 hover:text-icube-gold transition-colors"
-                        aria-expanded={expanded}
-                        aria-label={expanded ? "Hide details" : "Show details"}
-                      >
-                        Details
-                        <ChevronDown size={16} className={`transition-transform ${expanded ? "rotate-180" : ""}`} />
-                      </button>
 
                       {/* Details collapses from bottom */}
                       <div
@@ -192,7 +282,7 @@ export default function StudioBookingAddonsPage() {
                           expanded ? "max-h-[420px] opacity-100" : "max-h-0 opacity-0"
                         }`}
                       >
-                        <div className="mt-4 pt-4 border-t border-white/10 space-y-3">
+                        <div className="px-6 pb-6 pt-0 border-t border-white/10 space-y-3">
                           <div>
                             <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Description</p>
                             <p className="text-gray-400 text-sm font-light">{a.description?.trim() || "—"}</p>

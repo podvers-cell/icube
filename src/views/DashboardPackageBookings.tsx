@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { X } from "lucide-react";
+import { Download, Trash2, X } from "lucide-react";
 import { api, getBookingPackages, sendBookingConfirmedEmail } from "../api";
 
 type BookingPackage = { id: string; name: string; price_aed: number };
@@ -116,9 +116,84 @@ export default function DashboardPackageBookings() {
     }
   }
 
+  function downloadCsv(filename: string, rows: Record<string, unknown>[]) {
+    const headers = Array.from(
+      rows.reduce((acc, r) => {
+        Object.keys(r).forEach((k) => acc.add(k));
+        return acc;
+      }, new Set<string>())
+    );
+    const escape = (v: unknown) => {
+      const s = v == null ? "" : String(v);
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const csv = [headers.join(","), ...rows.map((r) => headers.map((h) => escape(r[h])).join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function exportData() {
+    const rows = list.map((b) => ({
+      id: b.id,
+      submitted_at: formatSubmitted(b.created_at),
+      first_name: b.first_name,
+      last_name: b.last_name,
+      email: b.email,
+      phone: b.phone ?? "",
+      package_id: b.package_id ?? "",
+      package_name: getPackageName(b, packages),
+      status: b.status,
+      project_details: b.project_details ?? "",
+    }));
+    downloadCsv(`package_bookings_${new Date().toISOString().slice(0, 10)}.csv`, rows);
+  }
+
+  async function clearData() {
+    if (list.length === 0) return;
+    if (!confirm(`Clear ${list.length} package bookings? This will permanently delete them.`)) return;
+    try {
+      for (const b of list) {
+        await api.delete(`/dashboard/bookings/${b.id}`);
+      }
+      load();
+      setSelected(null);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed");
+    }
+  }
+
   return (
     <div>
-      <h1 className="text-3xl font-display font-bold text-white mb-8">Package Bookings</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <h1 className="text-3xl font-display font-bold text-white">Package Bookings</h1>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={exportData}
+            disabled={list.length === 0}
+            className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-icube-gray px-4 py-2 text-sm font-semibold text-white hover:bg-white/5 disabled:opacity-50"
+          >
+            <Download size={16} />
+            Export
+          </button>
+          <button
+            type="button"
+            onClick={clearData}
+            disabled={list.length === 0}
+            className="inline-flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-200 hover:bg-red-500/15 disabled:opacity-50"
+          >
+            <Trash2 size={16} />
+            Clear
+          </button>
+        </div>
+      </div>
       <div className="overflow-x-auto">
         <table className="w-full text-left min-w-[760px]">
           <thead>

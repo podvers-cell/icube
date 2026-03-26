@@ -10,7 +10,7 @@ import BookingDatePicker from "@/components/BookingDatePicker";
 import BookingProgress from "@/components/BookingProgress";
 import { useBooking } from "@/BookingContext";
 import { getBookedSlots } from "@/api";
-import { getTodayInRegion, getDateInputMax, isSlotPastInRegion } from "@/utils/bookingTimezone";
+import { getTodayInRegion, getDateInputMax, isSlotPastInRegion, isSlotTooSoonInRegion } from "@/utils/bookingTimezone";
 
 // 9:00 AM (9) through 10:00 PM (22) — one slot per hour
 const HOURLY_SLOTS: { value: string; label: string }[] = (() => {
@@ -55,8 +55,9 @@ export default function BookingDateTimePage() {
   useEffect(() => {
     if (!selectedDate || !selectedTimeSlot) return;
     const isPast = isSlotPastInRegion(selectedDate, selectedTimeSlot);
+    const isTooSoon = isSlotTooSoonInRegion(selectedDate, selectedTimeSlot, 180);
     const isBooked = bookedSlots.includes(selectedTimeSlot);
-    if (isPast || isBooked) setSelectedTimeSlot(null);
+    if (isPast || isTooSoon || isBooked) setSelectedTimeSlot(null);
   }, [selectedDate, selectedTimeSlot, bookedSlots, setSelectedTimeSlot]);
 
   const handleContinue = () => {
@@ -129,15 +130,27 @@ export default function BookingDateTimePage() {
             <p className="text-gray-500 text-sm mb-3">
               Available from 9:00 AM to 10:00 PM (Dubai time). Past times and booked slots are unavailable.
             </p>
+            <p className="text-gray-500 text-xs mb-3">
+              Minimum lead time: <span className="text-gray-300 font-medium">3 hours</span> for same-day bookings.
+            </p>
             {loadingSlots && selectedDate && (
               <p className="text-gray-500 text-xs mb-2">Checking availability…</p>
             )}
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
               {HOURLY_SLOTS.map(({ value, label }) => {
                 const isPast = selectedDate ? isSlotPastInRegion(selectedDate, value) : false;
+                const isTooSoon = selectedDate ? isSlotTooSoonInRegion(selectedDate, value, 180) : false;
                 const isBooked = bookedSlots.includes(value);
-                const disabled = !selectedDate || isPast || isBooked;
-                const reason = selectedDate ? (isPast ? "Past" : isBooked ? "Booked" : "") : "";
+                const disabled = !selectedDate || isPast || isTooSoon || isBooked;
+                const reason = selectedDate
+                  ? isPast
+                    ? "Past"
+                    : isTooSoon
+                      ? "Too soon (min 3h)"
+                      : isBooked
+                        ? "Booked"
+                        : ""
+                  : "";
                 return (
                   <button
                     key={value}

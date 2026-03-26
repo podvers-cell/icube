@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api } from "../api";
-import { Mail, RefreshCw } from "lucide-react";
+import { Download, Mail, RefreshCw, Trash2 } from "lucide-react";
 
 export type ContactMessage = {
   id: string;
@@ -56,19 +56,89 @@ export default function DashboardMessages() {
     if (!m.read_at) markRead(m.id);
   }
 
+  function downloadCsv(filename: string, rows: Record<string, unknown>[]) {
+    const headers = Array.from(
+      rows.reduce((acc, r) => {
+        Object.keys(r).forEach((k) => acc.add(k));
+        return acc;
+      }, new Set<string>())
+    );
+    const escape = (v: unknown) => {
+      const s = v == null ? "" : String(v);
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const csv = [headers.join(","), ...rows.map((r) => headers.map((h) => escape(r[h])).join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function exportData() {
+    const rows = list.map((m) => ({
+      id: m.id,
+      created_at: createdAtDisplay(m.created_at),
+      name: m.name,
+      email: m.email,
+      subject: m.subject,
+      message: m.message,
+      read: m.read_at ? "yes" : "no",
+    }));
+    downloadCsv(`messages_${new Date().toISOString().slice(0, 10)}.csv`, rows);
+  }
+
+  async function clearData() {
+    if (list.length === 0) return;
+    if (!confirm(`Clear ${list.length} messages? This will permanently delete them.`)) return;
+    try {
+      for (const m of list) {
+        await api.delete(`/dashboard/messages/${m.id}`);
+      }
+      setSelected(null);
+      load();
+    } catch {
+      setError("Failed to clear messages");
+    }
+  }
+
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <h1 className="text-3xl font-display font-bold text-white">Contact Messages</h1>
-        <button
-          type="button"
-          onClick={load}
-          disabled={loading}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-icube-gray border border-white/10 text-white hover:bg-white/5 disabled:opacity-50"
-        >
-          <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
-          Refresh
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={exportData}
+            disabled={loading || list.length === 0}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-icube-gray border border-white/10 text-white hover:bg-white/5 disabled:opacity-50"
+          >
+            <Download size={16} />
+            Export
+          </button>
+          <button
+            type="button"
+            onClick={clearData}
+            disabled={loading || list.length === 0}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-red-500/30 bg-red-500/10 text-red-200 hover:bg-red-500/15 disabled:opacity-50"
+          >
+            <Trash2 size={16} />
+            Clear
+          </button>
+          <button
+            type="button"
+            onClick={load}
+            disabled={loading}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-icube-gray border border-white/10 text-white hover:bg-white/5 disabled:opacity-50"
+          >
+            <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {error && (

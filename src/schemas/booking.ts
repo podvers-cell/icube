@@ -4,7 +4,7 @@ export const bookingPayloadSchema = z.object({
   first_name: z.string().min(1, "First name is required").max(100, "First name is too long"),
   last_name: z.string().min(1, "Last name is required").max(100, "Last name is too long"),
   email: z.string().min(1, "Email is required").email("Invalid email").max(320, "Email is too long"),
-  phone: z.string().max(30).optional(),
+  phone: z.string().min(1, "Phone is required").max(30, "Phone is too long"),
   project_details: z.string().max(5000).optional(),
   package_id: z.string().max(100).optional(),
   studio_id: z.string().max(100).optional(),

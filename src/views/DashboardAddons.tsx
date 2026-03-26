@@ -63,6 +63,7 @@ export default function DashboardAddons() {
               included_features: "",
               price_before_aed: null,
               price_aed: 0,
+              is_popular: 0,
               sort_order: list.length,
             })
           }
@@ -86,6 +87,7 @@ export default function DashboardAddons() {
                 included_features: "",
                 price_before_aed: null,
                 price_aed: 0,
+                is_popular: 0,
                 sort_order: 0,
               })
             }
@@ -101,6 +103,11 @@ export default function DashboardAddons() {
               <div className="flex justify-between items-start gap-3">
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold text-white">{a.name}</p>
+                  {a.is_popular ? (
+                    <span className="mt-1 inline-flex items-center rounded-full border border-icube-gold/35 bg-icube-gold/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-icube-gold-light">
+                      Most Popular
+                    </span>
+                  ) : null}
                   <div className="mt-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-1">
                     {a.price_before_aed != null && a.price_before_aed > 0 && (
                       <span className="text-gray-400 text-sm line-through">{a.price_before_aed} AED</span>
@@ -219,6 +226,20 @@ export default function DashboardAddons() {
                 className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white"
                 placeholder={'One per line (or JSON array)\n- Feature 1\n- Feature 2'}
               />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+                Most popular
+              </label>
+              <label className="flex items-center gap-3 rounded-sm border border-white/10 bg-black/30 px-3 py-3 text-sm text-gray-300">
+                <input
+                  type="checkbox"
+                  checked={!!editing.is_popular}
+                  onChange={(e) => setEditing((x) => (x ? { ...x, is_popular: e.target.checked ? 1 : 0 } : null))}
+                  className="h-4 w-4 accent-[#D4AF37]"
+                />
+                Highlight this add-on as “Most Popular” on the booking page.
+              </label>
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">

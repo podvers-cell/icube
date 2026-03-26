@@ -88,7 +88,7 @@ export default function StudioBookingCheckoutPage() {
         first_name: form.first_name,
         last_name: form.last_name,
         email: form.email,
-        phone: form.phone || undefined,
+        phone: form.phone,
         project_details: form.project_details || undefined,
         studio_id: selectedStudio.id,
         studio_name: selectedStudio.name,
@@ -295,10 +295,11 @@ export default function StudioBookingCheckoutPage() {
             </div>
             <div className="space-y-2">
               <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                Phone <span className="text-gray-500 font-normal">(optional)</span>
+                Phone
               </label>
               <input
                 type="tel"
+                required
                 value={form.phone}
                 onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
                 className="w-full bg-icube-dark/80 border border-white/10 rounded-xl px-4 py-3.5 text-white focus:outline-none focus:border-icube-gold focus:ring-1 focus:ring-icube-gold/30"

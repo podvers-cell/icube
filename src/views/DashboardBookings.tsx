@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X } from "lucide-react";
+import { Download, Trash2, X } from "lucide-react";
 import { api, getBookingAddons, getBookingPackages, sendBookingConfirmedEmail, type BookingAddon } from "../api";
 
 type BookingPackage = { id: number; name: string; price_aed: number };
@@ -117,9 +117,92 @@ export default function DashboardBookings() {
     }
   }
 
+  const studioBookings = list.filter((b) => !b.package_id);
+
+  function downloadCsv(filename: string, rows: Record<string, unknown>[]) {
+    const headers = Array.from(
+      rows.reduce((acc, r) => {
+        Object.keys(r).forEach((k) => acc.add(k));
+        return acc;
+      }, new Set<string>())
+    );
+    const escape = (v: unknown) => {
+      const s = v == null ? "" : String(v);
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const csv = [headers.join(","), ...rows.map((r) => headers.map((h) => escape(r[h])).join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function exportData() {
+    const rows = studioBookings.map((b) => ({
+      id: b.id,
+      submitted_at: formatSubmitted(b.created_at),
+      first_name: b.first_name,
+      last_name: b.last_name,
+      email: b.email,
+      phone: b.phone ?? "",
+      studio_name: b.studio_name ?? "",
+      booking_date: b.booking_date ?? "",
+      time_slot: b.time_slot ?? "",
+      booking_duration_hours: b.booking_duration_hours ?? "",
+      status: b.status,
+      addons_total_aed: b.addons_total_aed ?? "",
+      studio_total_aed: b.studio_total_aed ?? "",
+      discount_code: b.discount_code ?? "",
+      discount_percent: b.discount_percent ?? "",
+      project_details: b.project_details ?? "",
+    }));
+    downloadCsv(`bookings_${new Date().toISOString().slice(0, 10)}.csv`, rows);
+  }
+
+  async function clearData() {
+    if (studioBookings.length === 0) return;
+    if (!confirm(`Clear ${studioBookings.length} bookings? This will permanently delete them.`)) return;
+    try {
+      for (const b of studioBookings) {
+        await api.delete(`/dashboard/bookings/${b.id}`);
+      }
+      load();
+      setSelected(null);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed");
+    }
+  }
+
   return (
     <div>
-      <h1 className="text-3xl font-display font-bold text-white mb-8">Bookings</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <h1 className="text-3xl font-display font-bold text-white">Bookings</h1>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={exportData}
+            disabled={studioBookings.length === 0}
+            className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-icube-gray px-4 py-2 text-sm font-semibold text-white hover:bg-white/5 disabled:opacity-50"
+          >
+            <Download size={16} />
+            Export
+          </button>
+          <button
+            type="button"
+            onClick={clearData}
+            disabled={studioBookings.length === 0}
+            className="inline-flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-200 hover:bg-red-500/15 disabled:opacity-50"
+          >
+            <Trash2 size={16} />
+            Clear
+          </button>
+        </div>
+      </div>
       <div className="overflow-x-auto">
         <table className="w-full text-left min-w-[900px]">
           <thead>
@@ -137,7 +220,7 @@ export default function DashboardBookings() {
             </tr>
           </thead>
           <tbody>
-            {list.map((b) => (
+            {studioBookings.map((b) => (
               <tr
                 key={b.id}
                 onClick={() => setSelected(b)}

@@ -19,6 +19,7 @@ service cloud.firestore {
     match /studio_equipment/{id} { allow read: if true; allow write: if isAdmin(); }
     match /studios/{id} { allow read: if true; allow write: if isAdmin(); }
     match /videos/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /blocked_slots/{id} { allow read: if isAdmin(); allow write: if isAdmin(); }
 
     // Public submits (write only), admin reads
     match /bookings/{id} {

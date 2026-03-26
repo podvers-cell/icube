@@ -79,20 +79,30 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: providerError }, { status: 502 });
     }
 
-    if (body.bookingId && ziinaBody.id) {
+    // Link the payment intent to a booking so webhook can reconcile.
+    if (body.bookingId) {
+      if (!ziinaBody.id) {
+        return NextResponse.json({ error: "Ziina did not return payment intent id." }, { status: 502 });
+      }
       try {
         await updateDoc(doc(requireFirestore(), "bookings", body.bookingId), {
           ziina_intent_id: ziinaBody.id,
           payment_status: "requires_payment_instrument",
           payment_provider: "ziina",
+          payment_intent_status: "requires_payment_instrument",
           updated_at: serverTimestamp(),
         });
-      } catch {
-        // Keep checkout flow alive; webhook may still reconcile by other fields.
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Failed to link payment intent to booking.";
+        return NextResponse.json({ error: `Payment initialized but could not link booking: ${msg}` }, { status: 500 });
       }
     }
 
-    return NextResponse.json({ redirect_url: ziinaBody.redirect_url, payment_intent_id: ziinaBody.id || null });
+    return NextResponse.json({
+      redirect_url: ziinaBody.redirect_url,
+      payment_intent_id: ziinaBody.id || null,
+      mode: process.env.ZIINA_TEST_MODE !== "false" ? "test" : "live",
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unexpected server error.";
     return NextResponse.json({ error: message }, { status: 500 });

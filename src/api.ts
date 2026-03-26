@@ -18,6 +18,7 @@ import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebas
 import { requireAuth, requireFirestore } from "./firebase";
 import { contactFormSchema } from "./schemas/contact";
 import { bookingPayloadSchema } from "./schemas/booking";
+import { isSlotTooSoonInRegion } from "./utils/bookingTimezone";
 
 type IdDoc<T> = T & { id: string };
 
@@ -42,6 +43,8 @@ function dashboardKindToCollection(kind: string): string {
       return "studio_equipment";
     case "discount-codes":
       return "discount_codes";
+    case "blocked-slots":
+      return "blocked_slots";
     default:
       return kind;
   }
@@ -129,6 +132,10 @@ export const api = {
       assertAuth();
       return (await listCollection("videos")) as T;
     }
+    if (path === "/dashboard/blocked-slots") {
+      assertAuth();
+      return (await listByCreatedAtDesc("blocked_slots")) as T;
+    }
     if (path === "/dashboard/bookings") {
       assertAuth();
       return (await listByCreatedAtDesc("bookings")) as T;
@@ -149,7 +156,33 @@ export const api = {
         throw new Error(typeof msg === "string" ? msg : "Invalid booking data");
       }
       const b = parsed.data;
+      if (b.booking_date && b.time_slot) {
+        if (isSlotTooSoonInRegion(b.booking_date, b.time_slot, 180)) {
+          throw new Error("Please select a time slot at least 3 hours from now (Dubai time).");
+        }
+      }
       const db = requireFirestore();
+      // Blocked slot validation (admin-controlled)
+      if (b.booking_date && b.time_slot) {
+        const blockedSnaps = await getDocs(
+          query(
+            collection(db, "blocked_slots"),
+            where("booking_date", "==", b.booking_date),
+            where("time_slot", "==", b.time_slot)
+          )
+        );
+        if (!blockedSnaps.empty) {
+          const studioId = (b as { studio_id?: string | null }).studio_id ?? null;
+          const isBlocked = blockedSnaps.docs.some((d) => {
+            const data = d.data() as { studio_id?: string | null };
+            const blockedStudio = data.studio_id ?? null;
+            return blockedStudio == null || (studioId != null && blockedStudio === studioId);
+          });
+          if (isBlocked) {
+            throw new Error("This time slot is blocked. Please choose another time.");
+          }
+        }
+      }
       const bookingRef = await addDoc(collection(db, "bookings"), {
         ...stripUndefined(b),
         status: "pending",
@@ -285,6 +318,15 @@ export const api = {
       });
       return { id: ref.id, ...d } as T;
     }
+    if (path === "/dashboard/blocked-slots") {
+      assertAuth();
+      const s = docBody(body);
+      const ref = await addDoc(collection(requireFirestore(), "blocked_slots"), {
+        ...s,
+        created_at: serverTimestamp(),
+      });
+      return { id: ref.id, ...s } as T;
+    }
 
     throw new Error(`Unknown POST path: ${path}`);
   },
@@ -298,7 +340,9 @@ export const api = {
       return { success: true } as T;
     }
 
-    const m = path.match(/^\/dashboard\/(services|portfolio|testimonials|packages|addons|why-us|studio-equipment|studios|videos|discount-codes)\/([^/]+)$/);
+    const m = path.match(
+      /^\/dashboard\/(services|portfolio|testimonials|packages|addons|why-us|studio-equipment|studios|videos|discount-codes|blocked-slots)\/([^/]+)$/
+    );
     if (m) {
       assertAuth();
       const [, kind, id] = m;
@@ -351,7 +395,16 @@ export const api = {
       await deleteDoc(doc(requireFirestore(), "bookings", id));
       return { success: true } as T;
     }
-    const m = path.match(/^\/dashboard\/(services|portfolio|testimonials|packages|addons|why-us|studio-equipment|studios|videos|discount-codes)\/([^/]+)$/);
+    const cm = path.match(/^\/dashboard\/messages\/([^/]+)$/);
+    if (cm) {
+      assertAuth();
+      const id = cm[1];
+      await deleteDoc(doc(requireFirestore(), "contact_messages", id));
+      return { success: true } as T;
+    }
+    const m = path.match(
+      /^\/dashboard\/(services|portfolio|testimonials|packages|addons|why-us|studio-equipment|studios|videos|discount-codes|blocked-slots)\/([^/]+)$/
+    );
     if (m) {
       assertAuth();
       const [, kind, id] = m;
@@ -554,6 +607,8 @@ export type BookingAddon = {
   price_before_aed?: number | null;
   /** After price (current) used for totals */
   price_aed: number;
+  /** When true-ish, highlight as "Most Popular" on the site. */
+  is_popular?: boolean | number;
   sort_order?: number;
 };
 export async function getBookingAddons(): Promise<BookingAddon[]> {
@@ -603,6 +658,25 @@ export async function getBookedSlots(bookingDate: string, studioId?: string): Pr
         }
       }
     });
+    // Add admin-blocked slots
+    try {
+      const blockedQ = query(
+        collection(requireFirestore(), "blocked_slots"),
+        where("booking_date", "==", bookingDate)
+      );
+      const blockedSnaps = await getDocs(blockedQ);
+      blockedSnaps.docs.forEach((d) => {
+        const data = d.data() as { time_slot?: string; studio_id?: string | null };
+        if (!data?.time_slot) return;
+        const blockedStudio = data.studio_id ?? null;
+        // If block has no studio_id -> applies to all studios. Otherwise match selected studio.
+        if (blockedStudio == null || (studioId != null && String(blockedStudio) === String(studioId))) {
+          slotSet.add(String(data.time_slot));
+        }
+      });
+    } catch {
+      // ignore; bookings still returned
+    }
     return Array.from(slotSet);
   } catch {
     return [];
