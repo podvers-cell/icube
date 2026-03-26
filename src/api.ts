@@ -45,6 +45,8 @@ function dashboardKindToCollection(kind: string): string {
       return "discount_codes";
     case "blocked-slots":
       return "blocked_slots";
+    case "workshop-bookings":
+      return "workshop_enrollments";
     default:
       return kind;
   }
@@ -86,6 +88,7 @@ export const api = {
     if (path === "/studio-equipment") return (await listCollection("studio_equipment")) as T;
     if (path === "/studios") return (await listCollection("studios")) as T;
     if (path === "/videos") return (await listCollection("videos")) as T;
+    if (path === "/workshops") return (await listCollection("workshops")) as T;
 
     // Dashboard
     if (path === "/dashboard/settings") {
@@ -132,6 +135,10 @@ export const api = {
       assertAuth();
       return (await listCollection("videos")) as T;
     }
+    if (path === "/dashboard/workshops") {
+      assertAuth();
+      return (await listCollection("workshops")) as T;
+    }
     if (path === "/dashboard/blocked-slots") {
       assertAuth();
       return (await listByCreatedAtDesc("blocked_slots")) as T;
@@ -139,6 +146,10 @@ export const api = {
     if (path === "/dashboard/bookings") {
       assertAuth();
       return (await listByCreatedAtDesc("bookings")) as T;
+    }
+    if (path === "/dashboard/workshop-bookings") {
+      assertAuth();
+      return (await listByCreatedAtDesc("workshop_enrollments")) as T;
     }
     if (path === "/dashboard/messages") {
       assertAuth();
@@ -236,6 +247,64 @@ export const api = {
       return { success: true } as T;
     }
 
+    if (path === "/workshop/enroll") {
+      const b = (typeof body === "object" && body !== null ? (body as Record<string, unknown>) : {}) as Record<string, unknown>;
+      const workshopId = String(b.workshop_id ?? "");
+      const fullName = String(b.full_name ?? "");
+      const email = String(b.email ?? "");
+      const phone = b.phone != null ? String(b.phone) : null;
+      const amountAed = Number(b.amount_aed ?? 0);
+      const workshopDate = b.workshop_date != null ? String(b.workshop_date) : null;
+      if (!workshopId) throw new Error("Workshop is required.");
+      if (!fullName.trim()) throw new Error("Name is required.");
+      if (!email.trim()) throw new Error("Email is required.");
+      if (!Number.isFinite(amountAed) || amountAed <= 0) throw new Error("Invalid amount.");
+
+      const db = requireFirestore();
+
+      // Capacity validation (best-effort): uses paid_enrollments_count on workshop doc.
+      try {
+        const wsSnap = await getDoc(doc(db, "workshops", workshopId));
+        if (wsSnap.exists()) {
+          const ws = wsSnap.data() as {
+            group_size_max?: number;
+            group_size_label?: string;
+            paid_enrollments_count?: number;
+            sold_out?: boolean;
+            sold_out_override?: boolean;
+          };
+          if (Boolean(ws.sold_out_override ?? ws.sold_out)) {
+            throw new Error("This workshop is sold out.");
+          }
+          const label = typeof ws.group_size_label === "string" ? ws.group_size_label : "";
+          const maxFromLabel = (() => {
+            const nums = label.match(/\d+/g)?.map((n) => Number(n)).filter((n) => Number.isFinite(n) && n > 0) ?? [];
+            return nums.length ? Math.max(...nums) : 0;
+          })();
+          const max = Number(ws.group_size_max ?? 0) || maxFromLabel || 0;
+          const paid = Number(ws.paid_enrollments_count ?? 0) || 0;
+          if (Number.isFinite(max) && max > 0 && paid >= max) {
+            throw new Error("This workshop is sold out.");
+          }
+        }
+      } catch (e) {
+        if (e instanceof Error) throw e;
+      }
+
+      const ref = await addDoc(collection(db, "workshop_enrollments"), {
+        workshop_id: workshopId,
+        workshop_date: workshopDate,
+        full_name: fullName.trim(),
+        email: email.trim(),
+        phone,
+        amount_aed: amountAed,
+        payment_provider: "ziina",
+        payment_status: "initiated",
+        created_at: serverTimestamp(),
+      });
+      return { success: true, enrollment_id: ref.id } as T;
+    }
+
     // Auth
     if (path === "/login") {
       const { email, password } = body as { email: string; password: string };
@@ -307,6 +376,12 @@ export const api = {
       const ref = await addDoc(collection(requireFirestore(), "videos"), { ...v, created_at: serverTimestamp() });
       return { id: ref.id, ...v } as T;
     }
+    if (path === "/dashboard/workshops") {
+      assertAuth();
+      const w = docBody(body);
+      const ref = await addDoc(collection(requireFirestore(), "workshops"), { ...w, created_at: serverTimestamp() });
+      return { id: ref.id, ...w } as T;
+    }
     if (path === "/dashboard/discount-codes") {
       assertAuth();
       const d = docBody(body);
@@ -341,7 +416,7 @@ export const api = {
     }
 
     const m = path.match(
-      /^\/dashboard\/(services|portfolio|testimonials|packages|addons|why-us|studio-equipment|studios|videos|discount-codes|blocked-slots)\/([^/]+)$/
+      /^\/dashboard\/(services|portfolio|testimonials|packages|addons|why-us|studio-equipment|studios|videos|workshops|discount-codes|blocked-slots)\/([^/]+)$/
     );
     if (m) {
       assertAuth();
@@ -402,8 +477,15 @@ export const api = {
       await deleteDoc(doc(requireFirestore(), "contact_messages", id));
       return { success: true } as T;
     }
+    const we = path.match(/^\/dashboard\/workshop-bookings\/([^/]+)$/);
+    if (we) {
+      assertAuth();
+      const id = we[1];
+      await deleteDoc(doc(requireFirestore(), "workshop_enrollments", id));
+      return { success: true } as T;
+    }
     const m = path.match(
-      /^\/dashboard\/(services|portfolio|testimonials|packages|addons|why-us|studio-equipment|studios|videos|discount-codes|blocked-slots)\/([^/]+)$/
+      /^\/dashboard\/(services|portfolio|testimonials|packages|addons|why-us|studio-equipment|studios|videos|workshops|discount-codes|blocked-slots)\/([^/]+)$/
     );
     if (m) {
       assertAuth();
@@ -490,6 +572,44 @@ export async function getStudios() {
 export type VideoItem = { id: string; title: string; url: string; sort_order: number };
 export async function getVideos() {
   return api.get<VideoItem[]>("/videos");
+}
+
+export type WorkshopItem = {
+  id: string;
+  title: string;
+  price_before_aed?: number;
+  short_description?: string;
+  description?: string;
+  price_aed: number;
+  workshop_date?: string;
+  sort_order?: number;
+  duration_label?: string;
+  group_size_label?: string;
+  group_size_max?: number;
+  paid_enrollments_count?: number;
+  sold_out?: boolean;
+  sold_out_override?: boolean;
+  level_label?: string;
+  cover_image_url?: string;
+  highlights?: string[];
+  includes?: string[];
+  images?: { image_url: string; caption?: string | null; sort_order?: number }[];
+  video_urls?: string[];
+};
+
+export async function getWorkshops() {
+  return api.get<WorkshopItem[]>("/workshops");
+}
+
+export async function enrollWorkshop(data: {
+  workshop_id: string;
+  full_name: string;
+  email: string;
+  phone?: string;
+  amount_aed: number;
+  workshop_date?: string;
+}): Promise<{ success: boolean; enrollment_id: string }> {
+  return api.post<{ success: boolean; enrollment_id: string }>("/workshop/enroll", data);
 }
 
 export type BookingPayload = {

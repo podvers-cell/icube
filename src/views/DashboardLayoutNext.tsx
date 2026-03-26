@@ -17,6 +17,7 @@ import {
   Mail,
   Sparkles,
   Video,
+  GraduationCap,
   Ban,
   LogOut,
   Home,
@@ -49,8 +50,10 @@ const nav: NavItem[] = [
   { href: "/dashboard/blocked-slots", end: false, label: "Blocked Slots", icon: Ban },
   { href: "/dashboard/bookings", end: false, label: "Bookings", icon: Calendar, countKey: "bookings" },
   { href: "/dashboard/package-bookings", end: false, label: "Package Bookings", icon: ClipboardList, countKey: "package-bookings" },
+  { href: "/dashboard/workshop-bookings", end: false, label: "Workshop Bookings", icon: ClipboardList },
   { href: "/dashboard/messages", end: false, label: "Contact Messages", icon: Mail, countKey: "messages" },
   { href: "/dashboard/benefits", end: false, label: "Benefits", icon: Sparkles },
+  { href: "/dashboard/workshops", end: false, label: "Workshops", icon: GraduationCap },
   { href: "/dashboard/studios", end: false, label: "Studios", icon: Building2 },
   { href: "/dashboard/studio", end: false, label: "Studio Equipment", icon: Video },
 ];

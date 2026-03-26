@@ -19,6 +19,7 @@ service cloud.firestore {
     match /studio_equipment/{id} { allow read: if true; allow write: if isAdmin(); }
     match /studios/{id} { allow read: if true; allow write: if isAdmin(); }
     match /videos/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /workshops/{id} { allow read: if true; allow write: if isAdmin(); }
     match /blocked_slots/{id} { allow read: if isAdmin(); allow write: if isAdmin(); }
 
     // Public submits (write only), admin reads
@@ -27,6 +28,10 @@ service cloud.firestore {
       allow read, update, delete: if isAdmin();
     }
     match /contact_messages/{id} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+    match /workshop_enrollments/{id} {
       allow create: if true;
       allow read, update, delete: if isAdmin();
     }

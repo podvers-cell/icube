@@ -3,7 +3,7 @@ import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { requireFirestore } from "@/firebase";
 
 type CreateIntentBody = {
-  bookingType?: "package" | "studio";
+  bookingType?: "package" | "studio" | "workshop";
   amountAed?: number;
   name?: string;
   date?: string;
@@ -11,6 +11,7 @@ type CreateIntentBody = {
   durationHours?: number;
   customerEmail?: string;
   bookingId?: string;
+  workshopEnrollmentId?: string;
 };
 
 function getBaseUrl(request: Request): string {
@@ -36,7 +37,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid amount." }, { status: 400 });
     }
 
-    const bookingType = body.bookingType === "studio" ? "studio" : "package";
+    const bookingType = body.bookingType === "studio" ? "studio" : body.bookingType === "workshop" ? "workshop" : "package";
     const amount = Math.round(amountAed * 100); // Ziina expects minor units (fils)
     const baseUrl = getBaseUrl(request);
     const successUrl = `${baseUrl}/payment-gateway/success?type=${encodeURIComponent(bookingType)}&name=${encodeURIComponent(
@@ -45,7 +46,9 @@ export async function POST(request: Request) {
     const cancelUrl =
       bookingType === "studio"
         ? `${baseUrl}/studio/booking/checkout`
-        : `${baseUrl}/packages/checkout`;
+        : bookingType === "workshop"
+          ? `${baseUrl}/#workshops`
+          : `${baseUrl}/packages/checkout`;
     const detailBits = [body.date, body.slot, body.durationHours ? `${body.durationHours}h` : ""].filter(Boolean);
     const message = `${body.name || "ICUBE Booking"}${detailBits.length ? ` · ${detailBits.join(" · ")}` : ""}`;
 
@@ -95,6 +98,25 @@ export async function POST(request: Request) {
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Failed to link payment intent to booking.";
         return NextResponse.json({ error: `Payment initialized but could not link booking: ${msg}` }, { status: 500 });
+      }
+    }
+
+    // Link the payment intent to a workshop enrollment so webhook can reconcile.
+    if (body.workshopEnrollmentId) {
+      if (!ziinaBody.id) {
+        return NextResponse.json({ error: "Ziina did not return payment intent id." }, { status: 502 });
+      }
+      try {
+        await updateDoc(doc(requireFirestore(), "workshop_enrollments", body.workshopEnrollmentId), {
+          ziina_intent_id: ziinaBody.id,
+          payment_status: "requires_payment_instrument",
+          payment_provider: "ziina",
+          payment_intent_status: "requires_payment_instrument",
+          updated_at: serverTimestamp(),
+        });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Failed to link payment intent to enrollment.";
+        return NextResponse.json({ error: `Payment initialized but could not link enrollment: ${msg}` }, { status: 500 });
       }
     }
 

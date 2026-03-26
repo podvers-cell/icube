@@ -7,6 +7,7 @@ import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
 import Services from "./components/Services";
 import Studio from "./components/Studio";
+import Workshops from "./components/Workshops";
 import Portfolio from "./components/Portfolio";
 import Testimonials from "./components/Testimonials";
 import Videos from "./components/Videos";
@@ -182,6 +183,10 @@ export default function PublicSite() {
         <SectionDivider />
         <ScrollReveal variant="revealLeft" amount={0.12}>
           <Studio />
+        </ScrollReveal>
+        <SectionDivider />
+        <ScrollReveal variant="fadeUp" amount={0.12}>
+          <Workshops />
         </ScrollReveal>
         <SectionDivider />
         <ScrollReveal variant="fadeUp" amount={0.08}>
