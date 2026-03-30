@@ -5,7 +5,7 @@ import { ArrowRight, BadgeCheck, CalendarDays, ChevronLeft, ChevronRight, Clock,
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useSiteData } from "@/SiteDataContext";
-import { useLoopingDragCarousel } from "@/hooks/useLoopingDragCarousel";
+import { useSwipeCarousel } from "@/hooks/useSwipeCarousel";
 import { isWorkshopSoldOut } from "@/utils/workshopCapacity";
 import { AnimatedSectionHeader } from "./ScrollReveal";
 import AnimatedStaggerItem from "./AnimatedStaggerItem";
@@ -189,9 +189,33 @@ export default function Workshops() {
   const canGoPrev = desktopPage > 0;
   const canGoNext = desktopPage < desktopTotalPages - 1;
 
-  // Mobile carousel: true drag (finger-following) + snap on release.
-  const mobileCarousel = useLoopingDragCarousel(len);
-  const logicalIndex = mobileCarousel.index;
+  // Mobile carousel (infinite loop like Studio)
+  const [mobileIndex, setMobileIndex] = useState(0);
+  const [noTransition, setNoTransition] = useState(false);
+  const displayItems = len ? [...items, ...items] : [];
+  const logicalIndex = len ? mobileIndex % len : 0;
+
+  useEffect(() => {
+    if (!noTransition) return;
+    const id = requestAnimationFrame(() => setNoTransition(false));
+    return () => cancelAnimationFrame(id);
+  }, [noTransition, mobileIndex]);
+
+  const goPrev = () => {
+    if (!len) return;
+    if (mobileIndex === 0) {
+      setNoTransition(true);
+      setMobileIndex(2 * len - 1);
+    } else setMobileIndex((i) => i - 1);
+  };
+  const goNext = () => {
+    if (!len) return;
+    if (mobileIndex === 2 * len - 1) {
+      setNoTransition(true);
+      setMobileIndex(0);
+    } else setMobileIndex((i) => i + 1);
+  };
+  const swipe = useSwipeCarousel(goPrev, goNext);
 
   return (
     <section
@@ -231,30 +255,20 @@ export default function Workshops() {
                 </div>
               ) : null}
               <div
-                ref={mobileCarousel.containerRef}
                 className="-mx-6 w-screen overflow-hidden touch-pan-y select-none max-w-[100vw] box-content"
-                onPointerDown={mobileCarousel.onPointerDown}
+                onTouchStart={swipe.onTouchStart}
+                onTouchEnd={swipe.onTouchEnd}
               >
                 <motion.div
                   className="flex"
-                  style={{ x: mobileCarousel.x }}
-                  drag="x"
-                  dragListener={false}
-                  dragControls={mobileCarousel.controls}
-                  dragConstraints={mobileCarousel.dragConstraints}
-                  dragElastic={0.08}
-                  dragMomentum={false}
-                  onDragEnd={mobileCarousel.onDragEnd}
+                  animate={{ x: `-${mobileIndex * 100}%` }}
+                  transition={noTransition ? { duration: 0 } : { duration: 0.4, ease: [0.25, 0.8, 0.25, 1] }}
                 >
-                  <div className="w-full shrink-0 px-6">
-                    <WorkshopCard w={items[mobileCarousel.prevIndex]!} index={mobileCarousel.prevIndex} />
-                  </div>
-                  <div className="w-full shrink-0 px-6">
-                    <WorkshopCard w={items[logicalIndex]!} index={logicalIndex} />
-                  </div>
-                  <div className="w-full shrink-0 px-6">
-                    <WorkshopCard w={items[mobileCarousel.nextIndex]!} index={mobileCarousel.nextIndex} />
-                  </div>
+                  {displayItems.map((w, i) => (
+                    <div key={`${w.id}-${i}`} className="w-full shrink-0 px-6">
+                      <WorkshopCard w={w} index={i} />
+                    </div>
+                  ))}
                 </motion.div>
               </div>
               {len > 1 ? (
@@ -264,7 +278,7 @@ export default function Workshops() {
                       key={i}
                       type="button"
                       onClick={() => {
-                        if (i !== logicalIndex) mobileCarousel.setIndex(i);
+                        if (i !== logicalIndex) setMobileIndex(i);
                       }}
                       className={`h-1.5 rounded-full transition-all duration-200 ${
                         i === logicalIndex ? "bg-icube-gold w-4" : "bg-white/20 w-1.5"
