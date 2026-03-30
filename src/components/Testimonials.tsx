@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { Quote } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
@@ -17,7 +17,7 @@ export default function Testimonials() {
       id="testimonials"
       className="py-28 md:py-32 bg-gradient-to-b from-icube-dark/95 via-icube-gray/75 to-icube-dark/90 relative overflow-hidden"
     >
-      <div className="absolute -bottom-32 left-1/2 -translate-x-1/2 w-96 h-96 bg-icube-gold/5 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute -bottom-32 left-1/2 -translate-x-1/2 w-96 h-96 bg-icube-gold/5 rounded-full blur-[120px] pointer-events-none hidden md:block" />
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
         <AnimatedSectionHeader className="section-header" amount={0.25}>
           <div className="section-label-row">
@@ -109,26 +109,17 @@ function MobileTestimonialsCarousel({
 }) {
   const len = testimonials.length;
   const [index, setIndex] = useState(0);
-  const [noTransition, setNoTransition] = useState(false);
-  const displayItems = len ? [...testimonials, ...testimonials] : [];
-
-  useEffect(() => {
-    if (!noTransition) return;
-    const id = requestAnimationFrame(() => setNoTransition(false));
-    return () => cancelAnimationFrame(id);
-  }, [noTransition, index]);
+  const [direction, setDirection] = useState<1 | -1>(1);
 
   const goPrev = () => {
-    if (index === 0) {
-      setNoTransition(true);
-      setIndex(2 * len - 1);
-    } else setIndex((i) => i - 1);
+    if (!len) return;
+    setDirection(-1);
+    setIndex((i) => (i - 1 + len) % len);
   };
   const goNext = () => {
-    if (index === 2 * len - 1) {
-      setNoTransition(true);
-      setIndex(0);
-    } else setIndex((i) => i + 1);
+    if (!len) return;
+    setDirection(1);
+    setIndex((i) => (i + 1) % len);
   };
   const swipe = useSwipeCarousel(goPrev, goNext);
   const logicalIndex = len ? index % len : 0;
@@ -147,20 +138,18 @@ function MobileTestimonialsCarousel({
         onTouchStart={swipe.onTouchStart}
         onTouchEnd={swipe.onTouchEnd}
       >
-        <motion.div
-          className="flex"
-          animate={{ x: `-${index * 100}%` }}
-          transition={noTransition ? { duration: 0 } : { duration: 0.4, ease: [0.25, 0.8, 0.25, 1] }}
-        >
-          {displayItems.map((t, i) => (
-            <div
-              key={`${t.id}-${i}`}
-              className="w-full shrink-0 px-2"
-            >
-              <TestimonialCard testimonial={t} fillSlide />
-            </div>
-          ))}
-        </motion.div>
+        <AnimatePresence initial={false} mode="popLayout">
+          <motion.div
+            key={testimonials[logicalIndex]?.id ?? logicalIndex}
+            initial={{ x: direction > 0 ? 36 : -36, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: direction > 0 ? -36 : 36, opacity: 0 }}
+            transition={{ duration: 0.22, ease: [0.25, 0.8, 0.25, 1] }}
+            className="w-full px-2"
+          >
+            <TestimonialCard testimonial={testimonials[logicalIndex]!} fillSlide />
+          </motion.div>
+        </AnimatePresence>
       </div>
       <div className="flex justify-center gap-2 pt-1">
         {testimonials.map((_, i) => (
@@ -168,7 +157,10 @@ function MobileTestimonialsCarousel({
             key={i}
             type="button"
             onClick={() => {
-              if (i !== logicalIndex) setIndex(i);
+              if (i !== logicalIndex) {
+                setDirection(i > logicalIndex ? 1 : -1);
+                setIndex(i);
+              }
             }}
             className={`h-1.5 rounded-full transition-all duration-200 ${
               i === logicalIndex ? "bg-icube-gold w-4" : "bg-white/20 w-1.5"
