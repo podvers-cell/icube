@@ -50,9 +50,12 @@ type HeroProps = { onHeroReady?: () => void };
 export default function Hero({ onHeroReady }: HeroProps) {
   const { settings, loading } = useSiteData();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const sectionRef = useRef<HTMLElement | null>(null);
   const router = useRouter();
   const pathname = usePathname();
   const reduceMotion = useReducedMotion();
+  // Disable hero text/buttons animation, but keep scroll indicator animation (mobile + desktop).
+  const disableHeroTextAnimations = true;
   const phrase1 = settings.hero_title_1 ?? "";
   const phrase2 = settings.hero_title_2 ?? "";
   const phrase3 = settings.hero_title_3 ?? "";
@@ -63,16 +66,37 @@ export default function Hero({ onHeroReady }: HeroProps) {
   const bgVideo = settings.hero_bg_video_url || "";
   const bgGif = settings.hero_bg_gif_url ?? "";
   const youtubeEmbed = bgVideo ? getYouTubeEmbedUrl(bgVideo) : null;
+  const heroVideoDarkOpacityRaw = Number(settings.hero_video_dark_opacity ?? 72);
+  const heroVideoDarkOpacityPct = Number.isFinite(heroVideoDarkOpacityRaw)
+    ? Math.max(0, Math.min(100, heroVideoDarkOpacityRaw))
+    : 72;
+  const heroVideoDarkOpacity = heroVideoDarkOpacityPct / 100;
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
+  const [isHeroInView, setIsHeroInView] = useState(true);
 
   useEffect(() => {
     const check = () => setIsMobile(typeof window !== "undefined" && window.innerWidth < 768);
     check();
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
+  }, [isMobile]);
+
+  // Track whether hero is visible (avoid scroll updates when off-screen).
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        setIsHeroInView(Boolean(entry?.isIntersecting));
+      },
+      { threshold: 0.02 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
   }, []);
 
   // Notify parent when hero background is ready (so splash can hide after video loads)
@@ -115,6 +139,7 @@ export default function Hero({ onHeroReady }: HeroProps) {
 
   // Throttled scroll progress: max one setState per frame, skip tiny changes (reduces lag/heat on mobile)
   useEffect(() => {
+    if (!isHeroInView) return;
     let rafId: number | null = null;
     let lastProgress = 0;
     function onScroll() {
@@ -124,7 +149,8 @@ export default function Hero({ onHeroReady }: HeroProps) {
         const scrollY = window.scrollY;
         const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
         const progress = maxScroll <= 0 ? 0 : Math.min(1, scrollY / maxScroll);
-        if (Math.abs(progress - lastProgress) < 0.02) return;
+        const threshold = isMobile ? 0.05 : 0.02;
+        if (Math.abs(progress - lastProgress) < threshold) return;
         lastProgress = progress;
         setScrollProgress(progress);
       });
@@ -135,11 +161,14 @@ export default function Hero({ onHeroReady }: HeroProps) {
       window.removeEventListener("scroll", onScroll);
       if (rafId !== null) cancelAnimationFrame(rafId);
     };
-  }, []);
+  }, [isMobile, isHeroInView]);
 
   return (
     <section
       id="home"
+      ref={(el) => {
+        sectionRef.current = el;
+      }}
       className="relative h-[100svh] min-h-[100svh] md:h-screen md:min-h-[100dvh] w-full flex items-center justify-center overflow-hidden pt-20 pb-24 md:pt-0 md:pb-0"
     >
       <div className="absolute inset-0 z-0 w-full h-full min-h-full">
@@ -148,11 +177,11 @@ export default function Hero({ onHeroReady }: HeroProps) {
           style={
             bgType === "video" && bgVideo
               ? {
-                  background: `linear-gradient(to bottom, var(--color-icube-dark) 0%, color-mix(in srgb, var(--color-icube-dark) 85%, transparent) 12%, rgba(0,0,0,0.72) 50%, color-mix(in srgb, var(--color-icube-dark) 85%, transparent) 88%, var(--color-icube-dark) 100%)`,
+                  background: `linear-gradient(to bottom, var(--color-icube-dark) 0%, color-mix(in srgb, var(--color-icube-dark) 85%, transparent) 12%, rgba(0,0,0,${heroVideoDarkOpacity}) 50%, color-mix(in srgb, var(--color-icube-dark) 85%, transparent) 88%, var(--color-icube-dark) 100%)`,
                 }
               : bgType === "gif" && bgGif
                 ? {
-                    background: `linear-gradient(to bottom, var(--color-icube-dark) 0%, color-mix(in srgb, var(--color-icube-dark) 85%, transparent) 12%, rgba(0,0,0,0.72) 50%, color-mix(in srgb, var(--color-icube-dark) 85%, transparent) 88%, var(--color-icube-dark) 100%)`,
+                    background: `linear-gradient(to bottom, var(--color-icube-dark) 0%, color-mix(in srgb, var(--color-icube-dark) 85%, transparent) 12%, rgba(0,0,0,${heroVideoDarkOpacity}) 50%, color-mix(in srgb, var(--color-icube-dark) 85%, transparent) 88%, var(--color-icube-dark) 100%)`,
                   }
                 : undefined
           }
@@ -216,14 +245,14 @@ export default function Hero({ onHeroReady }: HeroProps) {
 
       <motion.div
         className="relative z-20 max-w-7xl mx-auto px-6 sm:px-10 md:px-14 lg:px-16 w-full flex flex-col items-center text-center gap-6 sm:gap-7 md:gap-8"
-        initial={{ opacity: 0, y: 16 }}
+        initial={{ opacity: 1, y: 0 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, delay: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
+        transition={{ duration: 0 }}
       >
         <motion.div
           className="flex flex-col items-center gap-6 sm:gap-7 md:gap-8 w-full"
-          animate={reduceMotion ? { y: 0 } : { y: [0, 5, 0] }}
-          transition={reduceMotion ? {} : { duration: 5, repeat: Infinity, ease: "easeInOut" }}
+          animate={{ y: 0 }}
+          transition={{ duration: 0 }}
         >
         {phrases.length > 0 && (
           <div className="min-h-[3.5rem] sm:min-h-[4rem] md:mb-4 md:min-h-[7rem] flex w-full max-w-[min(100%,52rem)] items-center justify-center overflow-visible px-4 py-6 sm:px-8 sm:py-8 md:px-12 md:py-10">
@@ -237,10 +266,10 @@ export default function Hero({ onHeroReady }: HeroProps) {
               <AnimatePresence mode="wait" initial={false}>
                 <motion.span
                   key={activeIndex}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+                  initial={{ opacity: 1 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0 }}
                   className="block"
                 >
                   {phrases[activeIndex % phrases.length]}
@@ -257,7 +286,11 @@ export default function Hero({ onHeroReady }: HeroProps) {
         ) : null}
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 w-full sm:w-auto mt-8 sm:mt-10 md:mt-1">
-          <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }} className="w-full sm:w-auto">
+          <motion.div
+            whileHover={disableHeroTextAnimations ? undefined : { scale: 1.03 }}
+            whileTap={disableHeroTextAnimations ? undefined : { scale: 0.98 }}
+            className="w-full sm:w-auto"
+          >
             <Link
               href="/#studio"
               onClick={(e) => {
@@ -279,7 +312,11 @@ export default function Hero({ onHeroReady }: HeroProps) {
               <ArrowRight size={18} className="relative z-10 group-hover:translate-x-1 transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]" />
             </Link>
           </motion.div>
-          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }} className="w-full sm:w-auto flex justify-center">
+          <motion.div
+            whileHover={disableHeroTextAnimations ? undefined : { scale: 1.05 }}
+            whileTap={disableHeroTextAnimations ? undefined : { scale: 0.98 }}
+            className="w-full sm:w-auto flex justify-center"
+          >
             <Link
               href="/portfolio"
               className="group flex items-center justify-center gap-3 sm:gap-4 text-white hover:text-icube-gold transition-colors duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] py-2"
@@ -300,11 +337,7 @@ export default function Hero({ onHeroReady }: HeroProps) {
         className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-20 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-icube-gold focus-visible:ring-offset-2 focus-visible:ring-offset-transparent rounded p-2 min-h-[44px] min-w-[44px] justify-end"
         aria-label="Scroll to next section"
         animate={{ y: [0, 6, 0] }}
-        transition={{
-          duration: 2,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
+        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
       >
         <span className="text-xs text-gray-400 uppercase tracking-widest">Scroll</span>
         <div className="w-[1px] h-12 bg-white/25 relative overflow-hidden rounded-full">
@@ -318,11 +351,7 @@ export default function Hero({ onHeroReady }: HeroProps) {
           <motion.div
             className="absolute left-0 top-0 w-full h-4 bg-icube-gold rounded-full"
             animate={{ y: [0, 32, 0] }}
-            transition={{
-              duration: 2.2,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
+            transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
             style={{ willChange: "transform" }}
           />
         </div>

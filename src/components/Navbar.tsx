@@ -268,7 +268,7 @@ export default function Navbar() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.32, ease: "easeOut" }}
-            className="fixed inset-0 z-[50] bg-black/60 flex flex-col items-stretch justify-end pb-6 min-h-[100dvh] min-h-[100vh] md:hidden"
+            className="fixed inset-0 z-[50] bg-black/60 flex flex-col items-stretch justify-end pb-12 min-h-[100dvh] min-h-[100vh] md:hidden"
             aria-hidden="false"
           >
             <motion.div
@@ -283,7 +283,7 @@ export default function Navbar() {
               onDragEnd={(_e, { offset, velocity }) => {
                 if (offset.y > 60 || velocity.y > 200) setIsMobileMenuOpen(false);
               }}
-              className="relative w-full max-h-[80vh] overflow-y-auto bg-icube-dark/70 backdrop-blur-xl border border-white/15 rounded-2xl pt-10 px-6 pb-8 shadow-[0_-8px_40px_rgba(0,0,0,0.4)] flex flex-col items-center gap-6"
+              className="relative w-full max-h-[80vh] overflow-y-auto bg-icube-dark/70 backdrop-blur-xl border border-white/15 rounded-2xl pt-10 px-6 pb-12 shadow-[0_-8px_40px_rgba(0,0,0,0.4)] flex flex-col items-center gap-6"
             >
               {/* مقبض السحب: ابدأ السحب من هنا ثم اسحب لأسفل للإغلاق */}
               <div

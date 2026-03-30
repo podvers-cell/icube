@@ -130,6 +130,7 @@ const FALLBACK_SETTINGS: Record<string, string> = {
   hero_bg_image_url: "",
   hero_bg_video_url: "",
   hero_bg_gif_url: "",
+  hero_video_dark_opacity: "72",
   contact_address: "Dubai Media City, Building 1\nDubai, United Arab Emirates",
   contact_email: CONTACT_EMAIL,
   contact_email_bookings: CONTACT_EMAIL,

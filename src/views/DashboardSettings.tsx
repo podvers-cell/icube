@@ -13,6 +13,7 @@ const keys = [
   "hero_subtitle",
   "maintenance_mode",
   "maintenance_message",
+  "hero_video_dark_opacity",
   "contact_address",
   "contact_email",
   "contact_email_bookings",
@@ -62,6 +63,7 @@ export default function DashboardSettings() {
     hero_subtitle: "Hero subtitle",
     maintenance_mode: "Maintenance mode (close website)",
     maintenance_message: "Maintenance message",
+    hero_video_dark_opacity: "Hero video dark overlay opacity (0-100)",
     contact_address: "Address (Dubai)",
     contact_email: "Email (general)",
     contact_email_bookings: "Email (bookings)",
@@ -92,6 +94,23 @@ export default function DashboardSettings() {
                 />
                 Close public website and show maintenance page
               </label>
+            ) : key === "hero_video_dark_opacity" ? (
+              <div className="space-y-2">
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={settings[key] ?? "72"}
+                  onChange={(e) => update(key, e.target.value)}
+                  className="w-full accent-icube-gold"
+                />
+                <div className="flex items-center justify-between text-sm text-gray-300">
+                  <span>0</span>
+                  <span className="text-white/90 font-semibold">{settings[key] ?? "72"}%</span>
+                  <span>100</span>
+                </div>
+              </div>
             ) : key === "maintenance_message" || key === "contact_address" ? (
               <textarea
                 value={settings[key] ?? ""}

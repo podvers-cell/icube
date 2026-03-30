@@ -22,40 +22,38 @@ function isOptimizedImageUrl(url: string): boolean {
   }
 }
 
-export default function Studio() {
-  const router = useRouter();
-  const { studios } = useSiteData();
-  const { setSelectedStudio, setSelectedPackage } = useBooking();
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [desktopPage, setDesktopPage] = useState(0);
-  const desktopCardsPerPage = 3;
-  const desktopTotalPages = Math.max(1, Math.ceil(studios.length / desktopCardsPerPage));
-  const canGoPrev = desktopPage > 0;
-  const canGoNext = desktopPage < desktopTotalPages - 1;
-  const desktopStartIndex = desktopPage * desktopCardsPerPage;
-  const desktopPageStudios = studios.slice(desktopStartIndex, desktopStartIndex + desktopCardsPerPage);
+type StudioItem = {
+  id: string;
+  name: string;
+  short_description: string;
+  details: string;
+  price_aed_per_hour: number;
+  price_aed_per_hour_before?: number;
+  capacity: number;
+  size_sqm: number;
+  cover_image_url: string;
+};
 
-  function StudioCard({
-    studio,
-    expandedId,
-    setExpandedId,
-    setSelectedStudio,
-    setSelectedPackage,
-    router,
-    isPriority = false,
-  }: {
-    studio: (typeof studios)[number];
-    expandedId: string | null;
-    setExpandedId: (id: string | null) => void;
-    setSelectedStudio: (studio: { id: string; name: string; price_aed_per_hour: number }) => void;
-    setSelectedPackage: (p: null) => void;
-    router: ReturnType<typeof useRouter>;
-    isPriority?: boolean;
-  }) {
-    const s = studio;
-    const useNextImage = isOptimizedImageUrl(s.cover_image_url);
-    return (
-      <div className="w-[95%] md:w-full mx-auto h-full">
+function StudioCard({
+  studio: s,
+  expandedId,
+  setExpandedId,
+  setSelectedStudio,
+  setSelectedPackage,
+  router,
+  isPriority = false,
+}: {
+  studio: StudioItem;
+  expandedId: string | null;
+  setExpandedId: (id: string | null) => void;
+  setSelectedStudio: (studio: { id: string; name: string; price_aed_per_hour: number }) => void;
+  setSelectedPackage: (p: null) => void;
+  router: ReturnType<typeof useRouter>;
+  isPriority?: boolean;
+}) {
+  const useNextImage = isOptimizedImageUrl(s.cover_image_url);
+  return (
+    <div className="w-[95%] md:w-full mx-auto h-full">
       <article className="studio-card glass-card flex flex-col h-full rounded-2xl overflow-hidden transition-all duration-300">
         <Link
           href={`/studio/${s.id}`}
@@ -86,7 +84,7 @@ export default function Studio() {
         <div className="flex flex-col flex-1 p-6">
           <h3 className="text-xl font-display font-bold text-white mb-1">{s.name}</h3>
           <div className="mb-3 flex items-baseline gap-2">
-            {"price_aed_per_hour_before" in s && s.price_aed_per_hour_before ? (
+            {s.price_aed_per_hour_before ? (
               <span className="text-gray-500 text-xs line-through">{s.price_aed_per_hour_before} AED/hour</span>
             ) : null}
             <span className="text-icube-gold/90 text-sm font-semibold">{s.price_aed_per_hour} AED/hour</span>
@@ -96,6 +94,7 @@ export default function Studio() {
           <div className="studio-card-divider border-t border-white/10 pt-4 mt-1">
             <button
               type="button"
+              data-swipe-ignore="true"
               onClick={() => setExpandedId(expandedId === s.id ? null : s.id)}
               className="flex items-center justify-between w-full py-2 text-left text-sm font-medium text-white/90 hover:text-icube-gold transition-colors"
               aria-expanded={expandedId === s.id}
@@ -134,6 +133,7 @@ export default function Studio() {
 
           <button
             type="button"
+            data-swipe-ignore="true"
             onClick={() => {
               setSelectedStudio({
                 id: s.id,
@@ -150,97 +150,106 @@ export default function Studio() {
           </button>
         </div>
       </article>
+    </div>
+  );
+}
+
+function MobileStudiosCarousel(props: {
+  studios: StudioItem[];
+  expandedId: string | null;
+  setExpandedId: (id: string | null) => void;
+  setSelectedStudio: (studio: { id: string; name: string; price_aed_per_hour: number }) => void;
+  setSelectedPackage: (p: null) => void;
+  router: ReturnType<typeof useRouter>;
+}) {
+  const { studios, expandedId, setExpandedId, setSelectedStudio, setSelectedPackage, router } = props;
+  const len = studios.length;
+  const [index, setIndex] = useState(0);
+  const [direction, setDirection] = useState<1 | -1>(1);
+
+  const goPrev = () => {
+    if (!len) return;
+    setDirection(-1);
+    setIndex((i) => (i - 1 + len) % len);
+  };
+  const goNext = () => {
+    if (!len) return;
+    setDirection(1);
+    setIndex((i) => (i + 1) % len);
+  };
+  const swipe = useSwipeCarousel(goPrev, goNext);
+  const logicalIndex = len ? index % len : 0;
+
+  if (!len) return null;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-center text-xs text-gray-400 px-1">
+        <span className="tracking-[0.18em] uppercase text-[11px]">
+          {logicalIndex + 1} / {len}
+        </span>
       </div>
-    );
-  }
-
-  function MobileStudiosCarousel(props: {
-    studios: typeof studios;
-    expandedId: string | null;
-    setExpandedId: (id: string | null) => void;
-    setSelectedStudio: (studio: { id: string; name: string; price_aed_per_hour: number }) => void;
-    setSelectedPackage: (p: null) => void;
-    router: ReturnType<typeof useRouter>;
-  }) {
-    const { studios, expandedId, setExpandedId, setSelectedStudio, setSelectedPackage, router } = props;
-    const len = studios.length;
-    const [index, setIndex] = useState(0);
-    const [noTransition, setNoTransition] = useState(false);
-    const displayItems = len ? [...studios, ...studios] : [];
-
-    useEffect(() => {
-      if (!noTransition) return;
-      const id = requestAnimationFrame(() => setNoTransition(false));
-      return () => cancelAnimationFrame(id);
-    }, [noTransition, index]);
-
-    const goPrev = () => {
-      if (index === 0) {
-        setNoTransition(true);
-        setIndex(2 * len - 1);
-      } else setIndex((i) => i - 1);
-    };
-    const goNext = () => {
-      if (index === 2 * len - 1) {
-        setNoTransition(true);
-        setIndex(0);
-      } else setIndex((i) => i + 1);
-    };
-    const swipe = useSwipeCarousel(goPrev, goNext);
-    const logicalIndex = len ? index % len : 0;
-
-    if (!len) return null;
-
-    return (
-      <div className="space-y-4">
-        <div className="flex justify-center text-xs text-gray-400 px-1">
-          <span className="tracking-[0.18em] uppercase text-[11px]">
-            {logicalIndex + 1} / {len}
-          </span>
-        </div>
-        <div
-          className="-mx-6 w-screen overflow-hidden touch-pan-y select-none max-w-[100vw] box-content"
-          onTouchStart={swipe.onTouchStart}
-          onTouchEnd={swipe.onTouchEnd}
-        >
+      <div
+        className="-mx-6 w-screen overflow-hidden touch-pan-y select-none max-w-[100vw] box-content"
+        onTouchStart={swipe.onTouchStart}
+        onTouchEnd={swipe.onTouchEnd}
+      >
+        <AnimatePresence initial={false} mode="popLayout">
           <motion.div
-            className="flex"
-            animate={{ x: `-${index * 100}%` }}
-            transition={noTransition ? { duration: 0 } : { duration: 0.4, ease: [0.25, 0.8, 0.25, 1] }}
+            key={studios[logicalIndex]?.id ?? logicalIndex}
+            initial={{ x: direction > 0 ? 36 : -36, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: direction > 0 ? -36 : 36, opacity: 0 }}
+            transition={{ duration: 0.22, ease: [0.25, 0.8, 0.25, 1] }}
+            className="w-full"
           >
-            {displayItems.map((s, i) => (
-              <div key={`${s.id}-${i}`} className="w-full shrink-0">
-                <StudioCard
-                  studio={s}
-                  expandedId={expandedId}
-                  setExpandedId={setExpandedId}
-                  setSelectedStudio={setSelectedStudio}
-                  setSelectedPackage={setSelectedPackage}
-                  router={router}
-                  isPriority={i === 0}
-                />
-              </div>
-            ))}
-          </motion.div>
-        </div>
-        <div className="flex justify-center gap-2 pt-1">
-          {studios.map((_, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => {
-                if (i !== logicalIndex) setIndex(i);
-              }}
-              className={`h-1.5 rounded-full transition-all duration-200 ${
-                i === logicalIndex ? "bg-icube-gold w-4" : "bg-white/20 w-1.5"
-              }`}
-              aria-label={`Go to studio ${i + 1}`}
+            <StudioCard
+              studio={studios[logicalIndex]!}
+              expandedId={expandedId}
+              setExpandedId={setExpandedId}
+              setSelectedStudio={setSelectedStudio}
+              setSelectedPackage={setSelectedPackage}
+              router={router}
+              isPriority={logicalIndex === 0}
             />
-          ))}
-        </div>
+          </motion.div>
+        </AnimatePresence>
       </div>
-    );
-  }
+      <div className="flex justify-center gap-2 pt-1">
+        {studios.map((_, i) => (
+          <button
+            key={i}
+            type="button"
+            onClick={() => {
+              if (i !== logicalIndex) {
+                setDirection(i > logicalIndex ? 1 : -1);
+                setIndex(i);
+              }
+            }}
+            className={`h-1.5 rounded-full transition-all duration-200 ${
+              i === logicalIndex ? "bg-icube-gold w-4" : "bg-white/20 w-1.5"
+            }`}
+            aria-label={`Go to studio ${i + 1}`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function Studio() {
+  const router = useRouter();
+  const { studios } = useSiteData();
+  const { setSelectedStudio, setSelectedPackage } = useBooking();
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [desktopPage, setDesktopPage] = useState(0);
+  const desktopCardsPerPage = 3;
+  const desktopTotalPages = Math.max(1, Math.ceil(studios.length / desktopCardsPerPage));
+  const canGoPrev = desktopPage > 0;
+  const canGoNext = desktopPage < desktopTotalPages - 1;
+  const desktopStartIndex = desktopPage * desktopCardsPerPage;
+  const desktopPageStudios = studios.slice(desktopStartIndex, desktopStartIndex + desktopCardsPerPage);
+  const studioItems = studios as unknown as StudioItem[];
 
   return (
     <section
@@ -270,7 +279,7 @@ export default function Studio() {
         {/* Mobile carousel */}
         <div className="md:hidden">
           <MobileStudiosCarousel
-            studios={studios}
+            studios={studioItems}
             expandedId={expandedId}
             setExpandedId={setExpandedId}
             setSelectedStudio={setSelectedStudio}
@@ -296,7 +305,7 @@ export default function Studio() {
                 {desktopPageStudios.map((s, index) => (
                   <AnimatedStaggerItem key={s.id} index={desktopStartIndex + index}>
                     <StudioCard
-                      studio={s}
+                      studio={s as unknown as StudioItem}
                       expandedId={expandedId}
                       setExpandedId={setExpandedId}
                       setSelectedStudio={setSelectedStudio}

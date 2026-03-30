@@ -132,7 +132,6 @@ function MobileTestimonialsCarousel({
   };
   const swipe = useSwipeCarousel(goPrev, goNext);
   const logicalIndex = len ? index % len : 0;
-  const slideWidthPct = 78;
 
   if (!len) return null;
 
@@ -144,21 +143,19 @@ function MobileTestimonialsCarousel({
         </span>
       </div>
       <div
-        className="-mx-4 sm:-mx-6 w-screen overflow-hidden touch-pan-y select-none max-w-[100vw] box-content"
+        className="-mx-6 w-screen overflow-hidden touch-pan-y select-none max-w-[100vw] box-content"
         onTouchStart={swipe.onTouchStart}
         onTouchEnd={swipe.onTouchEnd}
       >
         <motion.div
           className="flex"
-          style={{ width: `${displayItems.length * slideWidthPct}%` }}
-          animate={{ x: `-${index * (100 / displayItems.length)}%` }}
+          animate={{ x: `-${index * 100}%` }}
           transition={noTransition ? { duration: 0 } : { duration: 0.4, ease: [0.25, 0.8, 0.25, 1] }}
         >
           {displayItems.map((t, i) => (
             <div
               key={`${t.id}-${i}`}
-              style={{ width: `${100 / displayItems.length}%` }}
-              className="shrink-0 pr-2 sm:pr-3"
+              className="w-full shrink-0 px-2"
             >
               <TestimonialCard testimonial={t} fillSlide />
             </div>
