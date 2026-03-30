@@ -157,9 +157,25 @@ export default function StudioDetailPage() {
                   aria-label={`Thumbnail ${i + 1}`}
                 >
                   {isOptimizedImageUrl(img.image_url) ? (
-                    <Image src={img.image_url} alt="" fill sizes="96px" className="object-cover" loading="lazy" />
+                    <Image
+                      src={img.image_url}
+                      alt=""
+                      fill
+                      sizes="96px"
+                      className="object-cover"
+                      priority={i === activeImage || i === activeImage - 1 || i === activeImage + 1}
+                      loading={i === activeImage || i === activeImage - 1 || i === activeImage + 1 ? undefined : "lazy"}
+                      decoding="async"
+                    />
                   ) : (
-                    <img src={img.image_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" loading="lazy" />
+                    <img
+                      src={img.image_url}
+                      alt=""
+                      className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
+                      loading={i === activeImage || i === activeImage - 1 || i === activeImage + 1 ? undefined : "lazy"}
+                      decoding="async"
+                    />
                   )}
                 </button>
               ))}
@@ -188,10 +204,10 @@ export default function StudioDetailPage() {
                   <motion.div
                     key={`${activeImage}-${images[activeImage].image_url}`}
                     ref={imageWrapRef}
-                    initial={{ opacity: 0 }}
+                    initial={{ opacity: 1 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
+                    transition={{ duration: 0.05 }}
                     className="w-full max-w-full"
                   >
                     {isOptimizedImageUrl(images[activeImage].image_url) ? (
@@ -202,7 +218,8 @@ export default function StudioDetailPage() {
                         height={800}
                         sizes="(max-width: 768px) 100vw, (max-width: 1024px) 80vw, 900px"
                         className="w-full h-auto max-h-[70vh] object-contain block"
-                        priority={activeImage === 0}
+                        priority
+                        loading={undefined}
                         onLoad={handleMainImageLoad}
                       />
                     ) : (
@@ -211,6 +228,7 @@ export default function StudioDetailPage() {
                         alt={studio.name}
                         className="w-full h-auto max-h-[70vh] object-contain block"
                         referrerPolicy="no-referrer"
+                        decoding="async"
                         onLoad={handleMainImageLoad}
                       />
                     )}

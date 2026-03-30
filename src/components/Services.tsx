@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { useSiteData } from "../SiteDataContext";
-import { useSwipeCarousel } from "../hooks/useSwipeCarousel";
+import { useLoopingDragCarousel } from "../hooks/useLoopingDragCarousel";
 import { getIcon } from "../lib/icons";
 import AnimatedStaggerItem from "./AnimatedStaggerItem";
 import { AnimatedSectionHeader } from "./ScrollReveal";
@@ -67,30 +67,8 @@ function MobileServicesCarousel({
   services: { id: string | number; icon: string; title: string; description: string }[];
 }) {
   const len = services.length;
-  const [index, setIndex] = useState(0);
-  const [noTransition, setNoTransition] = useState(false);
-  const displayItems = len ? [...services, ...services] : [];
-
-  useEffect(() => {
-    if (!noTransition) return;
-    const id = requestAnimationFrame(() => setNoTransition(false));
-    return () => cancelAnimationFrame(id);
-  }, [noTransition, index]);
-
-  const goPrev = () => {
-    if (index === 0) {
-      setNoTransition(true);
-      setIndex(2 * len - 1);
-    } else setIndex((i) => i - 1);
-  };
-  const goNext = () => {
-    if (index === 2 * len - 1) {
-      setNoTransition(true);
-      setIndex(0);
-    } else setIndex((i) => i + 1);
-  };
-  const swipe = useSwipeCarousel(goPrev, goNext);
-  const logicalIndex = len ? index % len : 0;
+  const carousel = useLoopingDragCarousel(len);
+  const logicalIndex = carousel.index;
 
   if (!len) return null;
 
@@ -102,23 +80,42 @@ function MobileServicesCarousel({
         </span>
       </div>
       <div
+        ref={carousel.containerRef}
         className="-mx-6 w-screen overflow-hidden touch-pan-y select-none max-w-[100vw] box-content"
-        onTouchStart={swipe.onTouchStart}
-        onTouchEnd={swipe.onTouchEnd}
+        onPointerDown={carousel.onPointerDown}
       >
         <motion.div
           className="flex"
-          animate={{ x: `-${index * 100}%` }}
-          transition={noTransition ? { duration: 0 } : { duration: 0.4, ease: [0.25, 0.8, 0.25, 1] }}
+          style={{ x: carousel.x }}
+          drag="x"
+          dragListener={false}
+          dragControls={carousel.controls}
+          dragConstraints={carousel.dragConstraints}
+          dragElastic={0.08}
+          dragMomentum={false}
+          onDragEnd={carousel.onDragEnd}
         >
-          {displayItems.map((service, i) => (
-            <div
-              key={`${String(service.id)}-${i}`}
-              className="w-full shrink-0 px-6"
-            >
-              <ServiceCard service={service} colorClass={colors[i % colors.length]} fillSlide />
-            </div>
-          ))}
+          <div className="w-full shrink-0 px-6">
+            <ServiceCard
+              service={services[carousel.prevIndex]!}
+              colorClass={colors[carousel.prevIndex % colors.length]}
+              fillSlide
+            />
+          </div>
+          <div className="w-full shrink-0 px-6">
+            <ServiceCard
+              service={services[logicalIndex]!}
+              colorClass={colors[logicalIndex % colors.length]}
+              fillSlide
+            />
+          </div>
+          <div className="w-full shrink-0 px-6">
+            <ServiceCard
+              service={services[carousel.nextIndex]!}
+              colorClass={colors[carousel.nextIndex % colors.length]}
+              fillSlide
+            />
+          </div>
         </motion.div>
       </div>
       <div className="flex justify-center gap-2 pt-1">
@@ -127,7 +124,7 @@ function MobileServicesCarousel({
             key={i}
             type="button"
             onClick={() => {
-              if (i !== logicalIndex) setIndex(i);
+              if (i !== logicalIndex) carousel.setIndex(i);
             }}
             className={`h-1.5 rounded-full transition-all duration-200 ${
               i === logicalIndex ? "bg-icube-gold w-4" : "bg-white/20 w-1.5"

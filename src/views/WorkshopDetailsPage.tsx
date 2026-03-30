@@ -306,6 +306,7 @@ export default function WorkshopDetailsPage() {
                           {Array.from({ length: totalPages }).map((_, pageIndex) => {
                             const start = pageIndex * itemsPerPage;
                             const slice = sortedImages.slice(start, start + itemsPerPage);
+                            const isEagerPage = pageIndex >= Math.max(0, page - 1) && pageIndex <= Math.min(totalPages - 1, page + 1);
                             return (
                               <div key={pageIndex} className="w-full shrink-0">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-[5px] justify-items-center">
@@ -316,7 +317,8 @@ export default function WorkshopDetailsPage() {
                                           src={String(img.image_url)}
                                           alt={String(img.caption ?? (w as any).title)}
                                           className="h-44 sm:h-48 w-full object-cover"
-                                          loading="lazy"
+                                          loading={isEagerPage ? undefined : "lazy"}
+                                          decoding="async"
                                         />
                                       </div>
                                       {img.caption ? (

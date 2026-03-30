@@ -6,7 +6,7 @@ import Image from "next/image";
 import { Play, ChevronRight } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useSiteData } from "../SiteDataContext";
-import { useSwipeCarousel } from "../hooks/useSwipeCarousel";
+import { useLoopingDragCarousel } from "../hooks/useLoopingDragCarousel";
 import { useContactModal } from "../ContactModalContext";
 import { getVideoEmbed } from "../lib/videoEmbed";
 import { VideoPlayerModal } from "./VideoPlayerModal";
@@ -376,6 +376,9 @@ function StandalonePortfolioCard({ project, setPlayingProject }: { project: Proj
           sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
           className="object-cover transition-all duration-500 group-hover:scale-105 group-hover:blur-[3px]"
           referrerPolicy="no-referrer"
+          priority
+          loading={undefined}
+          fetchPriority="high"
         />
         <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors" />
         {hasVideo && (
@@ -406,10 +409,12 @@ function PortfolioCard({
   project,
   setPlayingProject,
   enhanced = false,
+  imagePriority = false,
 }: {
   project: Project;
   setPlayingProject: (p: Project | null) => void;
   enhanced?: boolean;
+  imagePriority?: boolean;
 }) {
   const hasVideo = project.video_url && getVideoEmbed(project.video_url);
   return (
@@ -443,6 +448,10 @@ function PortfolioCard({
             className={`object-cover transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${enhanced ? "group-hover:scale-[1.08]" : "group-hover:scale-105"} group-hover:blur-[3px]`}
             style={enhanced ? { transformOrigin: "center center" } : undefined}
             referrerPolicy="no-referrer"
+            priority={imagePriority}
+            loading={imagePriority ? undefined : "lazy"}
+            fetchPriority={imagePriority ? "high" : undefined}
+            decoding="async"
           />
         </div>
         <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300 pointer-events-none" />
@@ -474,30 +483,8 @@ function MobilePortfolioCarousel({
   useStandaloneCard?: boolean;
 }) {
   const len = items.length;
-  const [index, setIndex] = useState(0);
-  const [noTransition, setNoTransition] = useState(false);
-  const displayItems = len ? [...items, ...items] : [];
-
-  useEffect(() => {
-    if (!noTransition) return;
-    const id = requestAnimationFrame(() => setNoTransition(false));
-    return () => cancelAnimationFrame(id);
-  }, [noTransition, index]);
-
-  const goPrev = () => {
-    if (index === 0) {
-      setNoTransition(true);
-      setIndex(2 * len - 1);
-    } else setIndex((i) => i - 1);
-  };
-  const goNext = () => {
-    if (index === 2 * len - 1) {
-      setNoTransition(true);
-      setIndex(0);
-    } else setIndex((i) => i + 1);
-  };
-  const swipe = useSwipeCarousel(goPrev, goNext);
-  const logicalIndex = len ? index % len : 0;
+  const carousel = useLoopingDragCarousel(len);
+  const logicalIndex = carousel.index;
 
   if (!len) return null;
 
@@ -509,24 +496,57 @@ function MobilePortfolioCarousel({
         </span>
       </div>
       <div
+        ref={carousel.containerRef}
         className="-mx-6 w-screen overflow-hidden touch-pan-y select-none max-w-[100vw] box-content"
-        onTouchStart={swipe.onTouchStart}
-        onTouchEnd={swipe.onTouchEnd}
+        onPointerDown={carousel.onPointerDown}
       >
         <motion.div
           className="flex"
-          animate={{ x: `-${index * 100}%` }}
-          transition={noTransition ? { duration: 0 } : { duration: 0.4, ease: [0.25, 0.8, 0.25, 1] }}
+          style={{ x: carousel.x }}
+          drag="x"
+          dragListener={false}
+          dragControls={carousel.controls}
+          dragConstraints={carousel.dragConstraints}
+          dragElastic={0.08}
+          dragMomentum={false}
+          onDragEnd={carousel.onDragEnd}
         >
-          {displayItems.map((p, i) => (
-            <div key={`${p.id}-${i}`} className="w-full shrink-0 px-2">
-              {useStandaloneCard ? (
-                <StandalonePortfolioCard project={p} setPlayingProject={setPlayingProject} />
-              ) : (
-                <PortfolioCard project={p} setPlayingProject={setPlayingProject} enhanced={enhanced} />
-              )}
-            </div>
-          ))}
+          <div className="w-full shrink-0 px-2">
+            {useStandaloneCard ? (
+              <StandalonePortfolioCard project={items[carousel.prevIndex]!} setPlayingProject={setPlayingProject} />
+            ) : (
+              <PortfolioCard
+                project={items[carousel.prevIndex]!}
+                setPlayingProject={setPlayingProject}
+                enhanced={enhanced}
+                imagePriority
+              />
+            )}
+          </div>
+          <div className="w-full shrink-0 px-2">
+            {useStandaloneCard ? (
+              <StandalonePortfolioCard project={items[logicalIndex]!} setPlayingProject={setPlayingProject} />
+            ) : (
+              <PortfolioCard
+                project={items[logicalIndex]!}
+                setPlayingProject={setPlayingProject}
+                enhanced={enhanced}
+                imagePriority
+              />
+            )}
+          </div>
+          <div className="w-full shrink-0 px-2">
+            {useStandaloneCard ? (
+              <StandalonePortfolioCard project={items[carousel.nextIndex]!} setPlayingProject={setPlayingProject} />
+            ) : (
+              <PortfolioCard
+                project={items[carousel.nextIndex]!}
+                setPlayingProject={setPlayingProject}
+                enhanced={enhanced}
+                imagePriority
+              />
+            )}
+          </div>
         </motion.div>
       </div>
       <div className="flex justify-center gap-2 pt-1">
@@ -535,7 +555,7 @@ function MobilePortfolioCarousel({
             key={i}
             type="button"
             onClick={() => {
-              if (i !== logicalIndex) setIndex(i);
+              if (i !== logicalIndex) carousel.setIndex(i);
             }}
             className={`h-1.5 rounded-full transition-all duration-200 ${
               i === logicalIndex ? "bg-icube-gold w-4" : "bg-white/20 w-1.5"

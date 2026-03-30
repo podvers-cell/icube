@@ -3,9 +3,9 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Quote } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
+import { motion } from "motion/react";
 import { useSiteData } from "../SiteDataContext";
-import { useSwipeCarousel } from "../hooks/useSwipeCarousel";
+import { useLoopingDragCarousel } from "../hooks/useLoopingDragCarousel";
 import AnimatedStaggerItem from "./AnimatedStaggerItem";
 import { AnimatedSectionHeader } from "./ScrollReveal";
 
@@ -54,9 +54,11 @@ export default function Testimonials() {
 function TestimonialCard({
   testimonial: t,
   fillSlide,
+  imagePriority,
 }: {
   testimonial: (ReturnType<typeof useSiteData>["testimonials"])[number];
   fillSlide?: boolean;
+  imagePriority?: boolean;
 }) {
   return (
     <div className={fillSlide ? "w-full h-full" : "w-[85%] md:w-full mx-auto h-full"}>
@@ -85,6 +87,9 @@ function TestimonialCard({
               height={48}
               className="w-12 h-12 rounded-xl object-cover ring-2 ring-white/10 group-hover:ring-icube-gold/30 grayscale group-hover:grayscale-0 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
               referrerPolicy="no-referrer"
+              priority={imagePriority}
+              loading={imagePriority ? undefined : "lazy"}
+              fetchPriority={imagePriority ? "high" : undefined}
             />
           ) : (
             <div className="w-12 h-12 rounded-xl bg-white/10 ring-2 ring-white/10 flex items-center justify-center text-icube-gold/80 font-display font-semibold text-sm" aria-hidden>
@@ -108,21 +113,8 @@ function MobileTestimonialsCarousel({
   testimonials: ReturnType<typeof useSiteData>["testimonials"];
 }) {
   const len = testimonials.length;
-  const [index, setIndex] = useState(0);
-  const [direction, setDirection] = useState<1 | -1>(1);
-
-  const goPrev = () => {
-    if (!len) return;
-    setDirection(-1);
-    setIndex((i) => (i - 1 + len) % len);
-  };
-  const goNext = () => {
-    if (!len) return;
-    setDirection(1);
-    setIndex((i) => (i + 1) % len);
-  };
-  const swipe = useSwipeCarousel(goPrev, goNext);
-  const logicalIndex = len ? index % len : 0;
+  const carousel = useLoopingDragCarousel(len);
+  const logicalIndex = carousel.index;
 
   if (!len) return null;
 
@@ -134,22 +126,31 @@ function MobileTestimonialsCarousel({
         </span>
       </div>
       <div
+        ref={carousel.containerRef}
         className="-mx-6 w-screen overflow-hidden touch-pan-y select-none max-w-[100vw] box-content"
-        onTouchStart={swipe.onTouchStart}
-        onTouchEnd={swipe.onTouchEnd}
+        onPointerDown={carousel.onPointerDown}
       >
-        <AnimatePresence initial={false} mode="popLayout">
-          <motion.div
-            key={testimonials[logicalIndex]?.id ?? logicalIndex}
-            initial={{ x: direction > 0 ? 36 : -36, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: direction > 0 ? -36 : 36, opacity: 0 }}
-            transition={{ duration: 0.22, ease: [0.25, 0.8, 0.25, 1] }}
-            className="w-full px-2"
-          >
-            <TestimonialCard testimonial={testimonials[logicalIndex]!} fillSlide />
-          </motion.div>
-        </AnimatePresence>
+        <motion.div
+          className="flex"
+          style={{ x: carousel.x }}
+          drag="x"
+          dragListener={false}
+          dragControls={carousel.controls}
+          dragConstraints={carousel.dragConstraints}
+          dragElastic={0.08}
+          dragMomentum={false}
+          onDragEnd={carousel.onDragEnd}
+        >
+          <div className="w-full shrink-0 px-2">
+            <TestimonialCard testimonial={testimonials[carousel.prevIndex]!} fillSlide imagePriority />
+          </div>
+          <div className="w-full shrink-0 px-2">
+            <TestimonialCard testimonial={testimonials[logicalIndex]!} fillSlide imagePriority />
+          </div>
+          <div className="w-full shrink-0 px-2">
+            <TestimonialCard testimonial={testimonials[carousel.nextIndex]!} fillSlide imagePriority />
+          </div>
+        </motion.div>
       </div>
       <div className="flex justify-center gap-2 pt-1">
         {testimonials.map((_, i) => (
@@ -157,10 +158,7 @@ function MobileTestimonialsCarousel({
             key={i}
             type="button"
             onClick={() => {
-              if (i !== logicalIndex) {
-                setDirection(i > logicalIndex ? 1 : -1);
-                setIndex(i);
-              }
+              if (i !== logicalIndex) carousel.setIndex(i);
             }}
             className={`h-1.5 rounded-full transition-all duration-200 ${
               i === logicalIndex ? "bg-icube-gold w-4" : "bg-white/20 w-1.5"

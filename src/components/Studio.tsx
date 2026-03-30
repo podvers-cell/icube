@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
-import { useSwipeCarousel } from "../hooks/useSwipeCarousel";
+import { useLoopingDragCarousel } from "../hooks/useLoopingDragCarousel";
 import { useSiteData } from "../SiteDataContext";
 import { useBooking } from "../BookingContext";
 import AnimatedStaggerItem from "./AnimatedStaggerItem";
@@ -164,21 +164,8 @@ function MobileStudiosCarousel(props: {
 }) {
   const { studios, expandedId, setExpandedId, setSelectedStudio, setSelectedPackage, router } = props;
   const len = studios.length;
-  const [index, setIndex] = useState(0);
-  const [direction, setDirection] = useState<1 | -1>(1);
-
-  const goPrev = () => {
-    if (!len) return;
-    setDirection(-1);
-    setIndex((i) => (i - 1 + len) % len);
-  };
-  const goNext = () => {
-    if (!len) return;
-    setDirection(1);
-    setIndex((i) => (i + 1) % len);
-  };
-  const swipe = useSwipeCarousel(goPrev, goNext);
-  const logicalIndex = len ? index % len : 0;
+  const carousel = useLoopingDragCarousel(len);
+  const logicalIndex = carousel.index;
 
   if (!len) return null;
 
@@ -190,19 +177,33 @@ function MobileStudiosCarousel(props: {
         </span>
       </div>
       <div
+        ref={carousel.containerRef}
         className="-mx-6 w-screen overflow-hidden touch-pan-y select-none max-w-[100vw] box-content"
-        onTouchStart={swipe.onTouchStart}
-        onTouchEnd={swipe.onTouchEnd}
+        onPointerDown={carousel.onPointerDown}
       >
-        <AnimatePresence initial={false} mode="popLayout">
-          <motion.div
-            key={studios[logicalIndex]?.id ?? logicalIndex}
-            initial={{ x: direction > 0 ? 36 : -36, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: direction > 0 ? -36 : 36, opacity: 0 }}
-            transition={{ duration: 0.22, ease: [0.25, 0.8, 0.25, 1] }}
-            className="w-full"
-          >
+        <motion.div
+          className="flex"
+          style={{ x: carousel.x }}
+          drag="x"
+          dragListener={false}
+          dragControls={carousel.controls}
+          dragConstraints={carousel.dragConstraints}
+          dragElastic={0.08}
+          dragMomentum={false}
+          onDragEnd={carousel.onDragEnd}
+        >
+          <div className="w-full shrink-0">
+            <StudioCard
+              studio={studios[carousel.prevIndex]!}
+              expandedId={expandedId}
+              setExpandedId={setExpandedId}
+              setSelectedStudio={setSelectedStudio}
+              setSelectedPackage={setSelectedPackage}
+              router={router}
+              isPriority={false}
+            />
+          </div>
+          <div className="w-full shrink-0">
             <StudioCard
               studio={studios[logicalIndex]!}
               expandedId={expandedId}
@@ -212,8 +213,19 @@ function MobileStudiosCarousel(props: {
               router={router}
               isPriority={logicalIndex === 0}
             />
-          </motion.div>
-        </AnimatePresence>
+          </div>
+          <div className="w-full shrink-0">
+            <StudioCard
+              studio={studios[carousel.nextIndex]!}
+              expandedId={expandedId}
+              setExpandedId={setExpandedId}
+              setSelectedStudio={setSelectedStudio}
+              setSelectedPackage={setSelectedPackage}
+              router={router}
+              isPriority={false}
+            />
+          </div>
+        </motion.div>
       </div>
       <div className="flex justify-center gap-2 pt-1">
         {studios.map((_, i) => (
@@ -221,10 +233,7 @@ function MobileStudiosCarousel(props: {
             key={i}
             type="button"
             onClick={() => {
-              if (i !== logicalIndex) {
-                setDirection(i > logicalIndex ? 1 : -1);
-                setIndex(i);
-              }
+              if (i !== logicalIndex) carousel.setIndex(i);
             }}
             className={`h-1.5 rounded-full transition-all duration-200 ${
               i === logicalIndex ? "bg-icube-gold w-4" : "bg-white/20 w-1.5"
