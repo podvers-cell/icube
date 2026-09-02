@@ -2,6 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: [],
+  serverExternalPackages: ["firebase-admin"],
   async headers() {
     return [
       {
