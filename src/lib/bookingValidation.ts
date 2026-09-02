@@ -1,15 +1,9 @@
 import type { Firestore } from "firebase-admin/firestore";
 import { isSlotTooSoonInRegion } from "@/utils/bookingTimezone";
 import type { BookingPayloadSchema } from "@/schemas/booking";
-import { getOccupiedSlotsForDate } from "@/lib/bookingSlots";
 
-function normalizeHourSlot(timeSlot: string): string {
-  const m = timeSlot.match(/(\d{1,2}):(\d{2})/);
-  if (!m) return timeSlot;
-  return `${String(parseInt(m[1] ?? "0", 10)).padStart(2, "0")}:00`;
-}
-
-export async function assertBookingSlotAvailable(
+/** Lead time + admin blocks only — pending checkout does not reserve a slot. */
+export async function assertPendingCheckoutAllowed(
   db: Firestore,
   booking: Pick<BookingPayloadSchema, "booking_date" | "time_slot" | "studio_id">
 ): Promise<void> {
@@ -25,23 +19,17 @@ export async function assertBookingSlotAvailable(
     .where("time_slot", "==", booking.time_slot)
     .get();
 
-  if (!blockedSnaps.empty) {
-    const studioId = booking.studio_id ?? null;
-    const isBlocked = blockedSnaps.docs.some((d) => {
-      const data = d.data() as { studio_id?: string | null };
-      const blockedStudio = data.studio_id ?? null;
-      return blockedStudio == null || (studioId != null && blockedStudio === studioId);
-    });
+  if (blockedSnaps.empty) return;
 
-    if (isBlocked) {
-      throw new Error("This time slot is blocked. Please choose another time.");
-    }
-  }
+  const studioId = booking.studio_id ?? null;
+  const isBlocked = blockedSnaps.docs.some((d) => {
+    const data = d.data() as { studio_id?: string | null };
+    const blockedStudio = data.studio_id ?? null;
+    return blockedStudio == null || (studioId != null && blockedStudio === studioId);
+  });
 
-  const requestedSlot = normalizeHourSlot(booking.time_slot);
-  const occupied = await getOccupiedSlotsForDate(db, booking.booking_date, booking.studio_id);
-  if (occupied.includes(requestedSlot)) {
-    throw new Error("This time slot is no longer available. Please choose another time.");
+  if (isBlocked) {
+    throw new Error("This time slot is blocked. Please choose another time.");
   }
 }
 

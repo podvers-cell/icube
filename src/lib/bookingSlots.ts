@@ -1,8 +1,7 @@
-import type { Firestore, QueryDocumentSnapshot } from "firebase-admin/firestore";
+import type { Firestore, QueryDocumentSnapshot, Transaction } from "firebase-admin/firestore";
 
 export const PENDING_BOOKINGS_COLLECTION = "pending_bookings";
 export const CONFIRMED_BOOKINGS_COLLECTION = "bookings";
-export const PENDING_HOLD_MS = 30 * 60 * 1000;
 export const MAX_SLOT_HOUR = 22;
 
 export function normalizeStoredPaymentStatus(status: string | undefined): "pending" | "paid" | "failed" {
@@ -19,14 +18,13 @@ export function normalizeStoredPaymentStatus(status: string | undefined): "pendi
   }
 }
 
-type SlotBookingLike = {
+export type SlotBookingLike = {
   status?: string | null;
   payment_status?: string | null;
   studio_id?: string | null;
   booking_date?: string | null;
   time_slot?: string | null;
   booking_duration_hours?: number | null;
-  expires_at?: { toMillis?: () => number; seconds?: number } | null;
 };
 
 function parseStartHour(timeSlotRaw: string): number | null {
@@ -41,40 +39,24 @@ function parseDurationHours(raw: unknown): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
 }
 
-function isActivePendingCheckout(data: SlotBookingLike, nowMs: number): boolean {
-  if (normalizeStoredPaymentStatus(data.payment_status ?? undefined) === "failed") return false;
-  if (data.status === "cancelled" || data.status === "completed") return false;
+/** Only paid + confirmed (or legacy manual confirmed) bookings block availability. */
+export function isConfirmedPaidBooking(data: SlotBookingLike): boolean {
+  if (data.status === "cancelled") return false;
 
-  const expiresAt = data.expires_at;
-  if (expiresAt && typeof expiresAt.toMillis === "function") {
-    return expiresAt.toMillis() > nowMs;
-  }
-  if (expiresAt && typeof expiresAt.seconds === "number") {
-    return expiresAt.seconds * 1000 > nowMs;
-  }
-
-  return normalizeStoredPaymentStatus(data.payment_status ?? undefined) === "pending";
-}
-
-function isConfirmedPaidBooking(data: SlotBookingLike): boolean {
   const payment = normalizeStoredPaymentStatus(data.payment_status ?? undefined);
-  if (payment === "paid") return data.status !== "cancelled";
-  if (!data.payment_status && data.status === "confirmed") return true;
+  const status = data.status ?? "";
+
+  if (payment === "paid" && status === "confirmed") return true;
+
+  // Legacy manual bookings before payment fields existed.
+  if (!data.payment_status && status === "confirmed") return true;
+
   return false;
 }
 
-export function occupiedSlotsFromBooking(
-  data: SlotBookingLike,
-  studioId?: string,
-  nowMs = Date.now()
+export function hourSlotsFromBooking(
+  data: Pick<SlotBookingLike, "time_slot" | "booking_duration_hours">
 ): string[] {
-  if (data.status === "cancelled") return [];
-
-  const holdsSlot = isConfirmedPaidBooking(data) || isActivePendingCheckout(data, nowMs);
-  if (!holdsSlot) return [];
-
-  if (studioId != null && String(data.studio_id ?? "") !== String(studioId)) return [];
-
   const timeSlotRaw = data.time_slot ?? "";
   const startHour = parseStartHour(timeSlotRaw);
   if (startHour == null) return [];
@@ -90,22 +72,45 @@ export function occupiedSlotsFromBooking(
   return slots;
 }
 
+/** When filtering by studio, bookings without studio_id apply to all studios on that date. */
+export function bookingAppliesToStudio(data: SlotBookingLike, studioId?: string): boolean {
+  if (studioId == null) return true;
+  const bookingStudio = data.studio_id ?? null;
+  if (bookingStudio == null) return true;
+  return String(bookingStudio) === String(studioId);
+}
+
+export function occupiedSlotsFromBooking(data: SlotBookingLike, studioId?: string): string[] {
+  if (!isConfirmedPaidBooking(data)) return [];
+  if (!bookingAppliesToStudio(data, studioId)) return [];
+  return hourSlotsFromBooking(data);
+}
+
+export function bookingsOverlap(a: SlotBookingLike, b: SlotBookingLike): boolean {
+  const studioA = a.studio_id ?? null;
+  const studioB = b.studio_id ?? null;
+  if (studioA != null && studioB != null && String(studioA) !== String(studioB)) {
+    return false;
+  }
+
+  const slotsA = new Set(hourSlotsFromBooking(a));
+  return hourSlotsFromBooking(b).some((slot) => slotsA.has(slot));
+}
+
 export async function getOccupiedSlotsForDate(
   db: Firestore,
   bookingDate: string,
   studioId?: string
 ): Promise<string[]> {
-  const nowMs = Date.now();
   const slotSet = new Set<string>();
+  const confirmedSnaps = await db
+    .collection(CONFIRMED_BOOKINGS_COLLECTION)
+    .where("booking_date", "==", bookingDate)
+    .get();
 
-  const [confirmedSnaps, pendingSnaps] = await Promise.all([
-    db.collection(CONFIRMED_BOOKINGS_COLLECTION).where("booking_date", "==", bookingDate).get(),
-    db.collection(PENDING_BOOKINGS_COLLECTION).where("booking_date", "==", bookingDate).get(),
-  ]);
-
-  for (const snap of [...confirmedSnaps.docs, ...pendingSnaps.docs]) {
+  for (const snap of confirmedSnaps.docs) {
     const data = snap.data() as SlotBookingLike;
-    for (const slot of occupiedSlotsFromBooking(data, studioId, nowMs)) {
+    for (const slot of occupiedSlotsFromBooking(data, studioId)) {
       slotSet.add(slot);
     }
   }
@@ -113,14 +118,37 @@ export async function getOccupiedSlotsForDate(
   return Array.from(slotSet);
 }
 
+export async function findPaidBookingSlotConflict(
+  tx: Transaction,
+  db: Firestore,
+  candidate: SlotBookingLike,
+  excludeBookingIds: string[] = []
+): Promise<{ id: string; data: SlotBookingLike } | null> {
+  if (!candidate.booking_date) return null;
+
+  const snaps = await tx.get(
+    db.collection(CONFIRMED_BOOKINGS_COLLECTION).where("booking_date", "==", candidate.booking_date)
+  );
+
+  const excluded = new Set(excludeBookingIds);
+
+  for (const doc of snaps.docs) {
+    if (excluded.has(doc.id)) continue;
+    const data = doc.data() as SlotBookingLike;
+    if (!isConfirmedPaidBooking(data)) continue;
+    if (bookingsOverlap(candidate, data)) {
+      return { id: doc.id, data };
+    }
+  }
+
+  return null;
+}
+
 export function isDashboardVisibleBooking(data: {
   payment_status?: string | null;
   status?: string | null;
 }): boolean {
-  const payment = normalizeStoredPaymentStatus(data.payment_status ?? undefined);
-  if (payment === "paid" && data.status !== "cancelled") return true;
-  if (!data.payment_status && data.status === "confirmed") return true;
-  return false;
+  return isConfirmedPaidBooking(data);
 }
 
 export function mapDocToSlotBooking(snap: QueryDocumentSnapshot): SlotBookingLike {

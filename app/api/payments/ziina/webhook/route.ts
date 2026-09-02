@@ -84,11 +84,16 @@ export async function POST(request: Request) {
 
     let finalizedBookings = 0;
     let failedBookings = 0;
+    let slotConflicts = 0;
 
     for (const booking of [...pendingSnaps.docs, ...bookingSnaps.docs]) {
       if (paymentStatus === "paid") {
-        await finalizePaidBooking(booking.id, meta);
-        finalizedBookings += 1;
+        const outcome = await finalizePaidBooking(booking.id, meta);
+        if (outcome.slotConflict) {
+          slotConflicts += 1;
+        } else {
+          finalizedBookings += 1;
+        }
       } else if (paymentStatus === "failed") {
         await markBookingPaymentFailed(booking.id, meta);
         failedBookings += 1;
@@ -165,6 +170,7 @@ export async function POST(request: Request) {
       intentId,
       updatedBookings: bookingSnaps.size + pendingSnaps.size,
       finalizedBookings,
+      slotConflicts,
       failedBookings,
       updatedEnrollments: enrollmentSnaps.size,
     });

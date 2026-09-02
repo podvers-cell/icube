@@ -703,7 +703,7 @@ export async function getBookingAddons(): Promise<BookingAddon[]> {
 const MAX_SLOT_HOUR = 22; // 10:00 PM — kept for blocked_slots client merge
 
 /**
- * Returns occupied time_slot values for a date via server (paid bookings + active pending checkouts).
+ * Returns occupied time_slot values for a date via server (paid/confirmed bookings only).
  */
 export async function getBookedSlots(bookingDate: string, studioId?: string): Promise<string[]> {
   try {
