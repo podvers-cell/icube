@@ -1,8 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Download, Trash2, X } from "lucide-react";
 import { api, getBookingAddons, getBookingPackages, sendBookingConfirmedEmail, type BookingAddon } from "../api";
+import { BookingFilterTabs, StatusBadge, useFilterTab } from "@/components/dashboard/BookingFilterTabs";
+import {
+  BOOKING_FILTER_TABS,
+  bookingMatchesFilter,
+  bookingStatusBadgeClass,
+  bookingStatusLabel,
+  canAdminConfirm,
+  formatBookingAmount,
+  formatPaymentReference,
+  getBookingFilterCategory,
+  getPackageDisplayName,
+  getPackagePrice,
+  paymentStatusBadgeClass,
+  paymentStatusLabel,
+  type BookingFilterTab,
+} from "@/lib/dashboardBookingUi";
 
 type BookingPackage = { id: number; name: string; price_aed: number };
 
@@ -25,6 +41,10 @@ type Booking = {
   addons_total_aed?: number;
   discount_code?: string | null;
   discount_percent?: number | null;
+  total_amount_aed?: number | null;
+  payment_status?: string | null;
+  payment_amount_minor?: number | null;
+  ziina_intent_id?: string | null;
   status: string;
   created_at: string | { seconds: number; nanoseconds?: number } | { _seconds: number; _nanoseconds?: number };
 };
@@ -62,6 +82,7 @@ export default function DashboardBookings() {
   const [selected, setSelected] = useState<Booking | null>(null);
   const [addons, setAddons] = useState<BookingAddon[]>([]);
   const [packages, setPackages] = useState<BookingPackage[]>([]);
+  const [filterTab, setFilterTab] = useFilterTab<BookingFilterTab>("confirmed");
 
   function load() {
     api.get<Booking[]>("/dashboard/bookings").then(setList).catch(() => {});
@@ -117,7 +138,30 @@ export default function DashboardBookings() {
     }
   }
 
-  const studioBookings = list.filter((b) => !b.package_id);
+  const studioBookings = useMemo(() => list.filter((b) => !b.package_id), [list]);
+
+  const filterCounts = useMemo(() => {
+    const counts: Record<BookingFilterTab, number> = { confirmed: 0, awaiting: 0, failed: 0, all: studioBookings.length };
+    for (const b of studioBookings) {
+      counts[getBookingFilterCategory(b)] += 1;
+    }
+    return counts;
+  }, [studioBookings]);
+
+  const visibleBookings = useMemo(
+    () => studioBookings.filter((b) => bookingMatchesFilter(b, filterTab)),
+    [studioBookings, filterTab]
+  );
+
+  const packageLookup = useMemo(
+    () => packages.map((p) => ({ id: p.id, name: p.name, price_aed: p.price_aed })),
+    [packages]
+  );
+
+  const getPackageName = useCallback(
+    (b: Booking) => getPackageDisplayName(b, packageLookup),
+    [packageLookup]
+  );
 
   function downloadCsv(filename: string, rows: Record<string, unknown>[]) {
     const headers = Array.from(
@@ -151,10 +195,14 @@ export default function DashboardBookings() {
       email: b.email,
       phone: b.phone ?? "",
       studio_name: b.studio_name ?? "",
+      package_name: getPackageName(b),
       booking_date: b.booking_date ?? "",
       time_slot: b.time_slot ?? "",
       booking_duration_hours: b.booking_duration_hours ?? "",
-      status: b.status,
+      booking_status: bookingStatusLabel(b.status),
+      payment_status: paymentStatusLabel(b.payment_status),
+      total_amount_aed: formatBookingAmount(b, getPackagePrice(b, packageLookup)),
+      ziina_intent_id: b.ziina_intent_id ?? "",
       addons_total_aed: b.addons_total_aed ?? "",
       studio_total_aed: b.studio_total_aed ?? "",
       discount_code: b.discount_code ?? "",
@@ -203,8 +251,11 @@ export default function DashboardBookings() {
           </button>
         </div>
       </div>
+
+      <BookingFilterTabs tabs={BOOKING_FILTER_TABS} active={filterTab} onChange={setFilterTab} counts={filterCounts} />
+
       <div className="overflow-x-auto">
-        <table className="w-full text-left min-w-[900px]">
+        <table className="w-full text-left min-w-[1200px]">
           <thead>
             <tr className="border-b border-white/10 text-gray-400 text-sm">
               <th className="pb-3 pr-4">Submitted</th>
@@ -215,12 +266,15 @@ export default function DashboardBookings() {
               <th className="pb-3 pr-4">Date</th>
               <th className="pb-3 pr-4">Time</th>
               <th className="pb-3 pr-4">Duration</th>
-              <th className="pb-3 pr-4">Status</th>
+              <th className="pb-3 pr-4">Amount</th>
+              <th className="pb-3 pr-4">Payment</th>
+              <th className="pb-3 pr-4">Booking</th>
+              <th className="pb-3 pr-4">Payment ref</th>
               <th className="pb-3">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {studioBookings.map((b) => (
+            {visibleBookings.map((b) => (
               <tr
                 key={b.id}
                 onClick={() => setSelected(b)}
@@ -252,15 +306,29 @@ export default function DashboardBookings() {
                 <td className="py-3 pr-4 text-gray-400 text-sm">
                   {b.booking_duration_hours != null ? `${b.booking_duration_hours}h` : "—"}
                 </td>
+                <td className="py-3 pr-4 text-icube-gold text-sm whitespace-nowrap">
+                  {formatBookingAmount(b, getPackagePrice(b, packageLookup))}
+                </td>
                 <td className="py-3 pr-4">
-                  <span className={`text-xs px-2 py-1 rounded ${b.status === "confirmed" ? "bg-green-500/20 text-green-400" : b.status === "cancelled" ? "bg-red-500/20 text-red-400" : "bg-icube-gold/20 text-icube-gold"}`}>
-                    {b.status}
-                  </span>
+                  <StatusBadge label={paymentStatusLabel(b.payment_status)} className={paymentStatusBadgeClass(b.payment_status)} />
+                </td>
+                <td className="py-3 pr-4">
+                  <StatusBadge label={bookingStatusLabel(b.status)} className={bookingStatusBadgeClass(b.status)} />
+                </td>
+                <td className="py-3 pr-4 text-gray-500 text-xs font-mono" title={b.ziina_intent_id ?? undefined}>
+                  {formatPaymentReference(b.ziina_intent_id)}
                 </td>
                 <td className="py-3" onClick={(e) => e.stopPropagation()}>
-                  {b.status === "pending" && (
+                  {b.status !== "confirmed" && b.status !== "cancelled" && (
                     <>
-                      <button onClick={() => setStatus(b.id, "confirmed", b)} className="text-green-400 text-sm mr-2">Confirm</button>
+                      <button
+                        onClick={() => canAdminConfirm(b) && setStatus(b.id, "confirmed", b)}
+                        disabled={!canAdminConfirm(b)}
+                        title={canAdminConfirm(b) ? "Confirm booking" : "Payment must be completed before confirming"}
+                        className="text-green-400 text-sm mr-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        Confirm
+                      </button>
                       <button onClick={() => setStatus(b.id, "cancelled")} className="text-red-400 text-sm">Cancel</button>
                     </>
                   )}
@@ -277,7 +345,10 @@ export default function DashboardBookings() {
           </tbody>
         </table>
       </div>
-      {list.length === 0 && <p className="text-gray-500 mt-4">No bookings yet.</p>}
+      {studioBookings.length === 0 && <p className="text-gray-500 mt-4">No bookings yet.</p>}
+      {studioBookings.length > 0 && visibleBookings.length === 0 && (
+        <p className="text-gray-500 mt-4">No bookings in this filter.</p>
+      )}
 
       {/* Detail modal */}
       {selected && (
@@ -307,11 +378,25 @@ export default function DashboardBookings() {
                   <p className="text-white">{formatSubmitted(selected.created_at)}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Status</p>
-                  <span className={`text-xs px-2 py-1 rounded ${selected.status === "confirmed" ? "bg-green-500/20 text-green-400" : selected.status === "cancelled" ? "bg-red-500/20 text-red-400" : "bg-icube-gold/20 text-icube-gold"}`}>
-                    {selected.status}
-                  </span>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Booking status</p>
+                  <StatusBadge label={bookingStatusLabel(selected.status)} className={bookingStatusBadgeClass(selected.status)} />
                 </div>
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Payment status</p>
+                  <StatusBadge label={paymentStatusLabel(selected.payment_status)} className={paymentStatusBadgeClass(selected.payment_status)} />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Total amount</p>
+                  <p className="text-icube-gold font-medium">
+                    {formatBookingAmount(selected, getPackagePrice(selected, packageLookup))}
+                  </p>
+                </div>
+                {selected.ziina_intent_id && (
+                  <div className="sm:col-span-2">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Ziina payment reference</p>
+                    <p className="text-gray-300 text-sm font-mono break-all">{selected.ziina_intent_id}</p>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -453,9 +538,14 @@ export default function DashboardBookings() {
             </div>
 
             <div className="border-t border-white/10 px-6 py-4 flex items-center justify-between gap-4 bg-white/[0.02]">
-              {selected.status === "pending" && (
+              {selected.status !== "confirmed" && selected.status !== "cancelled" && (
                 <div className="flex gap-2">
-                  <button onClick={() => setStatus(selected.id, "confirmed", selected)} className="px-4 py-2 rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30 text-sm font-medium">
+                  <button
+                    onClick={() => canAdminConfirm(selected) && setStatus(selected.id, "confirmed", selected)}
+                    disabled={!canAdminConfirm(selected)}
+                    title={canAdminConfirm(selected) ? "Confirm booking" : "Payment must be completed before confirming"}
+                    className="px-4 py-2 rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30 text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
                     Confirm
                   </button>
                   <button onClick={() => setStatus(selected.id, "cancelled")} className="px-4 py-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 text-sm font-medium">

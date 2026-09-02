@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 
-const WHATSAPP_URL = "https://wa.me/971589965005";
+import { WHATSAPP_URL } from "@/constants/whatsapp";
 
 /** Floating WhatsApp CTA on all public routes (hidden on dashboard). */
 export default function WhatsAppFloatingButton() {

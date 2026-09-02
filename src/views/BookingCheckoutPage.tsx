@@ -8,7 +8,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import BookingProgress from "@/components/BookingProgress";
 import { useBooking } from "@/BookingContext";
-import { submitBooking, sendBookingConfirmationEmail, validateDiscountCodeOnServer } from "@/api";
+import { submitBooking, validateDiscountCodeOnServer } from "@/api";
 
 export default function BookingCheckoutPage() {
   const router = useRouter();
@@ -90,14 +90,10 @@ export default function BookingCheckoutPage() {
         time_slot: selectedTimeSlot,
         ...(selectedAddOns.length > 0 && { addon_ids: selectedAddOns.map((a) => a.id), addons_total_aed: totalAddonsAmount }),
         ...(discountPercent > 0 && { discount_code: discountCode.trim().toUpperCase(), discount_percent: discountPercent }),
+        total_amount_aed: totalAmount,
       };
 
       const bookingRes = await submitBooking(payload);
-      try {
-        await sendBookingConfirmationEmail(payload);
-      } catch {
-        // Booking saved; email is best-effort
-      }
       const payRes = await fetch("/api/payments/ziina/create-intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

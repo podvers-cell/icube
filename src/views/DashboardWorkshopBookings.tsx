@@ -3,6 +3,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { Download, Trash2 } from "lucide-react";
 import { api } from "@/api";
+import { BookingFilterTabs, StatusBadge, useFilterTab } from "@/components/dashboard/BookingFilterTabs";
+import {
+  BOOKING_FILTER_TABS,
+  formatPaymentReference,
+  normalizePaymentStatus,
+  paymentStatusBadgeClass,
+  paymentStatusLabel,
+  workshopMatchesFilter,
+  type BookingFilterTab,
+} from "@/lib/dashboardBookingUi";
 
 type WorkshopEnrollment = {
   id: string;
@@ -21,8 +31,8 @@ function formatSubmitted(createdAt: WorkshopEnrollment["created_at"]): string {
   if (!createdAt) return "—";
   let date: Date;
   if (typeof createdAt === "string") date = new Date(createdAt);
-  else if (typeof createdAt === "object" && createdAt !== null && "seconds" in createdAt) date = new Date((createdAt as any).seconds * 1000);
-  else if (typeof createdAt === "object" && createdAt !== null && "_seconds" in createdAt) date = new Date((createdAt as any)._seconds * 1000);
+  else if (typeof createdAt === "object" && createdAt !== null && "seconds" in createdAt) date = new Date((createdAt as { seconds: number }).seconds * 1000);
+  else if (typeof createdAt === "object" && createdAt !== null && "_seconds" in createdAt) date = new Date((createdAt as { _seconds: number })._seconds * 1000);
   else date = new Date(Number(createdAt));
   if (isNaN(date.getTime())) return "—";
   return date.toLocaleString("en-AE", { dateStyle: "short", timeStyle: "short" });
@@ -51,8 +61,16 @@ function downloadCsv(filename: string, rows: Record<string, unknown>[]) {
   URL.revokeObjectURL(url);
 }
 
+function getWorkshopFilterCategory(e: WorkshopEnrollment): Exclude<BookingFilterTab, "all"> {
+  const payment = normalizePaymentStatus(e.payment_status);
+  if (payment === "paid") return "confirmed";
+  if (payment === "failed") return "failed";
+  return "awaiting";
+}
+
 export default function DashboardWorkshopBookings() {
   const [list, setList] = useState<WorkshopEnrollment[]>([]);
+  const [filterTab, setFilterTab] = useFilterTab<BookingFilterTab>("confirmed");
 
   function load() {
     api.get<WorkshopEnrollment[]>("/dashboard/workshop-bookings").then((d) => setList(Array.isArray(d) ? d : [])).catch(() => {});
@@ -62,6 +80,19 @@ export default function DashboardWorkshopBookings() {
   const sorted = useMemo(() => {
     return [...list].sort((a, b) => formatSubmitted(b.created_at).localeCompare(formatSubmitted(a.created_at)));
   }, [list]);
+
+  const filterCounts = useMemo(() => {
+    const counts: Record<BookingFilterTab, number> = { confirmed: 0, awaiting: 0, failed: 0, all: sorted.length };
+    for (const e of sorted) {
+      counts[getWorkshopFilterCategory(e)] += 1;
+    }
+    return counts;
+  }, [sorted]);
+
+  const visibleEnrollments = useMemo(
+    () => sorted.filter((e) => workshopMatchesFilter(e, filterTab)),
+    [sorted, filterTab]
+  );
 
   function exportData() {
     const rows = sorted.map((e) => ({
@@ -73,7 +104,7 @@ export default function DashboardWorkshopBookings() {
       email: e.email ?? "",
       phone: e.phone ?? "",
       amount_aed: e.amount_aed ?? "",
-      payment_status: e.payment_status ?? "",
+      payment_status: paymentStatusLabel(e.payment_status),
       ziina_intent_id: e.ziina_intent_id ?? "",
     }));
     downloadCsv(`workshop_bookings_${new Date().toISOString().slice(0, 10)}.csv`, rows);
@@ -118,6 +149,8 @@ export default function DashboardWorkshopBookings() {
         </div>
       </div>
 
+      <BookingFilterTabs tabs={BOOKING_FILTER_TABS} active={filterTab} onChange={setFilterTab} counts={filterCounts} />
+
       <div className="overflow-x-auto">
         <table className="w-full text-left min-w-[980px]">
           <thead>
@@ -130,11 +163,11 @@ export default function DashboardWorkshopBookings() {
               <th className="pb-3 pr-4">Phone</th>
               <th className="pb-3 pr-4">Amount</th>
               <th className="pb-3 pr-4">Payment</th>
-              <th className="pb-3">Intent</th>
+              <th className="pb-3">Payment ref</th>
             </tr>
           </thead>
           <tbody>
-            {sorted.map((e) => (
+            {visibleEnrollments.map((e) => (
               <tr key={e.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                 <td className="py-3 pr-4 text-gray-300 text-sm whitespace-nowrap">{formatSubmitted(e.created_at)}</td>
                 <td className="py-3 pr-4 text-white text-sm">{e.workshop_id || "—"}</td>
@@ -143,20 +176,24 @@ export default function DashboardWorkshopBookings() {
                 <td className="py-3 pr-4 text-gray-300 text-sm">{e.email || "—"}</td>
                 <td className="py-3 pr-4 text-gray-300 text-sm whitespace-nowrap">{e.phone || "—"}</td>
                 <td className="py-3 pr-4 text-icube-gold text-sm font-semibold whitespace-nowrap">
-                  {e.amount_aed != null ? `AED ${e.amount_aed}` : "—"}
+                  {e.amount_aed != null ? `${e.amount_aed} AED` : "—"}
                 </td>
-                <td className="py-3 pr-4 text-sm">
-                  <span className="text-xs px-2 py-1 rounded bg-white/5 border border-white/10 text-gray-200">
-                    {e.payment_status || "—"}
-                  </span>
+                <td className="py-3 pr-4">
+                  <StatusBadge label={paymentStatusLabel(e.payment_status)} className={paymentStatusBadgeClass(e.payment_status)} />
                 </td>
-                <td className="py-3 text-xs text-gray-500">{e.ziina_intent_id || "—"}</td>
+                <td className="py-3 text-xs text-gray-500 font-mono" title={e.ziina_intent_id ?? undefined}>
+                  {formatPaymentReference(e.ziina_intent_id)}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {sorted.length === 0 && <p className="text-gray-500 mt-4">No workshop bookings yet.</p>}
+      {sorted.length > 0 && visibleEnrollments.length === 0 && (
+        <p className="text-gray-500 mt-4">No workshop bookings in this filter.</p>
+      )}
     </div>
   );
 }
-

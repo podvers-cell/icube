@@ -26,6 +26,8 @@ type Project = {
   image_url: string;
   sort_order: number;
   video_url?: string;
+  video_urls?: string[];
+  gallery_images?: string[];
   visible?: boolean;
   show_in_selected_work?: boolean;
 };

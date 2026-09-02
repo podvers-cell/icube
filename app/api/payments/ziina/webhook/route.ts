@@ -1,7 +1,13 @@
 import { createHmac, timingSafeEqual } from "crypto";
+import { FieldValue } from "firebase-admin/firestore";
 import { NextResponse } from "next/server";
-import { collection, doc, getDocs, query, runTransaction, serverTimestamp, updateDoc, where, increment } from "firebase/firestore";
-import { requireFirestore } from "@/firebase";
+import { getAdminFirestore } from "@/firebase-admin";
+import {
+  finalizePaidBooking,
+  markBookingPaymentFailed,
+  normalizeStoredPaymentStatus,
+  type PaymentMeta,
+} from "@/lib/bookingPayment";
 
 type ZiinaWebhookPayload = {
   event?: string;
@@ -23,31 +29,22 @@ function verifySignature(rawBody: string, signature: string, secret: string): bo
   return timingSafeEqual(a, b);
 }
 
-function normalizePaymentStatus(status: string | undefined): string {
-  switch (status) {
-    case "completed":
-      return "paid";
-    case "failed":
-      return "failed";
-    case "canceled":
-      return "cancelled";
-    case "pending":
-      return "pending";
-    case "requires_user_action":
-      return "requires_user_action";
-    case "requires_payment_instrument":
-      return "requires_payment_instrument";
-    default:
-      return status || "unknown";
-  }
-}
-
 function parseGroupSizeMax(raw: unknown): number | null {
   const s = typeof raw === "string" ? raw : "";
   if (!s.trim()) return null;
   const nums = s.match(/\d+/g)?.map((n) => Number(n)).filter((n) => Number.isFinite(n) && n > 0) ?? [];
   if (!nums.length) return null;
   return Math.max(...nums);
+}
+
+function buildPaymentMeta(payload: ZiinaWebhookPayload, eventName: string): PaymentMeta {
+  return {
+    eventName,
+    providerStatus: payload.data?.status,
+    amountMinor: payload.data?.amount ?? null,
+    currency: payload.data?.currency_code ?? null,
+    message: payload.data?.message ?? null,
+  };
 }
 
 export async function POST(request: Request) {
@@ -71,64 +68,76 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true, ignored: true, reason: "Missing intent id" });
     }
 
-    const db = requireFirestore();
-    const paymentStatus = normalizePaymentStatus(providerStatus);
-    const [bookingSnaps, enrollmentSnaps] = await Promise.all([
-      getDocs(query(collection(db, "bookings"), where("ziina_intent_id", "==", intentId))),
-      getDocs(query(collection(db, "workshop_enrollments"), where("ziina_intent_id", "==", intentId))),
+    const db = getAdminFirestore();
+    const paymentStatus = normalizeStoredPaymentStatus(providerStatus);
+    const meta = buildPaymentMeta(payload, eventName);
+
+    const [bookingSnaps, pendingSnaps, enrollmentSnaps] = await Promise.all([
+      db.collection("bookings").where("ziina_intent_id", "==", intentId).get(),
+      db.collection("pending_bookings").where("ziina_intent_id", "==", intentId).get(),
+      db.collection("workshop_enrollments").where("ziina_intent_id", "==", intentId).get(),
     ]);
 
-    if (bookingSnaps.empty && enrollmentSnaps.empty) {
+    if (bookingSnaps.empty && pendingSnaps.empty && enrollmentSnaps.empty) {
       return NextResponse.json({ ok: true, ignored: true, reason: "No record for intent", intentId, event: eventName });
     }
 
-    for (const booking of bookingSnaps.docs) {
-      await updateDoc(doc(db, "bookings", booking.id), {
-        payment_status: paymentStatus,
-        payment_provider: "ziina",
-        payment_event: eventName,
-        payment_intent_status: providerStatus || null,
-        payment_amount_minor: payload.data?.amount ?? null,
-        payment_currency: payload.data?.currency_code ?? null,
-        payment_last_message: payload.data?.message ?? null,
-        paid_at: providerStatus === "completed" ? serverTimestamp() : null,
-        updated_at: serverTimestamp(),
-      });
+    let finalizedBookings = 0;
+    let failedBookings = 0;
+
+    for (const booking of [...pendingSnaps.docs, ...bookingSnaps.docs]) {
+      if (paymentStatus === "paid") {
+        await finalizePaidBooking(booking.id, meta);
+        finalizedBookings += 1;
+      } else if (paymentStatus === "failed") {
+        await markBookingPaymentFailed(booking.id, meta);
+        failedBookings += 1;
+      } else {
+        await booking.ref.update({
+          payment_status: "pending",
+          payment_provider: "ziina",
+          payment_event: eventName,
+          payment_intent_status: providerStatus || null,
+          payment_amount_minor: payload.data?.amount ?? null,
+          payment_currency: payload.data?.currency_code ?? null,
+          payment_last_message: payload.data?.message ?? null,
+          updated_at: FieldValue.serverTimestamp(),
+        });
+      }
     }
 
     for (const enr of enrollmentSnaps.docs) {
-      const enrRef = doc(db, "workshop_enrollments", enr.id);
-      await updateDoc(enrRef, {
-        payment_status: paymentStatus,
+      const enrRef = enr.ref;
+      await enrRef.update({
+        payment_status: paymentStatus === "paid" ? "paid" : paymentStatus === "failed" ? "failed" : "pending",
         payment_provider: "ziina",
         payment_event: eventName,
         payment_intent_status: providerStatus || null,
         payment_amount_minor: payload.data?.amount ?? null,
         payment_currency: payload.data?.currency_code ?? null,
         payment_last_message: payload.data?.message ?? null,
-        paid_at: providerStatus === "completed" ? serverTimestamp() : null,
-        updated_at: serverTimestamp(),
+        paid_at: providerStatus === "completed" ? FieldValue.serverTimestamp() : null,
+        updated_at: FieldValue.serverTimestamp(),
       });
 
-      // When payment completes, increment workshop paid seats once (idempotent).
       if (providerStatus === "completed") {
         try {
-          await runTransaction(db, async (tx) => {
+          await db.runTransaction(async (tx) => {
             const freshEnr = await tx.get(enrRef);
-            if (!freshEnr.exists()) return;
-            const data = freshEnr.data() as {
-              workshop_id?: string;
-              counted_at?: unknown;
-            };
-            if (data.counted_at) return; // already counted
+            if (!freshEnr.exists) return;
+            const data = freshEnr.data() as { workshop_id?: string; counted_at?: unknown };
+            if (data.counted_at) return;
+
             const workshopId = String(data.workshop_id ?? "");
             if (!workshopId) return;
-            const workshopRef = doc(db, "workshops", workshopId);
+
+            const workshopRef = db.collection("workshops").doc(workshopId);
             const wsSnap = await tx.get(workshopRef);
-            if (!wsSnap.exists()) {
-              tx.update(enrRef, { counted_at: serverTimestamp() });
+            if (!wsSnap.exists) {
+              tx.update(enrRef, { counted_at: FieldValue.serverTimestamp() });
               return;
             }
+
             const ws = wsSnap.data() as {
               paid_enrollments_count?: number;
               group_size_max?: number;
@@ -138,11 +147,11 @@ export async function POST(request: Request) {
             const current = Number(ws.paid_enrollments_count ?? 0) || 0;
 
             tx.update(workshopRef, {
-              paid_enrollments_count: increment(1),
+              paid_enrollments_count: FieldValue.increment(1),
               sold_out: Number.isFinite(max) && max > 0 ? current + 1 >= max : false,
-              updated_at: serverTimestamp(),
+              updated_at: FieldValue.serverTimestamp(),
             });
-            tx.update(enrRef, { counted_at: serverTimestamp() });
+            tx.update(enrRef, { counted_at: FieldValue.serverTimestamp() });
           });
         } catch {
           // best-effort; payment status already stored
@@ -154,7 +163,9 @@ export async function POST(request: Request) {
       ok: true,
       event: eventName,
       intentId,
-      updatedBookings: bookingSnaps.size,
+      updatedBookings: bookingSnaps.size + pendingSnaps.size,
+      finalizedBookings,
+      failedBookings,
       updatedEnrollments: enrollmentSnaps.size,
     });
   } catch (err) {

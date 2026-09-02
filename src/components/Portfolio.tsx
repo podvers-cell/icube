@@ -8,7 +8,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useSiteData } from "../SiteDataContext";
 import { useSwipeCarousel } from "../hooks/useSwipeCarousel";
 import { useContactModal } from "../ContactModalContext";
-import { getVideoEmbed } from "../lib/videoEmbed";
+import { getProjectMediaItems, projectHasMedia } from "../lib/portfolioMedia";
 import { VideoPlayerModal } from "./VideoPlayerModal";
 import AnimatedStaggerItem from "./AnimatedStaggerItem";
 import { AnimatedSectionHeader } from "./ScrollReveal";
@@ -21,6 +21,8 @@ type Project = {
   image_url: string;
   sort_order: number;
   video_url?: string;
+  video_urls?: string[];
+  gallery_images?: string[];
   visible?: boolean;
   show_in_selected_work?: boolean;
 };
@@ -218,12 +220,13 @@ export default function Portfolio({ limit, sectionLabel = "Selected work", title
       </div>
 
       {playingProject && (() => {
-          const embed = playingProject.video_url ? getVideoEmbed(playingProject.video_url) : null;
-          if (!embed) return null;
+          const mediaItems = getProjectMediaItems(playingProject, playingProject.image_url);
+          if (!mediaItems.length) return null;
           return (
             <VideoPlayerModal
               key={playingProject.id}
-              embed={embed}
+              mediaItems={mediaItems}
+              embed={mediaItems[0]?.type === "video" ? mediaItems[0].embed : undefined}
               title={playingProject.title}
               onClose={() => setPlayingProject(null)}
               projectInfo={{
@@ -257,7 +260,7 @@ function BentoSelectedWork({ items, setPlayingProject }: { items: Project[]; set
 }
 
 function BentoFeaturedCard({ project, setPlayingProject }: { project: Project; setPlayingProject: (p: Project | null) => void }) {
-  const hasVideo = project.video_url && getVideoEmbed(project.video_url);
+  const hasMedia = projectHasMedia(project);
   return (
     <motion.div
       className="group h-full min-h-[280px] lg:min-h-[340px] flex flex-col"
@@ -266,10 +269,10 @@ function BentoFeaturedCard({ project, setPlayingProject }: { project: Project; s
       transition={{ type: "tween", duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }}
     >
       <div
-        role={hasVideo ? "button" : undefined}
-        tabIndex={hasVideo ? 0 : undefined}
-        onClick={() => hasVideo && setPlayingProject(project)}
-        onKeyDown={(e) => hasVideo && (e.key === "Enter" || e.key === " ") && setPlayingProject(project)}
+        role={hasMedia ? "button" : undefined}
+        tabIndex={hasMedia ? 0 : undefined}
+        onClick={() => hasMedia && setPlayingProject(project)}
+        onKeyDown={(e) => hasMedia && (e.key === "Enter" || e.key === " ") && setPlayingProject(project)}
         className="group/card relative flex-1 min-h-[240px] overflow-hidden rounded-2xl border border-white/15 bg-white/[0.06] cursor-pointer
           shadow-[0_12px_40px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.06)]
           hover:border-icube-gold/50 hover:shadow-[0_28px_60px_rgba(0,0,0,0.5),0_0_0_1px_rgba(212,175,55,0.25),0_0_60px_rgba(212,175,55,0.12)]
@@ -304,7 +307,7 @@ function BentoFeaturedCard({ project, setPlayingProject }: { project: Project; s
 }
 
 function BentoSmallCard({ project, setPlayingProject }: { project: Project; setPlayingProject: (p: Project | null) => void }) {
-  const hasVideo = project.video_url && getVideoEmbed(project.video_url);
+  const hasMedia = projectHasMedia(project);
   return (
     <motion.div
       className="group h-full flex flex-col"
@@ -313,10 +316,10 @@ function BentoSmallCard({ project, setPlayingProject }: { project: Project; setP
       transition={{ type: "tween", duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
     >
       <div
-        role={hasVideo ? "button" : undefined}
-        tabIndex={hasVideo ? 0 : undefined}
-        onClick={() => hasVideo && setPlayingProject(project)}
-        onKeyDown={(e) => hasVideo && (e.key === "Enter" || e.key === " ") && setPlayingProject(project)}
+        role={hasMedia ? "button" : undefined}
+        tabIndex={hasMedia ? 0 : undefined}
+        onClick={() => hasMedia && setPlayingProject(project)}
+        onKeyDown={(e) => hasMedia && (e.key === "Enter" || e.key === " ") && setPlayingProject(project)}
         className="group/card relative flex-1 min-h-[160px] overflow-hidden rounded-xl border border-white/12 bg-white/[0.04] cursor-pointer
           shadow-[0_8px_24px_rgba(0,0,0,0.3)]
           hover:border-icube-gold/40 hover:shadow-[0_16px_40px_rgba(0,0,0,0.4),0_0_0_1px_rgba(212,175,55,0.15)]
@@ -352,7 +355,7 @@ function BentoSmallCard({ project, setPlayingProject }: { project: Project; setP
 
 /** Card for standalone portfolio page: image, title, subtitle (client/category), category tag */
 function StandalonePortfolioCard({ project, setPlayingProject }: { project: Project; setPlayingProject: (p: Project | null) => void }) {
-  const hasVideo = project.video_url && getVideoEmbed(project.video_url);
+  const hasMedia = projectHasMedia(project);
   const subtitle = project.client || project.category;
 
   return (
@@ -363,10 +366,10 @@ function StandalonePortfolioCard({ project, setPlayingProject }: { project: Proj
       transition={{ type: "tween", duration: 0.2 }}
     >
       <div
-        role={hasVideo ? "button" : undefined}
-        tabIndex={hasVideo ? 0 : undefined}
-        onClick={() => hasVideo && setPlayingProject(project)}
-        onKeyDown={(e) => hasVideo && (e.key === "Enter" || e.key === " ") && setPlayingProject(project)}
+        role={hasMedia ? "button" : undefined}
+        tabIndex={hasMedia ? 0 : undefined}
+        onClick={() => hasMedia && setPlayingProject(project)}
+        onKeyDown={(e) => hasMedia && (e.key === "Enter" || e.key === " ") && setPlayingProject(project)}
         className="relative aspect-[4/3] overflow-hidden rounded-xl bg-white/5 border border-white/10 cursor-pointer transition-all duration-300 hover:border-white/20"
       >
         <Image
@@ -378,7 +381,7 @@ function StandalonePortfolioCard({ project, setPlayingProject }: { project: Proj
           referrerPolicy="no-referrer"
         />
         <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors" />
-        {hasVideo && (
+        {hasMedia && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="play-btn-glass-wrap rounded-full w-10 h-10 md:w-14 md:h-14">
               <span className="play-btn-ring" aria-hidden />
@@ -411,7 +414,7 @@ function PortfolioCard({
   setPlayingProject: (p: Project | null) => void;
   enhanced?: boolean;
 }) {
-  const hasVideo = project.video_url && getVideoEmbed(project.video_url);
+  const hasMedia = projectHasMedia(project);
   return (
     <div className="w-[85%] md:w-full mx-auto">
     <motion.div
@@ -421,10 +424,10 @@ function PortfolioCard({
       transition={{ type: "tween", duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
     >
       <div
-        role={hasVideo ? "button" : undefined}
-        tabIndex={hasVideo ? 0 : undefined}
-        onClick={() => hasVideo && setPlayingProject(project)}
-        onKeyDown={(e) => hasVideo && (e.key === "Enter" || e.key === " ") && setPlayingProject(project)}
+        role={hasMedia ? "button" : undefined}
+        tabIndex={hasMedia ? 0 : undefined}
+        onClick={() => hasMedia && setPlayingProject(project)}
+        onKeyDown={(e) => hasMedia && (e.key === "Enter" || e.key === " ") && setPlayingProject(project)}
         className={`group relative aspect-[4/3] overflow-hidden rounded-2xl cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
           ${enhanced
             ? "border border-white/15 bg-white/[0.06] shadow-[0_8px_32px_rgba(0,0,0,0.35),0_0_0_1px_rgba(255,255,255,0.05)] hover:border-icube-gold/40 hover:shadow-[0_24px_48px_rgba(0,0,0,0.45),0_0_0_1px_rgba(212,175,55,0.2),0_0_40px_rgba(212,175,55,0.08)]"

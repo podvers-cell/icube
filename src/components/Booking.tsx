@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Calendar, CheckCircle2, Medal } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useSiteData } from "../SiteDataContext";
-import { submitBooking, sendBookingConfirmationEmail } from "../api";
+import { submitBookingInquiry } from "../api";
 import { useBooking } from "@/BookingContext";
 
 function parseFeatures(s: string): string[] {
@@ -142,12 +142,7 @@ export default function Booking() {
         phone: customForm.phone || undefined,
         project_details: customForm.project_details || undefined,
       };
-      await submitBooking(payload);
-      try {
-        await sendBookingConfirmationEmail(payload);
-      } catch {
-        // Booking saved; email is best-effort
-      }
+      await submitBookingInquiry(payload);
       setSubmitted(true);
       setCustomForm({ first_name: "", last_name: "", email: "", phone: "", project_details: "" });
     } catch (err) {
@@ -400,7 +395,7 @@ export default function Booking() {
             <form onSubmit={handleCustomSubmit} className="space-y-4">
               {submitted && (
                 <p className="text-icube-gold text-sm">
-                  Booking made successfully. Thank you for choosing us — we'll contact you shortly.
+                  Inquiry submitted successfully. Thank you — we'll contact you shortly.
                 </p>
               )}
               <div className="grid grid-cols-2 gap-4">

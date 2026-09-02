@@ -27,6 +27,7 @@ import {
   X,
 } from "lucide-react";
 import { api, getSiteSettings } from "../api";
+import { needsSidebarAttention } from "@/lib/dashboardBookingUi";
 import UserProfile from "../components/UserProfile";
 
 type NavItem = {
@@ -58,7 +59,7 @@ const nav: NavItem[] = [
   { href: "/dashboard/studio", end: false, label: "Studio Equipment", icon: Video },
 ];
 
-type BookingRow = { id: string; status?: string; package_id?: string | null };
+type BookingRow = { id: string; status?: string; package_id?: string | null; payment_status?: string | null };
 type MessageRow = { id: string; read_at?: string | null };
 
 export default function DashboardLayoutNext({ children }: { children: React.ReactNode }) {
@@ -97,13 +98,15 @@ export default function DashboardLayoutNext({ children }: { children: React.Reac
           api.get<MessageRow[]>("/dashboard/messages"),
         ]);
         if (cancelled) return;
-        const pendingBookings = Array.isArray(bookings) ? bookings.filter((b) => b.status === "pending") : [];
-        const pendingPackageBookings = pendingBookings.filter((b) => b.package_id);
-        const studioOrOtherPending = pendingBookings.filter((b) => !b.package_id);
+        const actionableBookings = Array.isArray(bookings)
+          ? bookings.filter((b) => needsSidebarAttention(b))
+          : [];
+        const packageActionable = actionableBookings.filter((b) => b.package_id);
+        const studioActionable = actionableBookings.filter((b) => !b.package_id);
         const unreadMessages = Array.isArray(messages) ? messages.filter((m) => !m.read_at) : [];
         setNotificationCounts({
-          bookings: studioOrOtherPending.length,
-          "package-bookings": pendingPackageBookings.length,
+          bookings: studioActionable.length,
+          "package-bookings": packageActionable.length,
           messages: unreadMessages.length,
         });
       } catch {

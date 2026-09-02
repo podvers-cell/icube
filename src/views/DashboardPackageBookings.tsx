@@ -1,8 +1,24 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Download, Trash2, X } from "lucide-react";
 import { api, getBookingPackages, sendBookingConfirmedEmail } from "../api";
+import { BookingFilterTabs, StatusBadge, useFilterTab } from "@/components/dashboard/BookingFilterTabs";
+import {
+  BOOKING_FILTER_TABS,
+  bookingMatchesFilter,
+  bookingStatusBadgeClass,
+  bookingStatusLabel,
+  canAdminConfirm,
+  formatBookingAmount,
+  formatPaymentReference,
+  getBookingFilterCategory,
+  getPackageDisplayName,
+  getPackagePrice,
+  paymentStatusBadgeClass,
+  paymentStatusLabel,
+  type BookingFilterTab,
+} from "@/lib/dashboardBookingUi";
 
 type BookingPackage = { id: string; name: string; price_aed: number };
 
@@ -23,6 +39,12 @@ type Booking = {
   time_slot?: string | null;
   addon_ids?: string[];
   addons_total_aed?: number;
+  discount_code?: string | null;
+  discount_percent?: number | null;
+  total_amount_aed?: number | null;
+  payment_status?: string | null;
+  payment_amount_minor?: number | null;
+  ziina_intent_id?: string | null;
   status: string;
   created_at: string | { seconds: number; nanoseconds?: number } | { _seconds: number; _nanoseconds?: number };
 };
@@ -44,17 +66,29 @@ function formatSubmitted(createdAt: Booking["created_at"]): string {
 }
 
 function getPackageName(b: Booking, packages: BookingPackage[]): string {
-  if (!b.package_id) return "—";
-  const pkg = packages.find((p) => p.id === b.package_id);
-  return pkg ? pkg.name : (b.package_name || b.package_id);
+  return getPackageDisplayName(b, packages);
 }
 
 export default function DashboardPackageBookings() {
   const [allBookings, setAllBookings] = useState<Booking[]>([]);
   const [selected, setSelected] = useState<Booking | null>(null);
   const [packages, setPackages] = useState<BookingPackage[]>([]);
+  const [filterTab, setFilterTab] = useFilterTab<BookingFilterTab>("confirmed");
 
   const list = useMemo(() => allBookings.filter((b) => b.package_id), [allBookings]);
+
+  const filterCounts = useMemo(() => {
+    const counts: Record<BookingFilterTab, number> = { confirmed: 0, awaiting: 0, failed: 0, all: list.length };
+    for (const b of list) {
+      counts[getBookingFilterCategory(b)] += 1;
+    }
+    return counts;
+  }, [list]);
+
+  const visibleBookings = useMemo(
+    () => list.filter((b) => bookingMatchesFilter(b, filterTab)),
+    [list, filterTab]
+  );
 
   function load() {
     api.get<Booking[]>("/dashboard/bookings").then(setAllBookings).catch(() => {});
@@ -149,6 +183,10 @@ export default function DashboardPackageBookings() {
       phone: b.phone ?? "",
       package_id: b.package_id ?? "",
       package_name: getPackageName(b, packages),
+      booking_status: bookingStatusLabel(b.status),
+      payment_status: paymentStatusLabel(b.payment_status),
+      total_amount_aed: formatBookingAmount(b, getPackagePrice(b, packages)),
+      ziina_intent_id: b.ziina_intent_id ?? "",
       status: b.status,
       project_details: b.project_details ?? "",
     }));
@@ -194,8 +232,11 @@ export default function DashboardPackageBookings() {
           </button>
         </div>
       </div>
+
+      <BookingFilterTabs tabs={BOOKING_FILTER_TABS} active={filterTab} onChange={setFilterTab} counts={filterCounts} />
+
       <div className="overflow-x-auto">
-        <table className="w-full text-left min-w-[760px]">
+        <table className="w-full text-left min-w-[1100px]">
           <thead>
             <tr className="border-b border-white/10 text-gray-400 text-sm">
               <th className="pb-3 pr-4">Submitted</th>
@@ -203,12 +244,15 @@ export default function DashboardPackageBookings() {
               <th className="pb-3 pr-4">Phone</th>
               <th className="pb-3 pr-4">Email</th>
               <th className="pb-3 pr-4">Package</th>
-              <th className="pb-3 pr-4">Status</th>
+              <th className="pb-3 pr-4">Amount</th>
+              <th className="pb-3 pr-4">Payment</th>
+              <th className="pb-3 pr-4">Booking</th>
+              <th className="pb-3 pr-4">Payment ref</th>
               <th className="pb-3">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {list.map((b) => (
+            {visibleBookings.map((b) => (
               <tr
                 key={b.id}
                 onClick={() => setSelected(b)}
@@ -231,15 +275,29 @@ export default function DashboardPackageBookings() {
                 <td className="py-3 pr-4 text-gray-300 text-sm max-w-[180px]">
                   {getPackageName(b, packages)}
                 </td>
+                <td className="py-3 pr-4 text-icube-gold text-sm whitespace-nowrap">
+                  {formatBookingAmount(b, getPackagePrice(b, packages))}
+                </td>
                 <td className="py-3 pr-4">
-                  <span className={`text-xs px-2 py-1 rounded ${b.status === "confirmed" ? "bg-green-500/20 text-green-400" : b.status === "cancelled" ? "bg-red-500/20 text-red-400" : "bg-icube-gold/20 text-icube-gold"}`}>
-                    {b.status}
-                  </span>
+                  <StatusBadge label={paymentStatusLabel(b.payment_status)} className={paymentStatusBadgeClass(b.payment_status)} />
+                </td>
+                <td className="py-3 pr-4">
+                  <StatusBadge label={bookingStatusLabel(b.status)} className={bookingStatusBadgeClass(b.status)} />
+                </td>
+                <td className="py-3 pr-4 text-gray-500 text-xs font-mono" title={b.ziina_intent_id ?? undefined}>
+                  {formatPaymentReference(b.ziina_intent_id)}
                 </td>
                 <td className="py-3" onClick={(e) => e.stopPropagation()}>
-                  {b.status === "pending" && (
+                  {b.status !== "confirmed" && b.status !== "cancelled" && (
                     <>
-                      <button onClick={() => setStatus(b.id, "confirmed", b)} className="text-green-400 text-sm mr-2">Confirm</button>
+                      <button
+                        onClick={() => canAdminConfirm(b) && setStatus(b.id, "confirmed", b)}
+                        disabled={!canAdminConfirm(b)}
+                        title={canAdminConfirm(b) ? "Confirm booking" : "Payment must be completed before confirming"}
+                        className="text-green-400 text-sm mr-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        Confirm
+                      </button>
                       <button onClick={() => setStatus(b.id, "cancelled")} className="text-red-400 text-sm">Cancel</button>
                     </>
                   )}
@@ -257,6 +315,9 @@ export default function DashboardPackageBookings() {
         </table>
       </div>
       {list.length === 0 && <p className="text-gray-500 mt-4">No package bookings yet.</p>}
+      {list.length > 0 && visibleBookings.length === 0 && (
+        <p className="text-gray-500 mt-4">No package bookings in this filter.</p>
+      )}
 
       {selected && (
         <div
@@ -285,11 +346,25 @@ export default function DashboardPackageBookings() {
                   <p className="text-white">{formatSubmitted(selected.created_at)}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Status</p>
-                  <span className={`text-xs px-2 py-1 rounded ${selected.status === "confirmed" ? "bg-green-500/20 text-green-400" : selected.status === "cancelled" ? "bg-red-500/20 text-red-400" : "bg-icube-gold/20 text-icube-gold"}`}>
-                    {selected.status}
-                  </span>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Booking status</p>
+                  <StatusBadge label={bookingStatusLabel(selected.status)} className={bookingStatusBadgeClass(selected.status)} />
                 </div>
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Payment status</p>
+                  <StatusBadge label={paymentStatusLabel(selected.payment_status)} className={paymentStatusBadgeClass(selected.payment_status)} />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Total amount</p>
+                  <p className="text-icube-gold font-medium">
+                    {formatBookingAmount(selected, getPackagePrice(selected, packages))}
+                  </p>
+                </div>
+                {selected.ziina_intent_id && (
+                  <div className="sm:col-span-2">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Ziina payment reference</p>
+                    <p className="text-gray-300 text-sm font-mono break-all">{selected.ziina_intent_id}</p>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -329,9 +404,14 @@ export default function DashboardPackageBookings() {
             </div>
 
             <div className="border-t border-white/10 px-6 py-4 flex items-center justify-between gap-4 bg-white/[0.02]">
-              {selected.status === "pending" && (
+              {selected.status !== "confirmed" && selected.status !== "cancelled" && (
                 <div className="flex gap-2">
-                  <button onClick={() => setStatus(selected.id, "confirmed", selected)} className="px-4 py-2 rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30 text-sm font-medium">
+                  <button
+                    onClick={() => canAdminConfirm(selected) && setStatus(selected.id, "confirmed", selected)}
+                    disabled={!canAdminConfirm(selected)}
+                    title={canAdminConfirm(selected) ? "Confirm booking" : "Payment must be completed before confirming"}
+                    className="px-4 py-2 rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30 text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
                     Confirm
                   </button>
                   <button onClick={() => setStatus(selected.id, "cancelled")} className="px-4 py-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 text-sm font-medium">

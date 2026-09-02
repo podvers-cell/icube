@@ -8,7 +8,7 @@ import { ChevronLeft, ChevronRight, ArrowLeft, Calendar, Play, Check } from "luc
 import { motion, AnimatePresence } from "motion/react";
 import { useSiteData } from "../SiteDataContext";
 import { useBooking } from "../BookingContext";
-import { getVideoEmbed } from "../lib/videoEmbed";
+import { getProjectMediaItems, projectHasMedia } from "../lib/portfolioMedia";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { VideoPlayerModal } from "../components/VideoPlayerModal";
@@ -36,7 +36,14 @@ export default function StudioDetailPage() {
   const imageWrapRef = useRef<HTMLDivElement>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
   const carouselPausedRef = useRef(false);
-  const [playingProject, setPlayingProject] = useState<{ id: number | string; title: string; video_url?: string } | null>(null);
+  const [playingProject, setPlayingProject] = useState<{
+    id: number | string;
+    title: string;
+    image_url?: string;
+    video_url?: string;
+    video_urls?: string[];
+    gallery_images?: string[];
+  } | null>(null);
 
   const studio = id ? (studios.find((s) => s.id === id) ?? null) : null;
   const images = studio
@@ -333,7 +340,7 @@ export default function StudioDetailPage() {
                 className="flex gap-4 md:gap-6 overflow-x-auto pb-2 -mx-1 scrollbar-hide"
               >
                 {[...works, ...works].map((project, i) => {
-                  const embed = project.video_url && getVideoEmbed(project.video_url);
+                  const hasMedia = projectHasMedia(project);
                   return (
                     <div
                       key={`${project.id}-${i}`}
@@ -349,7 +356,7 @@ export default function StudioDetailPage() {
                           referrerPolicy="no-referrer"
                         />
                         <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                          {embed ? (
+                          {hasMedia ? (
                             <button
                               type="button"
                               onClick={() => setPlayingProject(project)}
@@ -381,13 +388,14 @@ export default function StudioDetailPage() {
       </main>
       <Footer />
 
-      {playingProject?.video_url && (() => {
-        const embed = getVideoEmbed(playingProject.video_url);
-        if (!embed) return null;
+      {playingProject && (() => {
+        const mediaItems = getProjectMediaItems(playingProject, playingProject.image_url);
+        if (!mediaItems.length) return null;
         return (
           <VideoPlayerModal
             key={playingProject.id}
-            embed={embed}
+            mediaItems={mediaItems}
+            embed={mediaItems[0]?.type === "video" ? mediaItems[0].embed : undefined}
             title={playingProject.title}
             onClose={() => setPlayingProject(null)}
           />

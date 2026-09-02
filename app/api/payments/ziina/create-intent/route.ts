@@ -1,6 +1,7 @@
+import { FieldValue } from "firebase-admin/firestore";
 import { NextResponse } from "next/server";
-import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
-import { requireFirestore } from "@/firebase";
+import { getAdminFirestore } from "@/firebase-admin";
+import { updateBookingPaymentPending } from "@/lib/bookingPayment";
 
 type CreateIntentBody = {
   bookingType?: "package" | "studio" | "workshop";
@@ -25,10 +26,7 @@ export async function POST(request: Request) {
   try {
     const token = process.env.ZIINA_API_KEY?.trim();
     if (!token) {
-      return NextResponse.json(
-        { error: "ZIINA_API_KEY is missing on server." },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "ZIINA_API_KEY is missing on server." }, { status: 500 });
     }
 
     const body = (await request.json()) as CreateIntentBody;
@@ -38,17 +36,22 @@ export async function POST(request: Request) {
     }
 
     const bookingType = body.bookingType === "studio" ? "studio" : body.bookingType === "workshop" ? "workshop" : "package";
-    const amount = Math.round(amountAed * 100); // Ziina expects minor units (fils)
+    const amount = Math.round(amountAed * 100);
     const baseUrl = getBaseUrl(request);
-    const successUrl = `${baseUrl}/payment-gateway/success?type=${encodeURIComponent(bookingType)}&name=${encodeURIComponent(
-      body.name || "ICUBE booking"
-    )}&amount=${encodeURIComponent(String(amountAed))}`;
-    const cancelUrl =
-      bookingType === "studio"
-        ? `${baseUrl}/studio/booking/checkout`
-        : bookingType === "workshop"
-          ? `${baseUrl}/#workshops`
-          : `${baseUrl}/packages/checkout`;
+
+    const successParams = new URLSearchParams({ type: bookingType });
+    const cancelParams = new URLSearchParams({ type: bookingType });
+    if (body.bookingId) {
+      successParams.set("booking_id", body.bookingId);
+      cancelParams.set("booking_id", body.bookingId);
+    }
+    if (body.workshopEnrollmentId) {
+      successParams.set("enrollment_id", body.workshopEnrollmentId);
+      cancelParams.set("enrollment_id", body.workshopEnrollmentId);
+    }
+
+    const successUrl = `${baseUrl}/payment-gateway/success?${successParams.toString()}`;
+    const cancelUrl = `${baseUrl}/payment-gateway/failed?${cancelParams.toString()}`;
     const detailBits = [body.date, body.slot, body.durationHours ? `${body.durationHours}h` : ""].filter(Boolean);
     const message = `${body.name || "ICUBE Booking"}${detailBits.length ? ` · ${detailBits.join(" · ")}` : ""}`;
 
@@ -77,42 +80,34 @@ export async function POST(request: Request) {
     };
 
     if (!ziinaRes.ok || !ziinaBody.redirect_url) {
-      const providerError =
-        ziinaBody?.error?.message || ziinaBody?.message || "Ziina request failed.";
+      const providerError = ziinaBody?.error?.message || ziinaBody?.message || "Ziina request failed.";
       return NextResponse.json({ error: providerError }, { status: 502 });
     }
 
-    // Link the payment intent to a booking so webhook can reconcile.
     if (body.bookingId) {
       if (!ziinaBody.id) {
         return NextResponse.json({ error: "Ziina did not return payment intent id." }, { status: 502 });
       }
       try {
-        await updateDoc(doc(requireFirestore(), "bookings", body.bookingId), {
-          ziina_intent_id: ziinaBody.id,
-          payment_status: "requires_payment_instrument",
-          payment_provider: "ziina",
-          payment_intent_status: "requires_payment_instrument",
-          updated_at: serverTimestamp(),
-        });
+        await updateBookingPaymentPending(body.bookingId, ziinaBody.id, "requires_payment_instrument");
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Failed to link payment intent to booking.";
         return NextResponse.json({ error: `Payment initialized but could not link booking: ${msg}` }, { status: 500 });
       }
     }
 
-    // Link the payment intent to a workshop enrollment so webhook can reconcile.
     if (body.workshopEnrollmentId) {
       if (!ziinaBody.id) {
         return NextResponse.json({ error: "Ziina did not return payment intent id." }, { status: 502 });
       }
       try {
-        await updateDoc(doc(requireFirestore(), "workshop_enrollments", body.workshopEnrollmentId), {
+        const db = getAdminFirestore();
+        await db.collection("workshop_enrollments").doc(body.workshopEnrollmentId).update({
           ziina_intent_id: ziinaBody.id,
-          payment_status: "requires_payment_instrument",
+          payment_status: "pending",
           payment_provider: "ziina",
           payment_intent_status: "requires_payment_instrument",
-          updated_at: serverTimestamp(),
+          updated_at: FieldValue.serverTimestamp(),
         });
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Failed to link payment intent to enrollment.";

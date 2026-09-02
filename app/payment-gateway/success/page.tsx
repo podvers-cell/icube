@@ -1,47 +1,131 @@
-import Link from "next/link";
 import type { Metadata } from "next";
+import {
+  PaymentActionLink,
+  PaymentResultCard,
+  VerifiedBookingSummary,
+} from "@/components/payment/PaymentResultCard";
+import { CONTACT_EMAIL } from "@/constants/contact";
+import { WHATSAPP_URL } from "@/constants/whatsapp";
+import {
+  getContinueUrl,
+  getPaymentPageOutcome,
+  getRetryUrl,
+  verifyPaymentRecord,
+} from "@/lib/paymentVerification";
 
 export const metadata: Metadata = {
-  title: "Payment Success | ICUBE Media Studio",
-  description: "Mock payment success page.",
+  title: "Payment Status | ICUBE Media Studio",
+  description: "View your ICUBE booking payment status.",
 };
 
 type Props = {
   searchParams: Promise<{
+    booking_id?: string;
+    enrollment_id?: string;
+    intent_id?: string;
     type?: string;
-    name?: string;
-    amount?: string;
   }>;
 };
 
 export default async function PaymentSuccessPage({ searchParams }: Props) {
-  const p = await searchParams;
-  const bookingType = p.type ? decodeURIComponent(p.type) : "booking";
-  const name = p.name ? decodeURIComponent(p.name) : "ICUBE booking";
-  const amount = p.amount ? decodeURIComponent(p.amount) : "0";
-  const backUrl = bookingType === "studio" ? "/#studio" : "/packages";
+  const params = await searchParams;
+  const bookingType = params.type?.trim();
+
+  const record = await verifyPaymentRecord({
+    bookingId: params.booking_id,
+    enrollmentId: params.enrollment_id,
+    intentId: params.intent_id,
+  });
+
+  const outcome = getPaymentPageOutcome(record);
+  const continueUrl = getContinueUrl(bookingType, record);
+  const retryUrl = getRetryUrl(bookingType, record);
+
+  if (outcome === "not_found") {
+    return (
+      <PaymentResultCard
+        icon="?"
+        iconWrapClassName="border-white/20 bg-white/5 text-gray-300"
+        title="Payment status unavailable"
+        actions={
+          <>
+            <PaymentActionLink href="/">Back to home</PaymentActionLink>
+            <PaymentActionLink href={`mailto:${CONTACT_EMAIL}`} variant="secondary">
+              Contact support
+            </PaymentActionLink>
+          </>
+        }
+      >
+        <p>
+          We could not find a booking linked to this payment session. If you completed a payment, please
+          contact us and we will help confirm your booking.
+        </p>
+      </PaymentResultCard>
+    );
+  }
+
+  const summary = record ? (
+    <VerifiedBookingSummary
+      label={record.label}
+      amountAed={record.amountAed}
+      bookingDate={record.bookingDate}
+      timeSlot={record.timeSlot}
+    />
+  ) : null;
+
+  if (outcome === "success") {
+    return (
+      <PaymentResultCard
+        icon="✓"
+        iconWrapClassName="border-emerald-400/50 bg-emerald-500/15 text-emerald-300"
+        title="Payment confirmed"
+        actions={<PaymentActionLink href={continueUrl}>Continue</PaymentActionLink>}
+      >
+        <p>Your payment was received and your booking is confirmed.</p>
+        <p className="text-xs text-gray-500">A confirmation email will arrive shortly if you have not received one already.</p>
+        {summary}
+      </PaymentResultCard>
+    );
+  }
+
+  if (outcome === "processing") {
+    return (
+      <PaymentResultCard
+        icon="…"
+        iconWrapClassName="border-amber-400/50 bg-amber-500/15 text-amber-300"
+        title="Payment is being processed"
+        actions={
+          <>
+            <PaymentActionLink href={continueUrl}>Back to site</PaymentActionLink>
+            <PaymentActionLink href={`mailto:${CONTACT_EMAIL}`} variant="secondary">
+              Contact support
+            </PaymentActionLink>
+          </>
+        }
+      >
+        <p>Payment is being processed. We will confirm by email shortly.</p>
+        <p className="text-xs text-gray-500">This page will update once your payment is fully confirmed in our system.</p>
+        {summary}
+      </PaymentResultCard>
+    );
+  }
 
   return (
-    <main className="site-wrapper min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray to-icube-dark/80 text-white selection:bg-icube-gold selection:text-icube-dark">
-      <div className="mx-auto flex min-h-screen w-full max-w-xl items-center px-6 py-16">
-        <section className="w-full rounded-2xl border border-white/10 bg-white/[0.04] p-7 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-emerald-400/50 bg-emerald-500/15 text-2xl text-emerald-300">
-            ✓
-          </div>
-          <h1 className="text-2xl font-display font-bold">Payment completed</h1>
-          <p className="mt-2 text-sm text-gray-300">
-            Mock payment successful for <span className="text-white font-semibold">{name}</span> (AED {amount}).
-          </p>
-          <p className="mt-1 text-xs text-gray-500">Replace this page after real gateway integration.</p>
-
-          <Link
-            href={backUrl}
-            className="mt-6 inline-flex items-center justify-center rounded-xl bg-icube-gold px-5 py-3 font-semibold uppercase tracking-wider text-icube-dark hover:bg-icube-gold-light transition-colors"
-          >
-            Continue
-          </Link>
-        </section>
-      </div>
-    </main>
+    <PaymentResultCard
+      icon="✕"
+      iconWrapClassName="border-red-400/50 bg-red-500/15 text-red-300"
+      title="Payment not completed"
+      actions={
+        <>
+          <PaymentActionLink href={retryUrl}>Try again</PaymentActionLink>
+          <PaymentActionLink href={WHATSAPP_URL} variant="secondary" external>
+            WhatsApp support
+          </PaymentActionLink>
+        </>
+      }
+    >
+      <p>Your payment was not completed or this booking was cancelled. No booking has been confirmed.</p>
+      {summary}
+    </PaymentResultCard>
   );
 }

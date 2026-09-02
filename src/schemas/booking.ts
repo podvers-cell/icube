@@ -19,4 +19,19 @@ export const bookingPayloadSchema = z.object({
   discount_percent: z.number().min(0).max(100).optional(),
 });
 
+export const createPendingBookingSchema = bookingPayloadSchema.extend({
+  total_amount_aed: z.number().min(0, "Total amount is required"),
+});
+
+export const bookingInquirySchema = z.object({
+  first_name: z.string().min(1, "First name is required").max(100, "First name is too long"),
+  last_name: z.string().min(1, "Last name is required").max(100, "Last name is too long"),
+  email: z.string().min(1, "Email is required").email("Invalid email").max(320, "Email is too long"),
+  phone: z.string().max(30).optional(),
+  project_details: z.string().max(5000).optional(),
+  source: z.literal("custom_package_form").optional(),
+});
+
 export type BookingPayloadSchema = z.infer<typeof bookingPayloadSchema>;
+export type CreatePendingBookingSchema = z.infer<typeof createPendingBookingSchema>;
+export type BookingInquirySchema = z.infer<typeof bookingInquirySchema>;

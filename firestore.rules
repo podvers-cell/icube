@@ -24,6 +24,13 @@ service cloud.firestore {
 
     // Public submits (write only), admin reads
     match /bookings/{id} {
+      allow create: if false;
+      allow read, update, delete: if isAdmin();
+    }
+    match /pending_bookings/{id} {
+      allow read, write: if false;
+    }
+    match /booking_inquiries/{id} {
       allow create: if true;
       allow read, update, delete: if isAdmin();
     }

@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { X, Play, Pause, Volume2, VolumeX, Maximize, Zap } from "lucide-react";
+import { X, Play, Pause, Volume2, VolumeX, Maximize } from "lucide-react";
 import { useFocusTrap } from "../hooks/useFocusTrap";
 import type { VideoEmbedResult } from "../lib/videoEmbed";
+import type { ProjectMediaItem } from "../lib/portfolioMedia";
 
 type VideoDimensions = { width: number; height: number };
 
@@ -116,16 +117,26 @@ type PlayerApi = {
 };
 
 export function VideoPlayerModal({
-  embed,
+  embed: embedProp,
+  mediaItems,
+  initialIndex = 0,
   title,
   onClose,
   projectInfo,
 }: {
-  embed: VideoEmbedResult;
+  embed?: VideoEmbedResult;
+  mediaItems?: ProjectMediaItem[];
+  initialIndex?: number;
   title: string;
   onClose: () => void;
   projectInfo?: VideoPlayerProjectInfo;
 }) {
+  const [activeIndex, setActiveIndex] = useState(initialIndex);
+  const currentItem = mediaItems?.[activeIndex];
+  const isImageView = currentItem?.type === "image";
+  const embed = currentItem?.type === "video" ? currentItem.embed : embedProp;
+  const showCarousel = !!mediaItems && mediaItems.length > 1;
+
   const containerRef = useRef<HTMLDivElement>(null);
   useFocusTrap(containerRef, true);
   const ytDivRef = useRef<HTMLDivElement>(null);
@@ -168,20 +179,31 @@ export function VideoPlayerModal({
     return () => stopTick();
   }, [stopTick]);
 
+  useEffect(() => {
+    setReady(false);
+    setIsPlaying(false);
+    setCurrentTime(0);
+    setDuration(0);
+    setVideoDims(null);
+    stopTick();
+    playerRef.current = null;
+    vimeoPlayerRef.current = null;
+  }, [activeIndex, stopTick]);
+
   // Fetch actual video aspect (portrait vs landscape) so modal matches the video.
   useEffect(() => {
-    if (!embed) return;
+    if (!embed || isImageView) return;
     const controller = new AbortController();
     setVideoDims(null);
     fetchEmbedDimensions(embed, controller.signal).then((d) => {
       if (!controller.signal.aborted) setVideoDims(d);
     });
     return () => controller.abort();
-  }, [embed?.provider, embed?.videoId]);
+  }, [embed?.provider, embed?.videoId, isImageView]);
 
   // YouTube: poll duration when ready (in case it was 0 on first load)
   useEffect(() => {
-    if (embed?.provider !== "youtube" || !ready) return;
+    if (isImageView || embed?.provider !== "youtube" || !ready) return;
     const id = setInterval(() => {
       const p = playerRef.current;
       if (p) {
@@ -190,10 +212,10 @@ export function VideoPlayerModal({
       }
     }, 500);
     return () => clearInterval(id);
-  }, [embed?.provider, ready]);
+  }, [embed?.provider, ready, isImageView]);
 
   useEffect(() => {
-    if (!embed) return;
+    if (!embed || isImageView) return;
 
     if (embed.provider === "youtube") {
       const loadYT = () => {
@@ -350,11 +372,11 @@ export function VideoPlayerModal({
         playerRef.current = null;
       };
     }
-  }, [embed?.provider, embed?.videoId, startTick, stopTick]);
+  }, [embed?.provider, embed?.videoId, startTick, stopTick, isImageView]);
 
   // Vimeo: poll currentTime and duration so timer and indicator update
   useEffect(() => {
-    if (embed?.provider !== "vimeo" || !ready) return;
+    if (isImageView || embed?.provider !== "vimeo" || !ready) return;
     const vp = vimeoPlayerRef.current;
     if (!vp) return;
     const id = setInterval(() => {
@@ -431,16 +453,17 @@ export function VideoPlayerModal({
     }
   };
 
-  const hasProjectInfo = projectInfo && (projectInfo.subtitle || projectInfo.category || projectInfo.description || (projectInfo.deliverables?.length) || projectInfo.year || projectInfo.camera || projectInfo.output);
-  const tags = projectInfo?.category ? [projectInfo.category] : [];
-  const forcePortrait = embed.orientation === "portrait";
-  const aspect =
-    forcePortrait || (videoDims?.width && videoDims?.height && videoDims.height > videoDims.width * 1.2)
+  const forcePortrait = !isImageView && embed?.orientation === "portrait";
+  const aspect = isImageView
+    ? "16 / 9"
+    : forcePortrait || (videoDims?.width && videoDims?.height && videoDims.height > videoDims.width * 1.2)
       ? "9 / 16"
       : videoDims?.width && videoDims?.height
         ? `${videoDims.width} / ${videoDims.height}`
         : "16 / 9";
-  const isPortrait = forcePortrait || (videoDims?.height ?? 0) > (videoDims?.width ?? 0);
+  const isPortrait = !isImageView && (forcePortrait || (videoDims?.height ?? 0) > (videoDims?.width ?? 0));
+
+  if (!embed && !isImageView) return null;
 
   return (
     <div
@@ -465,60 +488,95 @@ export function VideoPlayerModal({
           <X size={20} />
         </button>
 
-        {/* Video area – aspect matches the actual video */}
+        {/* Video / image area */}
         <div
           className="relative w-full min-h-0 bg-black overflow-hidden"
           style={{
             aspectRatio: aspect,
-            maxHeight: "85svh",
+            maxHeight: showCarousel ? "70svh" : "85svh",
           }}
         >
-          {embed.provider === "youtube" && <div ref={ytDivRef} className="absolute inset-0 w-full h-full" />}
-          {embed.provider === "vimeo" && (
-            <iframe
-              ref={vimeoIframeRef}
-              src={embed.embedUrl}
-              title={title}
-              className="absolute inset-0 w-full h-full"
-              allow="autoplay; fullscreen; picture-in-picture"
-              allowFullScreen
+          {isImageView && currentItem?.type === "image" ? (
+            <img
+              src={currentItem.url}
+              alt={title}
+              className="absolute inset-0 w-full h-full object-contain"
             />
-          )}
-          {embed.provider === "file" && (
-            <video
-              ref={fileVideoRef}
-              src={embed.embedUrl}
-              className="absolute inset-0 w-full h-full object-cover"
-              playsInline
-            />
-          )}
-          {embed.provider === "instagram" && (
-            <iframe
-              src={embed.embedUrl}
-              title={title}
-              className="absolute inset-0 w-full h-full"
-              allow="autoplay; encrypted-media; picture-in-picture"
-              allowFullScreen
-            />
-          )}
-          {/* Centered play overlay when paused */}
-          {!isPlaying && (
-            <button
-              type="button"
-              onClick={handlePlayPause}
-              className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 hover:bg-black/30 transition-colors"
-              aria-label="Play"
-            >
-              <span className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30 hover:bg-white/30 hover:scale-105 transition-all">
-                <Play size={36} className="text-white ml-1" fill="white" />
-              </span>
-            </button>
-          )}
+          ) : embed ? (
+            <>
+              {embed.provider === "youtube" && <div ref={ytDivRef} className="absolute inset-0 w-full h-full" />}
+              {embed.provider === "vimeo" && (
+                <iframe
+                  ref={vimeoIframeRef}
+                  src={embed.embedUrl}
+                  title={title}
+                  className="absolute inset-0 w-full h-full"
+                  allow="autoplay; fullscreen; picture-in-picture"
+                  allowFullScreen
+                />
+              )}
+              {embed.provider === "file" && (
+                <video
+                  ref={fileVideoRef}
+                  src={embed.embedUrl}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  playsInline
+                />
+              )}
+              {embed.provider === "instagram" && (
+                <iframe
+                  src={embed.embedUrl}
+                  title={title}
+                  className="absolute inset-0 w-full h-full"
+                  allow="autoplay; encrypted-media; picture-in-picture"
+                  allowFullScreen
+                />
+              )}
+              {!isPlaying && (
+                <button
+                  type="button"
+                  onClick={handlePlayPause}
+                  className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 hover:bg-black/30 transition-colors"
+                  aria-label="Play"
+                >
+                  <span className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30 hover:bg-white/30 hover:scale-105 transition-all">
+                    <Play size={36} className="text-white ml-1" fill="white" />
+                  </span>
+                </button>
+              )}
+            </>
+          ) : null}
         </div>
 
-        {/* تم إخفاء قسم البيانات، التفاصيل، واسم المقطع بالكامل من البلاير */}
+        {showCarousel && mediaItems && (
+          <div className="border-t border-white/10 bg-black/30 px-4 py-3">
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+              {mediaItems.map((item, i) => (
+                <button
+                  key={`${item.type}-${item.url}-${i}`}
+                  type="button"
+                  onClick={() => setActiveIndex(i)}
+                  className={`relative shrink-0 w-20 h-14 md:w-24 md:h-16 rounded-lg overflow-hidden border-2 transition-all ${
+                    i === activeIndex
+                      ? "border-icube-gold ring-2 ring-icube-gold/30"
+                      : "border-white/15 opacity-70 hover:opacity-100 hover:border-white/30"
+                  }`}
+                  aria-label={`View ${item.type} ${i + 1}`}
+                  aria-current={i === activeIndex ? "true" : undefined}
+                >
+                  <img src={item.thumbnail} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                  {item.type === "video" && (
+                    <span className="absolute inset-0 flex items-center justify-center bg-black/30">
+                      <Play size={16} className="text-white ml-0.5" fill="white" />
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
-        {/* Control bar */}
+        {!isImageView && embed && (
         <div className="z-30 flex items-center gap-3 px-4 py-3 border-t border-white/10 bg-black/30">
           <button
             type="button"
@@ -571,6 +629,7 @@ export function VideoPlayerModal({
             <Maximize size={18} />
           </button>
         </div>
+        )}
       </div>
     </div>
   );

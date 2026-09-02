@@ -17,8 +17,7 @@ import {
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { requireAuth, requireFirestore } from "./firebase";
 import { contactFormSchema } from "./schemas/contact";
-import { bookingPayloadSchema } from "./schemas/booking";
-import { isSlotTooSoonInRegion } from "./utils/bookingTimezone";
+import { isDashboardVisibleBooking } from "./lib/bookingSlots";
 
 type IdDoc<T> = T & { id: string };
 
@@ -145,7 +144,8 @@ export const api = {
     }
     if (path === "/dashboard/bookings") {
       assertAuth();
-      return (await listByCreatedAtDesc("bookings")) as T;
+      const all = await listByCreatedAtDesc<Record<string, unknown>>("bookings");
+      return all.filter((b) => isDashboardVisibleBooking(b as { payment_status?: string | null; status?: string | null })) as T;
     }
     if (path === "/dashboard/workshop-bookings") {
       assertAuth();
@@ -161,76 +161,7 @@ export const api = {
 
   post: async <T>(path: string, body: unknown): Promise<T> => {
     if (path === "/booking") {
-      const parsed = bookingPayloadSchema.safeParse(body);
-      if (!parsed.success) {
-        const msg = parsed.error.issues[0]?.message ?? parsed.error.flatten().formErrors?.[0] ?? "Invalid booking data";
-        throw new Error(typeof msg === "string" ? msg : "Invalid booking data");
-      }
-      const b = parsed.data;
-      if (b.booking_date && b.time_slot) {
-        if (isSlotTooSoonInRegion(b.booking_date, b.time_slot, 180)) {
-          throw new Error("Please select a time slot at least 3 hours from now (Dubai time).");
-        }
-      }
-      const db = requireFirestore();
-      // Blocked slot validation (admin-controlled)
-      if (b.booking_date && b.time_slot) {
-        const blockedSnaps = await getDocs(
-          query(
-            collection(db, "blocked_slots"),
-            where("booking_date", "==", b.booking_date),
-            where("time_slot", "==", b.time_slot)
-          )
-        );
-        if (!blockedSnaps.empty) {
-          const studioId = (b as { studio_id?: string | null }).studio_id ?? null;
-          const isBlocked = blockedSnaps.docs.some((d) => {
-            const data = d.data() as { studio_id?: string | null };
-            const blockedStudio = data.studio_id ?? null;
-            return blockedStudio == null || (studioId != null && blockedStudio === studioId);
-          });
-          if (isBlocked) {
-            throw new Error("This time slot is blocked. Please choose another time.");
-          }
-        }
-      }
-      const bookingRef = await addDoc(collection(db, "bookings"), {
-        ...stripUndefined(b),
-        status: "pending",
-        payment_status: "initiated",
-        created_at: serverTimestamp(),
-      });
-
-      // If a discount code was used, increment its used_count and deactivate when max_uses reached.
-      const rawDiscountCode = (body as { discount_code?: string } | undefined)?.discount_code;
-      if (rawDiscountCode) {
-        try {
-          const code = rawDiscountCode.toUpperCase();
-          const q = query(
-            collection(db, "discount_codes"),
-            where("code", "==", code)
-          );
-          const snaps = await getDocs(q);
-          if (!snaps.empty) {
-            const docSnap = snaps.docs[0];
-            const data = docSnap.data() as {
-              used_count?: number;
-              max_uses?: number;
-              active?: boolean;
-            };
-            const used = (data.used_count ?? 0) + 1;
-            const maxUses = data.max_uses ?? 1;
-            const shouldDeactivate = used >= maxUses;
-            await updateDoc(docSnap.ref, {
-              used_count: used,
-              ...(shouldDeactivate ? { active: false } : {}),
-            });
-          }
-        } catch {
-          // best-effort; booking already stored
-        }
-      }
-      return { success: true, booking_id: bookingRef.id } as T;
+      throw new Error("Direct booking creation is deprecated. Use /api/bookings/create.");
     }
     if (path === "/contact") {
       const parsed = contactFormSchema.safeParse(body);
@@ -299,7 +230,7 @@ export const api = {
         phone,
         amount_aed: amountAed,
         payment_provider: "ziina",
-        payment_status: "initiated",
+        payment_status: "pending",
         created_at: serverTimestamp(),
       });
       return { success: true, enrollment_id: ref.id } as T;
@@ -330,7 +261,7 @@ export const api = {
     }
     if (path === "/dashboard/portfolio") {
       assertAuth();
-      const p = docBody(body);
+      const p = stripUndefined(docBody(body));
       const ref = await addDoc(collection(requireFirestore(), "portfolio"), { ...p, created_at: serverTimestamp() });
       return { id: ref.id, ...p } as T;
     }
@@ -432,7 +363,11 @@ export const api = {
           updated_at: serverTimestamp(),
         });
       } else {
-        await setDoc(doc(requireFirestore(), col, id!), { ...payload, updated_at: serverTimestamp() }, { merge: true });
+        await setDoc(
+          doc(requireFirestore(), col, id!),
+          { ...stripUndefined(payload), updated_at: serverTimestamp() },
+          { merge: true }
+        );
       }
       return { success: true } as T;
     }
@@ -519,9 +454,12 @@ export type PortfolioProject = {
   id: number | string;
   title: string;
   category: string;
+  client?: string;
   image_url: string;
   sort_order: number;
   video_url?: string;
+  video_urls?: string[];
+  gallery_images?: string[];
   visible?: boolean;
   show_in_selected_work?: boolean;
 };
@@ -629,9 +567,43 @@ export type BookingPayload = {
   addons_total_aed?: number;
   discount_code?: string;
   discount_percent?: number;
+  total_amount_aed?: number;
 };
-export function submitBooking(data: BookingPayload) {
-  return api.post<{ success: boolean; booking_id: string }>("/booking", data);
+
+export async function submitBooking(data: BookingPayload & { total_amount_aed: number }) {
+  const base = typeof window !== "undefined" ? "" : process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "";
+  const res = await fetch(`${base}/api/bookings/create`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  const body = (await res.json().catch(() => ({}))) as { error?: string; booking_id?: string };
+  if (!res.ok) {
+    throw new Error(body.error || "Failed to create booking");
+  }
+  return { success: true, booking_id: body.booking_id as string };
+}
+
+export type BookingInquiryPayload = {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone?: string;
+  project_details?: string;
+};
+
+export async function submitBookingInquiry(data: BookingInquiryPayload): Promise<{ success: boolean; inquiry_id: string }> {
+  const base = typeof window !== "undefined" ? "" : process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "";
+  const res = await fetch(`${base}/api/bookings/inquiry`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...data, source: "custom_package_form" }),
+  });
+  const body = (await res.json().catch(() => ({}))) as { error?: string; inquiry_id?: string };
+  if (!res.ok) {
+    throw new Error(body.error || "Failed to submit inquiry");
+  }
+  return { success: true, inquiry_id: body.inquiry_id as string };
 }
 
 export async function validateDiscountCodeOnServer(code: string): Promise<{ percent: number } | null> {
@@ -662,22 +634,10 @@ export async function validateDiscountCodeOnServer(code: string): Promise<{ perc
   return { percent };
 }
 
-/** Sends a confirmation email to the customer after booking. Call after submitBooking. */
-export async function sendBookingConfirmationEmail(data: BookingPayload): Promise<void> {
-  const base = typeof window !== "undefined" ? "" : process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "";
-  const res = await fetch(`${base}/api/send-booking-confirmation`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    if (res.status === 503) {
-      if (typeof window !== "undefined") console.warn("[Booking] Confirmation email not configured (RESEND_API_KEY missing).");
-      return;
-    }
-    if (typeof window !== "undefined") console.error("[Booking] Confirmation email failed:", res.status, body?.error);
-    return; // don't throw; booking was already saved
+/** @deprecated Pre-payment confirmation emails are disabled. Confirmation is sent only after successful payment. */
+export async function sendBookingConfirmationEmail(_data: BookingPayload): Promise<void> {
+  if (typeof window !== "undefined") {
+    console.warn("[Booking] Pre-payment confirmation emails are disabled.");
   }
 }
 
@@ -740,44 +700,20 @@ export async function getBookingAddons(): Promise<BookingAddon[]> {
   }
 }
 
-const MAX_SLOT_HOUR = 22; // 10:00 PM
+const MAX_SLOT_HOUR = 22; // 10:00 PM — kept for blocked_slots client merge
 
 /**
- * Returns time_slot values (e.g. "09:00", "10:00") that are blocked for the given date.
- * A booking from 3 PM for 3 hours blocks 15:00, 16:00, 17:00 (3 PM–6 PM). Used to prevent double-booking.
+ * Returns occupied time_slot values for a date via server (paid bookings + active pending checkouts).
  */
 export async function getBookedSlots(bookingDate: string, studioId?: string): Promise<string[]> {
   try {
-    const q = query(
-      collection(requireFirestore(), "bookings"),
-      where("booking_date", "==", bookingDate)
-    );
-    const snaps = await getDocs(q);
-    const slotSet = new Set<string>();
-    snaps.docs.forEach((d) => {
-      const data = d.data();
-      const status = data.status as string | undefined;
-      if (status === "cancelled") return;
-      if (studioId != null && String(data.studio_id ?? "") !== String(studioId)) return;
-      const timeSlotRaw = data.time_slot as string | undefined;
-      const rawDuration = data.booking_duration_hours as unknown;
-      const parsedDuration =
-        typeof rawDuration === "number" ? rawDuration : parseInt(String(rawDuration ?? ""), 10);
-      const durationHours = Number.isFinite(parsedDuration) && parsedDuration > 0 ? parsedDuration : 1;
-      if (!timeSlotRaw) return;
-
-      // Accept "13:00", "13:00 - 15:00", "1:00 PM" (legacy / inconsistent data).
-      const m = timeSlotRaw.match(/(\d{1,2}):(\d{2})/);
-      if (!m) return;
-      const startHour = parseInt(m[1] ?? "0", 10);
-      if (isNaN(startHour)) return;
-      for (let i = 0; i < durationHours; i++) {
-        const hour = startHour + i;
-        if (hour <= MAX_SLOT_HOUR) {
-          slotSet.add(`${String(hour).padStart(2, "0")}:00`);
-        }
-      }
-    });
+    const params = new URLSearchParams({ date: bookingDate });
+    if (studioId) params.set("studio_id", studioId);
+    const base = typeof window !== "undefined" ? "" : process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "";
+    const res = await fetch(`${base}/api/bookings/booked-slots?${params.toString()}`);
+    const body = (await res.json().catch(() => ({}))) as { slots?: string[] };
+    const slots = Array.isArray(body.slots) ? body.slots : [];
+    const slotSet = new Set(slots);
     // Add admin-blocked slots
     try {
       const blockedQ = query(
