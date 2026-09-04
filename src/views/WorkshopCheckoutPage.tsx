@@ -39,11 +39,9 @@ export default function WorkshopCheckoutPage() {
       setPaying(true);
       const { enrollment_id } = await enrollWorkshop({
         workshop_id: String((w as any).id),
-        workshop_date: (w as any).workshop_date ? String((w as any).workshop_date) : undefined,
         full_name: fullName.trim(),
         email: email.trim(),
         phone: phone.trim(),
-        amount_aed: Number((w as any).price_aed),
       });
 
       const res = await fetch("/api/payments/ziina/create-intent", {
@@ -51,9 +49,6 @@ export default function WorkshopCheckoutPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           bookingType: "workshop",
-          amountAed: Number((w as any).price_aed),
-          name: `Workshop: ${(w as any).title}`,
-          customerEmail: email.trim(),
           workshopEnrollmentId: enrollment_id,
         }),
       });
@@ -177,4 +172,3 @@ export default function WorkshopCheckoutPage() {
     </div>
   );
 }
-

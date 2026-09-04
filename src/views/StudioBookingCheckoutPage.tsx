@@ -108,12 +108,6 @@ export default function StudioBookingCheckoutPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           bookingType: "studio",
-          amountAed: totalAmount,
-          name: selectedStudio.name,
-          date: selectedDate,
-          slot: selectedTimeSlot,
-          durationHours,
-          customerEmail: form.email,
           bookingId: bookingRes.booking_id,
         }),
       });

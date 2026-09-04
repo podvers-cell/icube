@@ -127,8 +127,9 @@ export default function Booking() {
       name: pkg.name,
       price_aed: priceForCheckout,
       duration: pkg.duration,
+      requires_schedule: pkg.requires_schedule !== false,
     });
-    router.push("/packages/date-time");
+    router.push(pkg.requires_schedule === false ? "/packages/add-ons" : "/packages/date-time");
   }
 
   async function handleCustomSubmit(e: FormEvent) {

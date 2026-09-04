@@ -19,6 +19,8 @@ type Pkg = {
   description?: string;
   best_for_label?: string;
   category?: string;
+  /** Defaults to true for existing packages. */
+  requires_schedule?: boolean;
 };
 
 export default function DashboardPackages() {
@@ -90,6 +92,7 @@ export default function DashboardPackages() {
               description: "",
               best_for_label: "",
               category: "uncategorized",
+              requires_schedule: true,
             })
           }
           className="px-4 py-2 bg-icube-gold text-icube-dark font-semibold rounded-sm hover:bg-icube-gold-light"
@@ -117,6 +120,7 @@ export default function DashboardPackages() {
                 description: "",
                 best_for_label: "",
                 category: "uncategorized",
+                requires_schedule: true,
               })
             }
             className="px-4 py-2 bg-icube-gold text-icube-dark font-semibold rounded-sm hover:bg-icube-gold-light"
@@ -311,6 +315,18 @@ export default function DashboardPackages() {
               </span>
             </label>
             {/* 6. Description */}
+            <label className="flex items-start gap-2 text-gray-300">
+              <input
+                type="checkbox"
+                className="mt-1 shrink-0"
+                checked={editing.requires_schedule !== false}
+                onChange={(e) => setEditing((x) => (x ? { ...x, requires_schedule: e.target.checked } : null))}
+              />
+              <span>
+                <span className="font-medium text-white">Require date and time</span>
+                <span className="block text-gray-500 text-xs mt-0.5">Turn this off for packages that are paid without reserving a studio slot.</span>
+              </span>
+            </label>
             <textarea
               value={editing.description ?? ""}
               onChange={(e) => setEditing((x) => (x ? { ...x, description: e.target.value } : null))}

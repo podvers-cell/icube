@@ -40,7 +40,7 @@ export default function BookingCheckoutPage() {
       router.replace("/packages");
       return;
     }
-    if (!selectedDate || !selectedTimeSlot) {
+    if (selectedPackage.requires_schedule !== false && (!selectedDate || !selectedTimeSlot)) {
       router.replace("/packages/date-time");
       return;
     }
@@ -74,7 +74,7 @@ export default function BookingCheckoutPage() {
 
   async function handlePayNow(e: FormEvent) {
     e.preventDefault();
-    if (!selectedPackage || !selectedDate || !selectedTimeSlot) return;
+    if (!selectedPackage || (selectedPackage.requires_schedule !== false && (!selectedDate || !selectedTimeSlot))) return;
     setSubmitting(true);
     try {
       const payload = {
@@ -86,8 +86,7 @@ export default function BookingCheckoutPage() {
         package_id: selectedPackage.id,
         studio_id: selectedStudio?.id,
         studio_name: selectedStudio?.name,
-        booking_date: selectedDate,
-        time_slot: selectedTimeSlot,
+        ...(selectedDate && selectedTimeSlot ? { booking_date: selectedDate, time_slot: selectedTimeSlot } : {}),
         ...(selectedAddOns.length > 0 && { addon_ids: selectedAddOns.map((a) => a.id), addons_total_aed: totalAddonsAmount }),
         ...(discountPercent > 0 && { discount_code: discountCode.trim().toUpperCase(), discount_percent: discountPercent }),
         total_amount_aed: totalAmount,
@@ -99,11 +98,6 @@ export default function BookingCheckoutPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           bookingType: "package",
-          amountAed: totalAmount,
-          name: selectedPackage.name,
-          date: selectedDate,
-          slot: selectedTimeSlot,
-          customerEmail: form.email,
           bookingId: bookingRes.booking_id,
         }),
       });

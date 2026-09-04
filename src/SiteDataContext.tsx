@@ -48,6 +48,7 @@ type Package = {
   best_for_label?: string;
   /** Category slug used for filtering in the Packages page (e.g. "podcast-packages"). */
   category?: string;
+  requires_schedule?: boolean;
 };
 type Why = { id: number; icon: string; title: string; description: string; sort_order: number };
 type Equipment = { id: number; label: string; description: string; sort_order: number };

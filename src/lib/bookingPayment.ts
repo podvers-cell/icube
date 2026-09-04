@@ -1,8 +1,9 @@
-import { FieldValue, Timestamp, type DocumentReference } from "firebase-admin/firestore";
+import { FieldValue, Timestamp, type DocumentReference, type Transaction } from "firebase-admin/firestore";
 import type { Firestore } from "firebase-admin/firestore";
 import { getAdminFirestore } from "@/firebase-admin";
 import { sendPaidBookingConfirmedEmail, type PaidBookingEmailPayload } from "@/lib/bookingEmail";
-import { assertPendingCheckoutAllowed, resolvePackageName } from "@/lib/bookingValidation";
+import { assertPendingCheckoutAllowed } from "@/lib/bookingValidation";
+import { checkExpectedPayment, resolveCanonicalBookingPricing } from "@/lib/bookingPricing";
 import {
   CONFIRMED_BOOKINGS_COLLECTION,
   PENDING_BOOKINGS_COLLECTION,
@@ -25,6 +26,7 @@ export type FinalizePaidBookingResult = {
   alreadyPaid: boolean;
   emailSent: boolean;
   slotConflict?: boolean;
+  paymentMismatch?: boolean;
 };
 
 export type BookingRecord = CreatePendingBookingSchema & {
@@ -35,6 +37,8 @@ export type BookingRecord = CreatePendingBookingSchema & {
   paid_at?: Timestamp | null;
   confirmed_at?: Timestamp | null;
   promoted_booking_id?: string | null;
+  expected_payment_amount_minor?: number;
+  expected_payment_currency?: string;
 };
 
 function stripUndefined<T extends Record<string, unknown>>(obj: T): Partial<T> {
@@ -46,22 +50,29 @@ export async function createPendingBooking(
   input: CreatePendingBookingSchema
 ): Promise<{ bookingId: string; package_name: string | null }> {
   await assertPendingCheckoutAllowed(db, input);
-
-  let packageName: string | null = null;
-  if (input.package_id) {
-    packageName = await resolvePackageName(db, input.package_id);
-  }
+  const canonicalPricing = await resolveCanonicalBookingPricing(db, input);
+  const untrustedPriceFields = new Set([
+    "studio_name",
+    "studio_total_aed",
+    "addons_total_aed",
+    "discount_percent",
+    "total_amount_aed",
+  ]);
+  const customerInput = Object.fromEntries(
+    Object.entries(input).filter(([key]) => !untrustedPriceFields.has(key))
+  );
 
   const ref = await db.collection(PENDING_BOOKINGS_COLLECTION).add({
-    ...stripUndefined(input),
-    package_name: packageName,
+    ...stripUndefined(customerInput),
+    ...stripUndefined(canonicalPricing),
+    package_name: canonicalPricing.package_name ?? null,
     status: "awaiting_payment",
     payment_status: "pending",
     created_at: FieldValue.serverTimestamp(),
     updated_at: FieldValue.serverTimestamp(),
   });
 
-  return { bookingId: ref.id, package_name: packageName };
+  return { bookingId: ref.id, package_name: canonicalPricing.package_name ?? null };
 }
 
 export async function incrementDiscountCodeOnce(db: Firestore, rawCode: string | undefined | null): Promise<void> {
@@ -103,6 +114,39 @@ function bookingToEmailPayload(data: BookingRecord): PaidBookingEmailPayload {
   };
 }
 
+function writePaymentIncident(
+  tx: Transaction,
+  db: Firestore,
+  bookingRef: DocumentReference,
+  data: BookingRecord,
+  meta: PaymentMeta,
+  type: "amount_mismatch" | "slot_conflict",
+  extra: Record<string, unknown> = {}
+): void {
+  const incidentRef = db.collection("payment_incidents").doc(`booking_${bookingRef.id}_${type}`);
+  tx.set(
+    incidentRef,
+    {
+      type,
+      status: "open",
+      source_collection: bookingRef.parent.id,
+      source_id: bookingRef.id,
+      customer_email: data.email ?? null,
+      customer_phone: data.phone ?? null,
+      expected_amount_minor: data.expected_payment_amount_minor ?? null,
+      expected_currency: data.expected_payment_currency ?? null,
+      paid_amount_minor: meta.amountMinor ?? null,
+      paid_currency: meta.currency ?? null,
+      payment_event: meta.eventName ?? null,
+      provider_status: meta.providerStatus ?? null,
+      ...extra,
+      created_at: FieldValue.serverTimestamp(),
+      updated_at: FieldValue.serverTimestamp(),
+    },
+    { merge: true }
+  );
+}
+
 async function finalizeLegacyBookingInPlace(
   db: Firestore,
   bookingRef: DocumentReference,
@@ -111,7 +155,13 @@ async function finalizeLegacyBookingInPlace(
   const result = await db.runTransaction(async (tx) => {
     const snap = await tx.get(bookingRef);
     if (!snap.exists) {
-      return { alreadyPaid: false, shouldSendEmail: false, data: null as BookingRecord | null, slotConflict: false };
+      return {
+        alreadyPaid: false,
+        shouldSendEmail: false,
+        data: null as BookingRecord | null,
+        slotConflict: false,
+        paymentMismatch: false,
+      };
     }
 
     const data = snap.data() as BookingRecord;
@@ -119,14 +169,42 @@ async function finalizeLegacyBookingInPlace(
     const emailAlreadySent = Boolean(data.confirmation_email_sent_at);
 
     if (alreadyPaid) {
-      return { alreadyPaid: true, shouldSendEmail: false, data, slotConflict: false };
+      return { alreadyPaid: true, shouldSendEmail: false, data, slotConflict: false, paymentMismatch: false };
     }
 
-    const conflict = await findPaidBookingSlotConflict(tx, db, data, [bookingRef.id]);
+    const paymentCheck = checkExpectedPayment(data, meta.amountMinor, meta.currency);
+    if (!paymentCheck.ok) {
+      tx.update(bookingRef, {
+        payment_status: "review_required",
+        status: "payment_review_required",
+        payment_provider: "ziina",
+        payment_event: meta.eventName ?? null,
+        payment_intent_status: meta.providerStatus ?? null,
+        payment_amount_minor: meta.amountMinor ?? null,
+        payment_currency: meta.currency ?? null,
+        payment_validation_error: paymentCheck.reason,
+        payment_last_message: meta.message ?? null,
+        updated_at: FieldValue.serverTimestamp(),
+      });
+      writePaymentIncident(tx, db, bookingRef, data, meta, "amount_mismatch", {
+        validation_error: paymentCheck.reason,
+      });
+      return {
+        alreadyPaid: false,
+        shouldSendEmail: false,
+        data,
+        slotConflict: false,
+        paymentMismatch: true,
+      };
+    }
+
+    const conflict = await findPaidBookingSlotConflict(tx, db, data, [bookingRef.id], bookingRef.id);
     if (conflict) {
       tx.update(bookingRef, {
         payment_status: "paid",
-        status: "slot_unavailable",
+        status: "refund_required",
+        refund_status: "required",
+        payment_incident_type: "slot_conflict",
         payment_provider: "ziina",
         payment_event: meta.eventName ?? null,
         payment_intent_status: meta.providerStatus ?? null,
@@ -137,7 +215,11 @@ async function finalizeLegacyBookingInPlace(
         paid_at: FieldValue.serverTimestamp(),
         updated_at: FieldValue.serverTimestamp(),
       });
-      return { alreadyPaid: false, shouldSendEmail: false, data, slotConflict: true };
+      writePaymentIncident(tx, db, bookingRef, data, meta, "slot_conflict", {
+        conflict_with_booking_id: conflict.id,
+        refund_status: "required",
+      });
+      return { alreadyPaid: false, shouldSendEmail: false, data, slotConflict: true, paymentMismatch: false };
     }
 
     tx.update(bookingRef, {
@@ -154,12 +236,23 @@ async function finalizeLegacyBookingInPlace(
       updated_at: FieldValue.serverTimestamp(),
     });
 
-    return { alreadyPaid: false, shouldSendEmail: !emailAlreadySent, data, slotConflict: false };
+    return {
+      alreadyPaid: false,
+      shouldSendEmail: !emailAlreadySent,
+      data,
+      slotConflict: false,
+      paymentMismatch: false,
+    };
   });
 
   if (result.slotConflict) {
     console.error("[finalizePaidBooking] Slot conflict on legacy booking:", bookingRef.id);
     return { alreadyPaid: false, emailSent: false, slotConflict: true };
+  }
+
+  if (result.paymentMismatch) {
+    console.error("[finalizePaidBooking] Payment amount/currency requires review:", bookingRef.id);
+    return { alreadyPaid: false, emailSent: false, paymentMismatch: true };
   }
 
   if (result.alreadyPaid) {
@@ -215,6 +308,7 @@ export async function finalizePaidBooking(
         data: null as BookingRecord | null,
         confirmedRef: null as DocumentReference | null,
         slotConflict: false,
+        paymentMismatch: false,
       };
     }
 
@@ -227,14 +321,44 @@ export async function finalizePaidBooking(
         data,
         confirmedRef,
         slotConflict: false,
+        paymentMismatch: false,
       };
     }
 
-    const conflict = await findPaidBookingSlotConflict(tx, db, data);
+    const paymentCheck = checkExpectedPayment(data, meta.amountMinor, meta.currency);
+    if (!paymentCheck.ok) {
+      tx.update(pendingRef, {
+        payment_status: "review_required",
+        status: "payment_review_required",
+        payment_provider: "ziina",
+        payment_event: meta.eventName ?? null,
+        payment_intent_status: meta.providerStatus ?? null,
+        payment_amount_minor: meta.amountMinor ?? null,
+        payment_currency: meta.currency ?? null,
+        payment_validation_error: paymentCheck.reason,
+        payment_last_message: meta.message ?? null,
+        updated_at: FieldValue.serverTimestamp(),
+      });
+      writePaymentIncident(tx, db, pendingRef, data, meta, "amount_mismatch", {
+        validation_error: paymentCheck.reason,
+      });
+      return {
+        alreadyPaid: false,
+        shouldSendEmail: false,
+        data,
+        confirmedRef: null,
+        slotConflict: false,
+        paymentMismatch: true,
+      };
+    }
+
+    const conflict = await findPaidBookingSlotConflict(tx, db, data, [], checkoutId);
     if (conflict) {
       tx.update(pendingRef, {
         payment_status: "paid",
-        status: "slot_unavailable",
+        status: "refund_required",
+        refund_status: "required",
+        payment_incident_type: "slot_conflict",
         payment_provider: "ziina",
         payment_event: meta.eventName ?? null,
         payment_intent_status: meta.providerStatus ?? null,
@@ -245,12 +369,17 @@ export async function finalizePaidBooking(
         paid_at: FieldValue.serverTimestamp(),
         updated_at: FieldValue.serverTimestamp(),
       });
+      writePaymentIncident(tx, db, pendingRef, data, meta, "slot_conflict", {
+        conflict_with_booking_id: conflict.id,
+        refund_status: "required",
+      });
       return {
         alreadyPaid: false,
         shouldSendEmail: false,
         data,
         confirmedRef: null,
         slotConflict: true,
+        paymentMismatch: false,
       };
     }
 
@@ -295,12 +424,18 @@ export async function finalizePaidBooking(
       data: { ...data, ...rest } as BookingRecord,
       confirmedRef,
       slotConflict: false,
+      paymentMismatch: false,
     };
   });
 
   if (result.slotConflict) {
     console.error("[finalizePaidBooking] Slot conflict for pending checkout:", checkoutId);
     return { alreadyPaid: false, emailSent: false, slotConflict: true };
+  }
+
+  if (result.paymentMismatch) {
+    console.error("[finalizePaidBooking] Payment amount/currency requires review:", checkoutId);
+    return { alreadyPaid: false, emailSent: false, paymentMismatch: true };
   }
 
   if (result.alreadyPaid) {

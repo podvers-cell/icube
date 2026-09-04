@@ -65,7 +65,7 @@ export default function BookingAddonsPage() {
   });
 
   useEffect(() => {
-    if (!selectedPackage || !selectedDate || !selectedTimeSlot) {
+    if (!selectedPackage || (selectedPackage.requires_schedule !== false && (!selectedDate || !selectedTimeSlot))) {
       router.replace("/packages");
       return;
     }
@@ -83,7 +83,7 @@ export default function BookingAddonsPage() {
     else addAddon({ id: a.id, name: a.name, price_aed: a.price_aed });
   };
 
-  if (!selectedPackage || !selectedDate || !selectedTimeSlot) return null;
+  if (!selectedPackage || (selectedPackage.requires_schedule !== false && (!selectedDate || !selectedTimeSlot))) return null;
 
   return (
     <div className="site-wrapper min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray to-icube-dark/80 text-white selection:bg-icube-gold selection:text-icube-dark transition-colors duration-300">
@@ -92,11 +92,11 @@ export default function BookingAddonsPage() {
         <div className="max-w-6xl mx-auto px-5 sm:px-6 md:px-12">
           <BookingProgress currentStep={2} steps={["Date & time", "Add-ons", "Checkout"]} />
           <Link
-            href="/packages/date-time"
+            href={selectedPackage.requires_schedule === false ? "/packages" : "/packages/date-time"}
             className="inline-flex items-center gap-2 text-gray-400 hover:text-icube-gold text-sm font-medium mb-8 transition-colors"
           >
             <ChevronLeft size={18} />
-            Back to date & time
+            {selectedPackage.requires_schedule === false ? "Back to packages" : "Back to date & time"}
           </Link>
 
           <div className="mb-10">

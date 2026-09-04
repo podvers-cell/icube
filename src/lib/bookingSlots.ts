@@ -3,6 +3,7 @@ import type { Firestore, QueryDocumentSnapshot, Transaction } from "firebase-adm
 export const PENDING_BOOKINGS_COLLECTION = "pending_bookings";
 export const CONFIRMED_BOOKINGS_COLLECTION = "bookings";
 export const MAX_SLOT_HOUR = 22;
+const SLOT_CLAIM_WINDOW_MS = 2 * 60 * 1000;
 
 export function normalizeStoredPaymentStatus(status: string | undefined): "pending" | "paid" | "failed" {
   switch (status) {
@@ -122,7 +123,8 @@ export async function findPaidBookingSlotConflict(
   tx: Transaction,
   db: Firestore,
   candidate: SlotBookingLike,
-  excludeBookingIds: string[] = []
+  excludeBookingIds: string[] = [],
+  claimBookingId?: string
 ): Promise<{ id: string; data: SlotBookingLike } | null> {
   if (!candidate.booking_date) return null;
 
@@ -139,6 +141,44 @@ export async function findPaidBookingSlotConflict(
     if (bookingsOverlap(candidate, data)) {
       return { id: doc.id, data };
     }
+  }
+
+  if (!claimBookingId) return null;
+
+  const candidateSlots = hourSlotsFromBooking(candidate);
+  const claimRefs = candidateSlots.map((slot) =>
+    db.collection("booking_slot_claims").doc(`${candidate.booking_date}__${slot}`)
+  );
+  const claimSnaps = await Promise.all(claimRefs.map((ref) => tx.get(ref)));
+  const candidateStudio = candidate.studio_id ?? null;
+
+  for (const claimSnap of claimSnaps) {
+    if (!claimSnap.exists) continue;
+    const claim = claimSnap.data() as {
+      booking_id?: string;
+      studio_id?: string | null;
+      claimed_at?: { toMillis?: () => number };
+    };
+    const claimedAt = typeof claim.claimed_at?.toMillis === "function" ? claim.claimed_at.toMillis() : 0;
+    const isFresh = claimedAt > 0 && Date.now() - claimedAt < SLOT_CLAIM_WINDOW_MS;
+    const claimedStudio = claim.studio_id ?? null;
+    const sameResource = candidateStudio == null || claimedStudio == null || String(candidateStudio) === String(claimedStudio);
+    if (isFresh && sameResource && claim.booking_id !== claimBookingId) {
+      return { id: claim.booking_id ?? claimSnap.id, data: { studio_id: claimedStudio } };
+    }
+  }
+
+  for (const claimRef of claimRefs) {
+    tx.set(
+      claimRef,
+      {
+        booking_id: claimBookingId,
+        studio_id: candidateStudio,
+        booking_date: candidate.booking_date,
+        claimed_at: new Date(),
+      },
+      { merge: true }
+    );
   }
 
   return null;

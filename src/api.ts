@@ -178,64 +178,6 @@ export const api = {
       return { success: true } as T;
     }
 
-    if (path === "/workshop/enroll") {
-      const b = (typeof body === "object" && body !== null ? (body as Record<string, unknown>) : {}) as Record<string, unknown>;
-      const workshopId = String(b.workshop_id ?? "");
-      const fullName = String(b.full_name ?? "");
-      const email = String(b.email ?? "");
-      const phone = b.phone != null ? String(b.phone) : null;
-      const amountAed = Number(b.amount_aed ?? 0);
-      const workshopDate = b.workshop_date != null ? String(b.workshop_date) : null;
-      if (!workshopId) throw new Error("Workshop is required.");
-      if (!fullName.trim()) throw new Error("Name is required.");
-      if (!email.trim()) throw new Error("Email is required.");
-      if (!Number.isFinite(amountAed) || amountAed <= 0) throw new Error("Invalid amount.");
-
-      const db = requireFirestore();
-
-      // Capacity validation (best-effort): uses paid_enrollments_count on workshop doc.
-      try {
-        const wsSnap = await getDoc(doc(db, "workshops", workshopId));
-        if (wsSnap.exists()) {
-          const ws = wsSnap.data() as {
-            group_size_max?: number;
-            group_size_label?: string;
-            paid_enrollments_count?: number;
-            sold_out?: boolean;
-            sold_out_override?: boolean;
-          };
-          if (Boolean(ws.sold_out_override ?? ws.sold_out)) {
-            throw new Error("This workshop is sold out.");
-          }
-          const label = typeof ws.group_size_label === "string" ? ws.group_size_label : "";
-          const maxFromLabel = (() => {
-            const nums = label.match(/\d+/g)?.map((n) => Number(n)).filter((n) => Number.isFinite(n) && n > 0) ?? [];
-            return nums.length ? Math.max(...nums) : 0;
-          })();
-          const max = Number(ws.group_size_max ?? 0) || maxFromLabel || 0;
-          const paid = Number(ws.paid_enrollments_count ?? 0) || 0;
-          if (Number.isFinite(max) && max > 0 && paid >= max) {
-            throw new Error("This workshop is sold out.");
-          }
-        }
-      } catch (e) {
-        if (e instanceof Error) throw e;
-      }
-
-      const ref = await addDoc(collection(db, "workshop_enrollments"), {
-        workshop_id: workshopId,
-        workshop_date: workshopDate,
-        full_name: fullName.trim(),
-        email: email.trim(),
-        phone,
-        amount_aed: amountAed,
-        payment_provider: "ziina",
-        payment_status: "pending",
-        created_at: serverTimestamp(),
-      });
-      return { success: true, enrollment_id: ref.id } as T;
-    }
-
     // Auth
     if (path === "/login") {
       const { email, password } = body as { email: string; password: string };
@@ -543,11 +485,19 @@ export async function enrollWorkshop(data: {
   workshop_id: string;
   full_name: string;
   email: string;
-  phone?: string;
-  amount_aed: number;
-  workshop_date?: string;
+  phone: string;
 }): Promise<{ success: boolean; enrollment_id: string }> {
-  return api.post<{ success: boolean; enrollment_id: string }>("/workshop/enroll", data);
+  const base = typeof window !== "undefined" ? "" : process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "";
+  const response = await fetch(`${base}/api/workshops/enroll`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  const body = (await response.json().catch(() => ({}))) as { error?: string; enrollment_id?: string };
+  if (!response.ok || !body.enrollment_id) {
+    throw new Error(body.error || "Failed to start workshop enrollment.");
+  }
+  return { success: true, enrollment_id: body.enrollment_id };
 }
 
 export type BookingPayload = {

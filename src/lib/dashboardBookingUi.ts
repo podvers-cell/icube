@@ -61,7 +61,14 @@ export function bookingMatchesFilter(b: DashboardBookingLike, tab: BookingFilter
 }
 
 export function canAdminConfirm(b: DashboardBookingLike): boolean {
-  if (b.status === "confirmed" || b.status === "cancelled") return false;
+  if (
+    b.status === "confirmed" ||
+    b.status === "cancelled" ||
+    b.status === "refund_required" ||
+    b.status === "payment_review_required"
+  ) {
+    return false;
+  }
   return normalizePaymentStatus(b.payment_status) === "paid";
 }
 
@@ -92,6 +99,10 @@ export function bookingStatusLabel(raw?: string | null): string {
       return "Confirmed";
     case "cancelled":
       return "Cancelled";
+    case "refund_required":
+      return "Refund required";
+    case "payment_review_required":
+      return "Payment review required";
     default:
       return normalized.replace(/_/g, " ");
   }
@@ -120,6 +131,10 @@ export function bookingStatusBadgeClass(raw?: string | null): string {
       return "bg-red-500/20 text-red-400";
     case "awaiting_payment":
       return "bg-icube-gold/20 text-icube-gold";
+    case "refund_required":
+      return "bg-red-500/20 text-red-300";
+    case "payment_review_required":
+      return "bg-amber-500/20 text-amber-300";
     default:
       return "bg-white/10 text-gray-300";
   }

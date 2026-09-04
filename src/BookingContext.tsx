@@ -7,6 +7,7 @@ export type BookingPackage = {
   name: string;
   price_aed: number;
   duration: string;
+  requires_schedule?: boolean;
 };
 
 export type SelectedAddon = {
