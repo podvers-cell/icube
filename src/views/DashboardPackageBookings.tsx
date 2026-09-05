@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Download, Trash2, X } from "lucide-react";
-import { api, getBookingPackages, sendBookingConfirmedEmail } from "../api";
+import { api, getBookingPackages } from "../api";
 import { BookingFilterTabs, StatusBadge, useFilterTab } from "@/components/dashboard/BookingFilterTabs";
 import {
   BOOKING_FILTER_TABS,
@@ -120,30 +120,9 @@ export default function DashboardPackageBookings() {
     }
   }
 
-  async function setStatus(id: string, status: string, booking?: Booking) {
+  async function setStatus(id: string, status: string, _booking?: Booking) {
     try {
       await api.patch(`/dashboard/bookings/${id}`, { status });
-      if (status === "confirmed" && booking?.email) {
-        try {
-          await sendBookingConfirmedEmail({
-            first_name: booking.first_name,
-            last_name: booking.last_name,
-            email: booking.email,
-            phone: booking.phone ?? undefined,
-            studio_name: booking.studio_name ?? undefined,
-            package_id: booking.package_id ?? undefined,
-            package_name: getPackageName(booking, packages),
-            booking_date: booking.booking_date ?? undefined,
-            time_slot: booking.time_slot ?? undefined,
-            booking_duration_hours: booking.booking_duration_hours ?? undefined,
-            studio_total_aed: booking.studio_total_aed ?? undefined,
-            addons_total_aed: booking.addons_total_aed,
-            project_details: booking.project_details ?? undefined,
-          });
-        } catch {
-          // Status updated; email is best-effort
-        }
-      }
       load();
       if (selected?.id === id) setSelected(null);
     } catch (err) {
