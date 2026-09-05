@@ -36,7 +36,8 @@ service cloud.firestore {
       allow read, update, delete: if isAdmin();
     }
     match /contact_messages/{id} {
-      allow create: if true;
+      // Public submissions go through /api/contact for validation and rate limiting.
+      allow create: if false;
       allow read, update, delete: if isAdmin();
     }
     match /workshop_enrollments/{id} {

@@ -4,8 +4,7 @@ import { createContext, useContext, useState, useRef, type ReactNode } from "rea
 import Link from "next/link";
 import { useFocusTrap } from "./hooks/useFocusTrap";
 import { X } from "lucide-react";
-import { useSiteData } from "./SiteDataContext";
-import { submitContact, sendContactEmailNotification } from "./api";
+import { submitContact } from "./api";
 import { CONTACT_SUBJECT_OPTIONS } from "./constants/contact";
 import type { FormEvent } from "react";
 
@@ -76,11 +75,6 @@ function ContactModalInner() {
         message: message || "No additional details.",
       };
       await submitContact(data);
-      try {
-        await sendContactEmailNotification(data);
-      } catch {
-        // Message already saved; email is best-effort
-      }
       setSubmitted(true);
       setForm({ first_name: "", last_name: "", email: "", company_name: "", country: "", phone: "", area_of_interest: "" });
       setAreaError(false);

@@ -2,9 +2,11 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { cert, getApps, initializeApp, type App } from "firebase-admin/app";
+import { getAuth, type Auth } from "firebase-admin/auth";
 import { getFirestore, type Firestore } from "firebase-admin/firestore";
 
 let adminApp: App | undefined;
+let adminAuth: Auth | undefined;
 let adminDb: Firestore | undefined;
 
 export class FirebaseAdminConfigError extends Error {
@@ -188,4 +190,12 @@ export function getAdminFirestore(): Firestore {
     adminDb = getFirestore();
   }
   return adminDb;
+}
+
+/** Server-only. Never import from client components. */
+export function getAdminAuth(): Auth {
+  if (!adminAuth) {
+    adminAuth = getAuth(initAdminApp());
+  }
+  return adminAuth;
 }

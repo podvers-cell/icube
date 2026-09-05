@@ -165,21 +165,6 @@ export const api = {
     if (path === "/booking") {
       throw new Error("Direct booking creation is deprecated. Use /api/bookings/create.");
     }
-    if (path === "/contact") {
-      const parsed = contactFormSchema.safeParse(body);
-      if (!parsed.success) {
-        const msg = parsed.error.issues[0]?.message ?? parsed.error.flatten().formErrors?.[0] ?? "Invalid contact data";
-        throw new Error(typeof msg === "string" ? msg : "Invalid contact data");
-      }
-      const m = parsed.data;
-      await addDoc(collection(requireFirestore(), "contact_messages"), {
-        ...m,
-        read_at: null,
-        created_at: serverTimestamp(),
-      });
-      return { success: true } as T;
-    }
-
     // Auth
     if (path === "/login") {
       const { email, password } = body as { email: string; password: string };
@@ -658,33 +643,29 @@ export async function getBookedSlots(bookingDate: string, studioId?: string): Pr
     return [];
   }
 }
-export function submitContact(data: { name: string; email: string; subject: string; message: string }) {
-  return api.post<{ success: boolean }>("/contact", data);
-}
-
-/** Sends a copy of the contact form to info@icubeproduction.com via the API. Call after submitContact. */
-export async function sendContactEmailNotification(data: {
+export async function submitContact(data: {
   name: string;
   email: string;
   subject: string;
   message: string;
-}): Promise<void> {
+}): Promise<{ success: boolean }> {
+  const parsed = contactFormSchema.safeParse(data);
+  if (!parsed.success) {
+    const msg = parsed.error.issues[0]?.message ?? "Invalid contact data";
+    throw new Error(msg);
+  }
   const base = typeof window !== "undefined" ? "" : process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "";
-  const res = await fetch(`${base}/api/send-contact-email`, {
+  const res = await fetch(`${base}/api/contact`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
+    body: JSON.stringify(parsed.data),
   });
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
-    if (res.status === 503) {
-      if (typeof window !== "undefined") console.warn("[Contact] Email not configured (RESEND_API_KEY missing). Message was still saved.");
-      return;
-    }
-    const msg = (body && typeof body.error === "string" ? body.error : "Failed to send email notification") as string;
-    if (typeof window !== "undefined") console.error("[Contact] Email send failed:", res.status, msg);
+    const msg = (body && typeof body.error === "string" ? body.error : "Failed to submit contact message") as string;
     throw new Error(msg);
   }
+  return { success: true };
 }
 
 // Auth

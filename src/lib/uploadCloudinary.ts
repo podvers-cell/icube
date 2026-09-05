@@ -3,6 +3,8 @@
  * Used by the dashboard so images/videos uploaded from the dashboard appear on the website.
  */
 
+import { requireAuth } from "@/firebase";
+
 export type UploadOptions = {
   folder?: string;
   type?: "image" | "video" | "auto";
@@ -10,10 +12,14 @@ export type UploadOptions = {
   onProgress?: (percent: number) => void;
 };
 
-export function uploadToCloudinaryWithProgress(
+export async function uploadToCloudinaryWithProgress(
   file: File,
   options: UploadOptions = {}
 ): Promise<string> {
+  const user = requireAuth().currentUser;
+  if (!user) throw new Error("Please sign in as an administrator before uploading.");
+  const idToken = await user.getIdToken();
+
   const { folder = "icube", type = "auto", onProgress } = options;
   const formData = new FormData();
   formData.set("file", file);
@@ -22,7 +28,6 @@ export function uploadToCloudinaryWithProgress(
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    const uploadKey = typeof process !== "undefined" && process.env?.NEXT_PUBLIC_UPLOAD_API_KEY;
 
     xhr.upload.addEventListener("progress", (e) => {
       if (e.lengthComputable && onProgress) {
@@ -55,9 +60,7 @@ export function uploadToCloudinaryWithProgress(
     xhr.addEventListener("abort", () => reject(new Error("Upload cancelled")));
 
     xhr.open("POST", "/api/upload");
-    if (uploadKey) {
-      xhr.setRequestHeader("x-upload-key", uploadKey);
-    }
+    xhr.setRequestHeader("Authorization", `Bearer ${idToken}`);
     xhr.send(formData);
   });
 }

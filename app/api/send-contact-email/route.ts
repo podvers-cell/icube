@@ -1,21 +1,18 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
+import { FieldValue } from "firebase-admin/firestore";
 import { contactFormSchema } from "@/schemas/contact";
 import { CONTACT_EMAIL } from "@/constants/contact";
+import { getAdminFirestore } from "@/firebase-admin";
 
 const FROM_EMAIL = process.env.CONTACT_FROM_EMAIL || "onboarding@resend.dev";
 const TO_EMAIL = process.env.CONTACT_TO_EMAIL || CONTACT_EMAIL;
 
-export async function POST(request: Request) {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.error("[send-contact-email] RESEND_API_KEY is not set");
-    return NextResponse.json(
-      { error: "Email not configured (RESEND_API_KEY missing)" },
-      { status: 503 }
-    );
+export async function handleContactSubmission(request: Request) {
+  const contentLength = Number(request.headers.get("content-length") ?? "0");
+  if (Number.isFinite(contentLength) && contentLength > 32_768) {
+    return NextResponse.json({ error: "Request body is too large" }, { status: 413 });
   }
-  const resend = new Resend(apiKey);
 
   let body: unknown;
   try {
@@ -31,6 +28,21 @@ export async function POST(request: Request) {
   }
 
   const { name, email, subject, message } = parsed.data;
+  const ref = await getAdminFirestore().collection("contact_messages").add({
+    name,
+    email,
+    subject,
+    message,
+    read_at: null,
+    created_at: FieldValue.serverTimestamp(),
+  });
+
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.error("[contact] RESEND_API_KEY is not set; message saved without email notification");
+    return NextResponse.json({ success: true, message_id: ref.id, email_sent: false });
+  }
+  const resend = new Resend(apiKey);
 
   // 1) Email to you (info@icubeproduction.com)
   const ownerHtml = `
@@ -52,8 +64,8 @@ export async function POST(request: Request) {
   });
 
   if (ownerError) {
-    console.error("[send-contact-email] Resend error (owner):", ownerError.message, { to: TO_EMAIL });
-    return NextResponse.json({ error: ownerError.message }, { status: 500 });
+    console.error("[contact] Resend error (owner):", ownerError.message, { to: TO_EMAIL });
+    return NextResponse.json({ success: true, message_id: ref.id, email_sent: false });
   }
 
   // 2) Confirmation email to the customer – professional layout
@@ -104,12 +116,19 @@ export async function POST(request: Request) {
   });
 
   if (customerError) {
-    console.error("[send-contact-email] Resend error (customer confirmation):", customerError.message, { to: email });
+    console.error("[contact] Resend error (customer confirmation):", customerError.message, { to: email });
     // Still return success; owner email was sent
   }
 
-  console.info("[send-contact-email] Sent to", TO_EMAIL, "id:", ownerData?.id);
-  return NextResponse.json({ success: true, id: ownerData?.id });
+  console.info("[contact] Saved", ref.id, "and notified", TO_EMAIL, "id:", ownerData?.id);
+  return NextResponse.json({ success: true, message_id: ref.id, email_sent: true });
+}
+
+export async function POST() {
+  return NextResponse.json(
+    { error: "This endpoint has moved to /api/contact." },
+    { status: 410 }
+  );
 }
 
 function escapeHtml(s: string): string {

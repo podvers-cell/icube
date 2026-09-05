@@ -10,6 +10,7 @@ const store = new Map<string, LimitEntry>();
 const RULES: Record<string, LimitRule> = {
   "/api/upload": { key: "upload", max: 10 },
   "/api/send-contact-email": { key: "contact", max: 5 },
+  "/api/contact": { key: "contact", max: 5 },
   "/api/send-booking-confirmation": { key: "booking-email", max: 5 },
   "/api/send-booking-confirmed": { key: "booking-email", max: 5 },
   "/api/bookings/create": { key: "booking-create", max: 10 },
@@ -72,6 +73,7 @@ export const config = {
   matcher: [
     "/api/upload",
     "/api/send-contact-email",
+    "/api/contact",
     "/api/send-booking-confirmation",
     "/api/send-booking-confirmed",
     "/api/bookings/create",

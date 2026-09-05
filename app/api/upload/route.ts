@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
+import { verifyAdminApiRequest } from "@/lib/adminApiAuth";
 
 function getConfig() {
   const url = process.env.CLOUDINARY_URL;
@@ -15,27 +16,10 @@ function getConfig() {
   return null;
 }
 
-/** In production only server-side key is allowed. Never use NEXT_PUBLIC_UPLOAD_API_KEY in production. */
-function getUploadKey(): string | null {
-  const isProduction = process.env.NODE_ENV === "production";
-  if (isProduction) return process.env.UPLOAD_API_KEY ?? null;
-  return process.env.UPLOAD_API_KEY ?? process.env.NEXT_PUBLIC_UPLOAD_API_KEY ?? null;
-}
-
 export async function POST(request: NextRequest) {
-  const uploadKey = getUploadKey();
-  const isProduction = process.env.NODE_ENV === "production";
-  if (isProduction && !uploadKey) {
-    return NextResponse.json(
-      { error: "Upload not configured. Set UPLOAD_API_KEY server-side in production." },
-      { status: 503 }
-    );
-  }
-  if (uploadKey) {
-    const provided = request.headers.get("x-upload-key") ?? request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-    if (!provided || provided !== uploadKey) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  const auth = await verifyAdminApiRequest(request);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
 
   const config = getConfig();
@@ -69,6 +53,15 @@ export async function POST(request: NextRequest) {
 
   if (!file || !file.size) {
     return NextResponse.json({ error: "No file provided" }, { status: 400 });
+  }
+  if (!/^[a-z0-9/_-]{1,80}$/i.test(folder) || folder.includes("..")) {
+    return NextResponse.json({ error: "Invalid upload folder" }, { status: 400 });
+  }
+  if (resourceType === "image" && !file.type.startsWith("image/")) {
+    return NextResponse.json({ error: "Expected an image file" }, { status: 400 });
+  }
+  if (resourceType === "video" && !file.type.startsWith("video/")) {
+    return NextResponse.json({ error: "Expected a video file" }, { status: 400 });
   }
 
   const bytes = await file.arrayBuffer();

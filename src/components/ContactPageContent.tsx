@@ -14,7 +14,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { useSiteData } from "../SiteDataContext";
-import { submitContact, sendContactEmailNotification } from "../api";
+import { submitContact } from "../api";
 import { CONTACT_EMAIL } from "../constants/contact";
 
 function TikTokIcon() {
@@ -48,7 +48,6 @@ export default function ContactPageContent() {
     settings.contact_address ||
     "Dubai Media City, Building 1\nDubai, United Arab Emirates";
   const email = settings.contact_email || CONTACT_EMAIL;
-  const emailBookings = settings.contact_email_bookings || "bookings@icube.ae";
   const phone = settings.contact_phone || "+971 4 123 4567";
   const phone2 = settings.contact_phone_2 || "";
   const hours = settings.contact_hours || "Sun–Thu, 9am – 6pm GST";
@@ -70,11 +69,6 @@ export default function ContactPageContent() {
     };
     try {
       await submitContact(data);
-      try {
-        await sendContactEmailNotification(data);
-      } catch {
-        // Message already saved; email is best-effort
-      }
       setSubmitted(true);
       setForm({ name: "", email: "", subject: "Studio Booking", message: "" });
     } catch (err) {

@@ -5,7 +5,7 @@ import { Mail, Phone, MapPin, Instagram, Youtube, Linkedin, Facebook } from "luc
 import { motion } from "motion/react";
 import { useSiteData } from "../SiteDataContext";
 import { useToast } from "../ToastContext";
-import { submitContact, sendContactEmailNotification } from "../api";
+import { submitContact } from "../api";
 import { CONTACT_EMAIL, CONTACT_SUBJECT_OPTIONS } from "../constants/contact";
 import AnimatedStaggerItem from "./AnimatedStaggerItem";
 import { AnimatedSectionHeader } from "./ScrollReveal";
@@ -69,11 +69,6 @@ export default function Contact() {
     const data = { name: form.name, email: form.email, subject: form.subject, message: form.message };
     try {
       await submitContact(data);
-      try {
-        await sendContactEmailNotification(data);
-      } catch {
-        // Message already saved to Firestore; email is best-effort
-      }
       setSubmitted(true);
       setForm({ name: "", email: "", subject: CONTACT_SUBJECT_OPTIONS[0], message: "" });
       showToast("Message sent. We'll get back to you soon.", "success");
@@ -187,7 +182,7 @@ export default function Contact() {
             <div className="glass-card p-8 md:p-12 rounded-2xl">
               <h3 className="text-3xl font-display font-bold mb-8">Send a Message</h3>
               <form onSubmit={handleSubmit} className="space-y-6">
-                {submitted && <p className="text-icube-gold text-sm">Message sent. We'll get back to you soon.</p>}
+                {submitted && <p className="text-icube-gold text-sm">Message sent. We&apos;ll get back to you soon.</p>}
                 <div className="space-y-2">
                   <label htmlFor="contact-name" className="text-sm font-semibold text-gray-400 uppercase tracking-wider block">
                     Name
