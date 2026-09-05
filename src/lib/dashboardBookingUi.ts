@@ -40,6 +40,13 @@ export function normalizeBookingStatus(raw?: string | null): string {
   return raw;
 }
 
+/** Never present an unpaid record as confirmed, including legacy data. */
+export function effectiveBookingStatus(b: DashboardBookingLike): string {
+  const status = normalizeBookingStatus(b.status);
+  const payment = normalizePaymentStatus(b.payment_status);
+  return status === "confirmed" && payment !== "paid" ? "awaiting_payment" : status;
+}
+
 export function isConfirmedActiveBooking(b: DashboardBookingLike): boolean {
   return normalizePaymentStatus(b.payment_status) === "paid" && b.status === "confirmed";
 }

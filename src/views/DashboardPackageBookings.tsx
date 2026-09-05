@@ -10,6 +10,7 @@ import {
   bookingStatusBadgeClass,
   bookingStatusLabel,
   canAdminConfirm,
+  effectiveBookingStatus,
   formatBookingAmount,
   formatPaymentReference,
   getBookingFilterCategory,
@@ -183,7 +184,7 @@ export default function DashboardPackageBookings() {
       phone: b.phone ?? "",
       package_id: b.package_id ?? "",
       package_name: getPackageName(b, packages),
-      booking_status: bookingStatusLabel(b.status),
+      booking_status: bookingStatusLabel(effectiveBookingStatus(b)),
       payment_status: paymentStatusLabel(b.payment_status),
       total_amount_aed: formatBookingAmount(b, getPackagePrice(b, packages)),
       ziina_intent_id: b.ziina_intent_id ?? "",
@@ -282,7 +283,7 @@ export default function DashboardPackageBookings() {
                   <StatusBadge label={paymentStatusLabel(b.payment_status)} className={paymentStatusBadgeClass(b.payment_status)} />
                 </td>
                 <td className="py-3 pr-4">
-                  <StatusBadge label={bookingStatusLabel(b.status)} className={bookingStatusBadgeClass(b.status)} />
+                  <StatusBadge label={bookingStatusLabel(effectiveBookingStatus(b))} className={bookingStatusBadgeClass(effectiveBookingStatus(b))} />
                 </td>
                 <td className="py-3 pr-4 text-gray-500 text-xs font-mono" title={b.ziina_intent_id ?? undefined}>
                   {formatPaymentReference(b.ziina_intent_id)}
@@ -347,7 +348,7 @@ export default function DashboardPackageBookings() {
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Booking status</p>
-                  <StatusBadge label={bookingStatusLabel(selected.status)} className={bookingStatusBadgeClass(selected.status)} />
+                  <StatusBadge label={bookingStatusLabel(effectiveBookingStatus(selected))} className={bookingStatusBadgeClass(effectiveBookingStatus(selected))} />
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Payment status</p>
