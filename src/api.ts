@@ -17,7 +17,6 @@ import {
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { requireAuth, requireFirestore } from "./firebase";
 import { contactFormSchema } from "./schemas/contact";
-import { isDashboardVisibleBooking } from "./lib/bookingSlots";
 
 type IdDoc<T> = T & { id: string };
 
@@ -144,8 +143,11 @@ export const api = {
     }
     if (path === "/dashboard/bookings") {
       assertAuth();
-      const all = await listByCreatedAtDesc<Record<string, unknown>>("bookings");
-      return all.filter((b) => isDashboardVisibleBooking(b as { payment_status?: string | null; status?: string | null })) as T;
+      const [confirmed, pending] = await Promise.all([
+        listByCreatedAtDesc<Record<string, unknown>>("bookings"),
+        listByCreatedAtDesc<Record<string, unknown>>("pending_bookings"),
+      ]);
+      return [...confirmed, ...pending] as T;
     }
     if (path === "/dashboard/workshop-bookings") {
       assertAuth();
