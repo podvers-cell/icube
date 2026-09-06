@@ -14,9 +14,9 @@ but uncommitted, 28 tests passing. Since superseded — see Status below.
 
 ## Status
 
-Items 0–12 and 16–19 are **done and committed locally** (10 commits, not yet pushed — pushing is
-the production deploy). See `RESUME_STATE.md` for the commit map, verification evidence and the
-owner-blocked list.
+Items 0–12 and 16–20 are **done, pushed and verified live**. Only 13, 14 and 15 remain, and all
+three are blocked on owner access, plus optional item 21. See `RESUME_STATE.md` for the commit map,
+verification evidence and the owner-blocked list.
 
 One correction to the original ranking: item 1 was ranked top as an active revenue loss. On
 checking the callers, every checkout page creates a *fresh* booking before calling create-intent
@@ -48,7 +48,7 @@ it was not costing money.
 | **17** | Delete the dead Express server | ✅ `479a4ba` | 6 production deps shipping for nothing | 30 min |
 | **18** | Dependency audit | ✅ 10 → 8 via `479a4ba` | 10 moderate transitive findings | 30 min |
 | **19** | Repo hygiene | ✅ `479a4ba` | Build artifact tracked, 17 stale docs | 20 min |
-| **20** | `next/image` on the catalog | ⏳ with the catalogue page | Perf, when the catalog page is built | 1 h |
+| **20** | `next/image` on the catalog | ✅ `0b4f303` | Perf, when the catalog page is built | 1 h |
 | **21** | Server-side dashboard gate | ⏳ optional | Defense in depth only; real boundary already holds | 2 h |
 
 ---
