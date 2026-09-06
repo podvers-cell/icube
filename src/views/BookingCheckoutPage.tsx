@@ -108,6 +108,7 @@ export default function BookingCheckoutPage() {
         body: JSON.stringify({
           bookingType: "package",
           bookingId: bookingRes.booking_id,
+          checkoutToken: bookingRes.checkout_token,
         }),
       });
       const payBody = (await payRes.json().catch(() => ({}))) as { redirect_url?: string; error?: string };

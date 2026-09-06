@@ -474,18 +474,22 @@ export async function enrollWorkshop(data: {
   full_name: string;
   email: string;
   phone: string;
-}): Promise<{ success: boolean; enrollment_id: string }> {
+}): Promise<{ success: boolean; enrollment_id: string; checkout_token?: string }> {
   const base = typeof window !== "undefined" ? "" : process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "";
   const response = await fetch(`${base}/api/workshops/enroll`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  const body = (await response.json().catch(() => ({}))) as { error?: string; enrollment_id?: string };
+  const body = (await response.json().catch(() => ({}))) as {
+    error?: string;
+    enrollment_id?: string;
+    checkout_token?: string;
+  };
   if (!response.ok || !body.enrollment_id) {
     throw new Error(body.error || "Failed to start workshop enrollment.");
   }
-  return { success: true, enrollment_id: body.enrollment_id };
+  return { success: true, enrollment_id: body.enrollment_id, checkout_token: body.checkout_token };
 }
 
 export type BookingPayload = {
@@ -516,11 +520,15 @@ export async function submitBooking(data: BookingPayload & { total_amount_aed: n
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  const body = (await res.json().catch(() => ({}))) as { error?: string; booking_id?: string };
+  const body = (await res.json().catch(() => ({}))) as {
+    error?: string;
+    booking_id?: string;
+    checkout_token?: string;
+  };
   if (!res.ok) {
     throw new Error(body.error || "Failed to create booking");
   }
-  return { success: true, booking_id: body.booking_id as string };
+  return { success: true, booking_id: body.booking_id as string, checkout_token: body.checkout_token };
 }
 
 export type BookingInquiryPayload = {

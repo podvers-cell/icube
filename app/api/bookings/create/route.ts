@@ -27,12 +27,14 @@ export async function POST(request: Request) {
     }
 
     const db = getAdminFirestore();
-    const { bookingId, package_name } = await createPendingBooking(db, parsed.data);
+    const { bookingId, package_name, checkoutToken } = await createPendingBooking(db, parsed.data);
 
     return NextResponse.json({
       success: true,
       booking_id: bookingId,
       package_name,
+      // Returned once, to this caller only: proves ownership when starting the payment.
+      checkout_token: checkoutToken,
     });
   } catch (err) {
     if (isFirebaseAdminConfigError(err)) {

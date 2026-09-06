@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { getAdminFirestore } from "@/firebase-admin";
 import { resolveCanonicalWorkshopPricing } from "@/lib/bookingPricing";
 import { ClientFacingError, toApiError } from "@/lib/apiErrors";
+import { checkoutTokenMatches } from "@/lib/checkoutToken";
 
 type BookingType = "package" | "studio" | "workshop";
 
@@ -11,6 +12,7 @@ type CreateIntentBody = {
   bookingType?: BookingType;
   bookingId?: string;
   workshopEnrollmentId?: string;
+  checkoutToken?: string;
 };
 
 type PaymentRecord = {
@@ -28,6 +30,7 @@ type PaymentRecord = {
   email?: string | null;
   expected_payment_amount_minor?: number;
   expected_payment_currency?: string;
+  checkout_token_hash?: string;
   ziina_intent_id?: string | null;
   superseded_intent_ids?: string[];
   payment_status?: string | null;
@@ -141,12 +144,27 @@ function lockIsFresh(record: PaymentRecord): boolean {
   return Number.isFinite(millis) && Date.now() - millis < INITIALIZATION_LOCK_MS;
 }
 
-async function reservePaymentInitialization(db: Firestore, target: PaymentTarget, token: string): Promise<void> {
+async function reservePaymentInitialization(
+  db: Firestore,
+  target: PaymentTarget,
+  token: string,
+  checkoutToken: string | undefined
+): Promise<void> {
   const expected = validateExpectedPayment(target.record);
   await db.runTransaction(async (tx) => {
     const snap = await tx.get(target.ref);
     if (!snap.exists) throw new ClientFacingError("Payment record was not found.", 404);
     const current = snap.data() as PaymentRecord;
+
+    // Ownership: only the client that created this booking holds the token. Checked against the
+    // freshly read record inside the transaction so it cannot be raced.
+    if (!current.checkout_token_hash) {
+      // Records created before checkout tokens existed cannot prove ownership. They are still
+      // payable so nobody's in-flight booking breaks on deploy; remove this once they have aged out.
+      console.warn("[payments/create-intent] Legacy record without a checkout token:", target.ref.path);
+    } else if (!checkoutTokenMatches(checkoutToken, current.checkout_token_hash)) {
+      throw new ClientFacingError("This checkout session is no longer valid. Please start again.", 403);
+    }
     if (target.type !== "workshop") validateExpectedPayment(current);
     if (current.payment_status === "paid" || current.promoted_booking_id) {
       throw new ClientFacingError("This booking has already been paid.", 409);
@@ -206,7 +224,7 @@ export async function POST(request: Request) {
     const expected = validateExpectedPayment(target.record);
     const baseUrl = getBaseUrl(request);
     initializationToken = randomUUID();
-    await reservePaymentInitialization(db, target, initializationToken);
+    await reservePaymentInitialization(db, target, initializationToken, body.checkoutToken?.trim());
 
     const successParams = new URLSearchParams({ type: target.type, [target.idParam]: target.id });
     const cancelParams = new URLSearchParams({ type: target.type, [target.idParam]: target.id });

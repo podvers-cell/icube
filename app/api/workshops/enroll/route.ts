@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminFirestore, isFirebaseAdminConfigError } from "@/firebase-admin";
 import { resolveCanonicalWorkshopPricing } from "@/lib/bookingPricing";
+import { createCheckoutToken } from "@/lib/checkoutToken";
 
 const workshopEnrollmentSchema = z.object({
   workshop_id: z.string().trim().min(1).max(100),
@@ -49,6 +50,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "This workshop is sold out." }, { status: 409 });
     }
 
+    const { token: checkoutToken, hash: checkoutTokenHash } = createCheckoutToken();
     const ref = await db.collection("workshop_enrollments").add({
       workshop_id: parsed.data.workshop_id,
       workshop_title: pricing.workshop_title,
@@ -62,11 +64,12 @@ export async function POST(request: Request) {
       payment_provider: "ziina",
       payment_status: "pending",
       status: "awaiting_payment",
+      checkout_token_hash: checkoutTokenHash,
       created_at: FieldValue.serverTimestamp(),
       updated_at: FieldValue.serverTimestamp(),
     });
 
-    return NextResponse.json({ success: true, enrollment_id: ref.id });
+    return NextResponse.json({ success: true, enrollment_id: ref.id, checkout_token: checkoutToken });
   } catch (error) {
     if (isFirebaseAdminConfigError(error)) {
       console.error("[workshops/enroll]", error.message);

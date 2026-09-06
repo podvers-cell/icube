@@ -4,6 +4,7 @@ import { getAdminFirestore } from "@/firebase-admin";
 import { sendPaidBookingConfirmedEmail, type PaidBookingEmailPayload } from "@/lib/bookingEmail";
 import { assertPendingCheckoutAllowed } from "@/lib/bookingValidation";
 import { checkExpectedPayment, resolveCanonicalBookingPricing } from "@/lib/bookingPricing";
+import { createCheckoutToken } from "@/lib/checkoutToken";
 import {
   CONFIRMED_BOOKINGS_COLLECTION,
   PENDING_BOOKINGS_COLLECTION,
@@ -48,7 +49,7 @@ function stripUndefined<T extends Record<string, unknown>>(obj: T): Partial<T> {
 export async function createPendingBooking(
   db: Firestore,
   input: CreatePendingBookingSchema
-): Promise<{ bookingId: string; package_name: string | null }> {
+): Promise<{ bookingId: string; package_name: string | null; checkoutToken: string }> {
   await assertPendingCheckoutAllowed(db, input);
   const canonicalPricing = await resolveCanonicalBookingPricing(db, input);
   const untrustedPriceFields = new Set([
@@ -62,17 +63,19 @@ export async function createPendingBooking(
     Object.entries(input).filter(([key]) => !untrustedPriceFields.has(key))
   );
 
+  const { token, hash } = createCheckoutToken();
   const ref = await db.collection(PENDING_BOOKINGS_COLLECTION).add({
     ...stripUndefined(customerInput),
     ...stripUndefined(canonicalPricing),
     package_name: canonicalPricing.package_name ?? null,
     status: "awaiting_payment",
     payment_status: "pending",
+    checkout_token_hash: hash,
     created_at: FieldValue.serverTimestamp(),
     updated_at: FieldValue.serverTimestamp(),
   });
 
-  return { bookingId: ref.id, package_name: canonicalPricing.package_name ?? null };
+  return { bookingId: ref.id, package_name: canonicalPricing.package_name ?? null, checkoutToken: token };
 }
 
 export async function incrementDiscountCodeOnce(db: Firestore, rawCode: string | undefined | null): Promise<void> {

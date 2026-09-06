@@ -37,7 +37,7 @@ export default function WorkshopCheckoutPage() {
 
     try {
       setPaying(true);
-      const { enrollment_id } = await enrollWorkshop({
+      const { enrollment_id, checkout_token } = await enrollWorkshop({
         workshop_id: String((w as any).id),
         full_name: fullName.trim(),
         email: email.trim(),
@@ -50,6 +50,7 @@ export default function WorkshopCheckoutPage() {
         body: JSON.stringify({
           bookingType: "workshop",
           workshopEnrollmentId: enrollment_id,
+          checkoutToken: checkout_token,
         }),
       });
       const body = (await res.json().catch(() => ({}))) as { redirect_url?: string; error?: string };

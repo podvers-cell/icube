@@ -109,6 +109,7 @@ export default function StudioBookingCheckoutPage() {
         body: JSON.stringify({
           bookingType: "studio",
           bookingId: bookingRes.booking_id,
+          checkoutToken: bookingRes.checkout_token,
         }),
       });
       const payBody = (await payRes.json().catch(() => ({}))) as { redirect_url?: string; error?: string };
