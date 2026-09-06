@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { v2 as cloudinary } from "cloudinary";
+import { v2 as cloudinary, type UploadApiResponse } from "cloudinary";
 import { verifyAdminApiRequest } from "@/lib/adminApiAuth";
+
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+// NOTE: Vercel caps a serverless function's request body well below this (4.5 MB by default), so
+// that platform limit is reached first in production. This bound is the application's own
+// guarantee for any other deployment target and for local runs.
+const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
 
 function getConfig() {
   const url = process.env.CLOUDINARY_URL;
@@ -37,7 +43,7 @@ export async function POST(request: NextRequest) {
 
   let file: File;
   let folder = "icube";
-  let resourceType: "image" | "video" | "auto" = "auto";
+  let requestedType: "image" | "video" | "auto" = "auto";
 
   try {
     const formData = await request.formData();
@@ -45,8 +51,8 @@ export async function POST(request: NextRequest) {
     const f = formData.get("folder");
     const type = formData.get("type");
     if (f && typeof f === "string") folder = f;
-    if (type === "image") resourceType = "image";
-    else if (type === "video") resourceType = "video";
+    if (type === "image") requestedType = "image";
+    else if (type === "video") requestedType = "video";
   } catch {
     return NextResponse.json({ error: "Invalid form data" }, { status: 400 });
   }
@@ -57,22 +63,52 @@ export async function POST(request: NextRequest) {
   if (!/^[a-z0-9/_-]{1,80}$/i.test(folder) || folder.includes("..")) {
     return NextResponse.json({ error: "Invalid upload folder" }, { status: 400 });
   }
-  if (resourceType === "image" && !file.type.startsWith("image/")) {
+
+  // "auto" used to hand Cloudinary an unrestricted resource_type. Resolve it from the file
+  // instead, so every upload is deliberately an image or a video and nothing else.
+  const mime = (file.type || "").toLowerCase();
+  let resourceType: "image" | "video";
+  if (requestedType !== "auto") {
+    resourceType = requestedType;
+  } else if (mime.startsWith("image/")) {
+    resourceType = "image";
+  } else if (mime.startsWith("video/")) {
+    resourceType = "video";
+  } else {
+    return NextResponse.json({ error: "Only image and video uploads are supported" }, { status: 400 });
+  }
+
+  if (resourceType === "image" && !mime.startsWith("image/")) {
     return NextResponse.json({ error: "Expected an image file" }, { status: 400 });
   }
-  if (resourceType === "video" && !file.type.startsWith("video/")) {
+  if (resourceType === "video" && !mime.startsWith("video/")) {
     return NextResponse.json({ error: "Expected a video file" }, { status: 400 });
   }
 
-  const bytes = await file.arrayBuffer();
-  const buffer = Buffer.from(bytes);
-  const mime = file.type || "application/octet-stream";
-  const dataUri = `data:${mime};base64,${buffer.toString("base64")}`;
+  // Checked before reading the body: the whole file lands in function memory below, so an
+  // unbounded upload is an out-of-memory risk rather than merely a slow one.
+  const maxBytes = resourceType === "video" ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES;
+  if (file.size > maxBytes) {
+    return NextResponse.json(
+      { error: `File is too large. Maximum ${Math.round(maxBytes / (1024 * 1024))} MB for ${resourceType}s.` },
+      { status: 413 }
+    );
+  }
+
+  const buffer = Buffer.from(await file.arrayBuffer());
 
   try {
-    const result = await cloudinary.uploader.upload(dataUri, {
-      folder,
-      resource_type: resourceType,
+    // Streamed rather than sent as a base64 data URI, which inflated every upload by ~33% in
+    // memory on top of the file itself.
+    const result = await new Promise<UploadApiResponse>((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        { folder, resource_type: resourceType },
+        (error, uploadResult) => {
+          if (error || !uploadResult) reject(error ?? new Error("No URL returned"));
+          else resolve(uploadResult);
+        }
+      );
+      stream.end(buffer);
     });
 
     if (!result || !("secure_url" in result)) {
@@ -81,9 +117,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ url: (result as { secure_url: string }).secure_url });
   } catch (err) {
     console.error("Cloudinary upload error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Upload failed" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Upload failed. Please try again." }, { status: 500 });
   }
 }
