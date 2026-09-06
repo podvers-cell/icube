@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getAdminFirestore, isFirebaseAdminConfigError } from "@/firebase-admin";
 import { createPendingBooking } from "@/lib/bookingPayment";
 import { createPendingBookingSchema } from "@/schemas/booking";
+import { validatePackageSchedule } from "@/lib/packageSchedule";
 
 export async function POST(request: Request) {
   try {
@@ -16,6 +17,12 @@ export async function POST(request: Request) {
     if (!parsed.success) {
       const msg = parsed.error.issues[0]?.message ?? "Invalid booking data";
       return NextResponse.json({ error: msg }, { status: 400 });
+    }
+
+    const { schedule_preference: schedulePreference, booking_date: bookingDate, time_slot: timeSlot } = parsed.data;
+    const scheduleError = validatePackageSchedule({ schedulePreference, bookingDate, timeSlot });
+    if (scheduleError) {
+      return NextResponse.json({ error: scheduleError }, { status: 400 });
     }
 
     const db = getAdminFirestore();

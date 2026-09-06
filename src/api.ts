@@ -494,6 +494,7 @@ export type BookingPayload = {
   phone?: string;
   project_details?: string;
   package_id?: string;
+  schedule_preference?: "scheduled" | "unscheduled";
   studio_id?: string;
   studio_name?: string;
   booking_duration_hours?: number;

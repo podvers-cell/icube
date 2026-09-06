@@ -104,6 +104,7 @@ function bookingToEmailPayload(data: BookingRecord): PaidBookingEmailPayload {
     studio_name: data.studio_name,
     package_id: data.package_id,
     package_name: data.package_name ?? undefined,
+    schedule_preference: data.schedule_preference,
     booking_date: data.booking_date,
     time_slot: data.time_slot,
     booking_duration_hours: data.booking_duration_hours,

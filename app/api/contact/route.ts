@@ -1,1 +1,1 @@
-export { handleContactSubmission as POST } from "../send-contact-email/route";
+export { handleContactSubmission as POST } from "./handler";

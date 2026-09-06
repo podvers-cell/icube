@@ -12,6 +12,7 @@ export type PaidBookingEmailPayload = {
   studio_name?: string;
   package_id?: string;
   package_name?: string;
+  schedule_preference?: "scheduled" | "unscheduled";
   booking_date?: string;
   time_slot?: string;
   booking_duration_hours?: number;
@@ -53,6 +54,11 @@ export async function sendPaidBookingConfirmedEmail(
   if (booking.studio_name) detailRows.push({ label: "Studio", value: booking.studio_name });
   if (booking.package_name) detailRows.push({ label: "Package", value: booking.package_name });
   if (booking.package_id && !booking.package_name) detailRows.push({ label: "Package", value: booking.package_id });
+  if (booking.schedule_preference === "unscheduled") {
+    detailRows.push({ label: "Schedule", value: "No date or time requested" });
+  } else if (booking.schedule_preference === "scheduled") {
+    detailRows.push({ label: "Schedule", value: "Date and time booked" });
+  }
   if (booking.booking_date) detailRows.push({ label: "Date", value: booking.booking_date });
   if (booking.time_slot) detailRows.push({ label: "Time", value: formatTimeSlot(booking.time_slot) });
   if (booking.booking_duration_hours != null) {

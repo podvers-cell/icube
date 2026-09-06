@@ -25,7 +25,7 @@ const HOURLY_SLOTS: { value: string; label: string }[] = (() => {
 
 export default function BookingDateTimePage() {
   const router = useRouter();
-  const { selectedPackage, selectedStudio, selectedDate, selectedTimeSlot, setSelectedDate, setSelectedTimeSlot } = useBooking();
+  const { selectedPackage, selectedStudio, selectedDate, selectedTimeSlot, packageSchedulePreference, setSelectedDate, setSelectedTimeSlot } = useBooking();
   const dateMin = getTodayInRegion();
   const dateMax = getDateInputMax();
 
@@ -37,7 +37,14 @@ export default function BookingDateTimePage() {
       router.replace("/packages");
       return;
     }
-  }, [selectedPackage, router]);
+    if (selectedPackage.requires_schedule === false || packageSchedulePreference === "unscheduled") {
+      router.replace("/packages/add-ons");
+      return;
+    }
+    if (packageSchedulePreference !== "scheduled") {
+      router.replace("/packages/schedule");
+    }
+  }, [selectedPackage, packageSchedulePreference, router]);
 
   useEffect(() => {
     if (!selectedDate) {
@@ -64,20 +71,20 @@ export default function BookingDateTimePage() {
     if (selectedDate && selectedTimeSlot) router.push("/packages/add-ons");
   };
 
-  if (!selectedPackage) return null;
+  if (!selectedPackage || packageSchedulePreference !== "scheduled") return null;
 
   return (
     <div className="site-wrapper min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray to-icube-dark/80 text-white selection:bg-icube-gold selection:text-icube-dark transition-colors duration-300">
       <Navbar />
       <main className="relative py-24 md:py-28">
         <div className="max-w-4xl mx-auto px-5 sm:px-6 md:px-12">
-          <BookingProgress currentStep={1} steps={["Date & time", "Add-ons", "Checkout"]} />
+          <BookingProgress currentStep={2} steps={["Schedule", "Date & time", "Add-ons", "Checkout"]} />
           <Link
-            href="/packages"
+            href="/packages/schedule"
             className="inline-flex items-center gap-2 text-gray-400 hover:text-icube-gold text-sm font-medium mb-8 transition-colors"
           >
             <ChevronLeft size={18} />
-            Back to packages
+            Back to booking type
           </Link>
 
           <div className="mb-10">

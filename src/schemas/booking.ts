@@ -7,6 +7,7 @@ export const bookingPayloadSchema = z.object({
   phone: z.string().min(1, "Phone is required").max(30, "Phone is too long"),
   project_details: z.string().max(5000).optional(),
   package_id: z.string().max(100).optional(),
+  schedule_preference: z.enum(["scheduled", "unscheduled"]).optional(),
   studio_id: z.string().max(100).optional(),
   studio_name: z.string().max(200).optional(),
   booking_duration_hours: z.number().int().min(1).max(24).optional(),

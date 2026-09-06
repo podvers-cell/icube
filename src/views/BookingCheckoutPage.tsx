@@ -17,6 +17,7 @@ export default function BookingCheckoutPage() {
     selectedStudio,
     selectedDate,
     selectedTimeSlot,
+    packageSchedulePreference,
     selectedAddOns,
     totalAddonsAmount,
     clearBooking,
@@ -40,11 +41,15 @@ export default function BookingCheckoutPage() {
       router.replace("/packages");
       return;
     }
-    if (selectedPackage.requires_schedule !== false && (!selectedDate || !selectedTimeSlot)) {
+    if (selectedPackage.requires_schedule !== false && packageSchedulePreference == null) {
+      router.replace("/packages/schedule");
+      return;
+    }
+    if (packageSchedulePreference === "scheduled" && (!selectedDate || !selectedTimeSlot)) {
       router.replace("/packages/date-time");
       return;
     }
-  }, [selectedPackage, selectedDate, selectedTimeSlot, router, success]);
+  }, [selectedPackage, packageSchedulePreference, selectedDate, selectedTimeSlot, router, success]);
 
   const subtotal = selectedPackage ? selectedPackage.price_aed + totalAddonsAmount : 0;
   const discountAmount = Math.round(subtotal * (discountPercent / 100));
@@ -74,7 +79,10 @@ export default function BookingCheckoutPage() {
 
   async function handlePayNow(e: FormEvent) {
     e.preventDefault();
-    if (!selectedPackage || (selectedPackage.requires_schedule !== false && (!selectedDate || !selectedTimeSlot))) return;
+    const isUnscheduled = selectedPackage?.requires_schedule === false || packageSchedulePreference === "unscheduled";
+    const isScheduledComplete = packageSchedulePreference === "scheduled" && !!selectedDate && !!selectedTimeSlot;
+    if (!selectedPackage || (!isUnscheduled && !isScheduledComplete)) return;
+    const schedulePreference: "scheduled" | "unscheduled" = isUnscheduled ? "unscheduled" : "scheduled";
     setSubmitting(true);
     try {
       const payload = {
@@ -84,6 +92,7 @@ export default function BookingCheckoutPage() {
         phone: form.phone,
         project_details: form.project_details || undefined,
         package_id: selectedPackage.id,
+        schedule_preference: schedulePreference,
         studio_id: selectedStudio?.id,
         studio_name: selectedStudio?.name,
         ...(selectedDate && selectedTimeSlot ? { booking_date: selectedDate, time_slot: selectedTimeSlot } : {}),
@@ -154,7 +163,22 @@ export default function BookingCheckoutPage() {
       <Navbar />
       <main className="relative py-24 md:py-28">
         <div className="max-w-2xl mx-auto px-5 sm:px-6 md:px-12">
-          <BookingProgress currentStep={3} steps={["Date & time", "Add-ons", "Checkout"]} />
+          <BookingProgress
+            currentStep={
+              selectedPackage.requires_schedule === false
+                ? 2
+                : packageSchedulePreference === "unscheduled"
+                  ? 3
+                  : 4
+            }
+            steps={
+              selectedPackage.requires_schedule === false
+                ? ["Add-ons", "Checkout"]
+                : packageSchedulePreference === "unscheduled"
+                  ? ["Schedule", "Add-ons", "Checkout"]
+                  : ["Schedule", "Date & time", "Add-ons", "Checkout"]
+            }
+          />
           <Link
             href="/packages/add-ons"
             className="inline-flex items-center gap-2 text-gray-400 hover:text-icube-gold text-sm font-medium mb-8 transition-colors"
@@ -221,6 +245,12 @@ export default function BookingCheckoutPage() {
               {selectedDate && selectedTimeSlot && (
                 <div className="flex justify-between text-sm text-gray-500">
                   <span>{selectedDate} · {selectedTimeSlot}</span>
+                </div>
+              )}
+              {(selectedPackage.requires_schedule === false || packageSchedulePreference === "unscheduled") && (
+                <div className="flex justify-between text-sm text-gray-400">
+                  <span>Schedule</span>
+                  <span>No date or time requested</span>
                 </div>
               )}
               {selectedAddOns.length > 0 && (

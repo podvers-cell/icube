@@ -50,6 +50,7 @@ export default function Booking() {
     setSelectedDurationHours,
     setSelectedDate,
     setSelectedTimeSlot,
+    setPackageSchedulePreference,
     setSelectedAddOns,
   } = useBooking();
   const searchParams = useSearchParams();
@@ -121,6 +122,7 @@ export default function Booking() {
     setSelectedDurationHours(null);
     setSelectedDate(null);
     setSelectedTimeSlot(null);
+    setPackageSchedulePreference(pkg.requires_schedule === false ? "unscheduled" : null);
     setSelectedAddOns([]);
     setSelectedPackage({
       id: String(pkg.id),
@@ -129,7 +131,7 @@ export default function Booking() {
       duration: pkg.duration,
       requires_schedule: pkg.requires_schedule !== false,
     });
-    router.push(pkg.requires_schedule === false ? "/packages/add-ons" : "/packages/date-time");
+    router.push(pkg.requires_schedule === false ? "/packages/add-ons" : "/packages/schedule");
   }
 
   async function handleCustomSubmit(e: FormEvent) {

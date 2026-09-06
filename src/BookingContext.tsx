@@ -22,12 +22,15 @@ export type SelectedStudio = {
   price_aed_per_hour: number;
 };
 
+export type PackageSchedulePreference = "scheduled" | "unscheduled";
+
 type BookingState = {
   selectedStudio: SelectedStudio | null;
   selectedPackage: BookingPackage | null;
   selectedDurationHours: number | null;
   selectedDate: string | null;
   selectedTimeSlot: string | null;
+  packageSchedulePreference: PackageSchedulePreference | null;
   selectedAddOns: SelectedAddon[];
 };
 
@@ -35,21 +38,30 @@ const STORAGE_KEY = "icube_booking_draft";
 
 function loadState(): BookingState {
   if (typeof window === "undefined")
-    return { selectedStudio: null, selectedPackage: null, selectedDurationHours: null, selectedDate: null, selectedTimeSlot: null, selectedAddOns: [] };
+    return { selectedStudio: null, selectedPackage: null, selectedDurationHours: null, selectedDate: null, selectedTimeSlot: null, packageSchedulePreference: null, selectedAddOns: [] };
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY);
-    if (!raw) return { selectedStudio: null, selectedPackage: null, selectedDurationHours: null, selectedDate: null, selectedTimeSlot: null, selectedAddOns: [] };
+    if (!raw) return { selectedStudio: null, selectedPackage: null, selectedDurationHours: null, selectedDate: null, selectedTimeSlot: null, packageSchedulePreference: null, selectedAddOns: [] };
     const parsed = JSON.parse(raw) as BookingState;
+    const packageSchedulePreference: PackageSchedulePreference | null =
+      parsed.packageSchedulePreference === "scheduled" || parsed.packageSchedulePreference === "unscheduled"
+        ? parsed.packageSchedulePreference
+        : parsed.selectedDate && parsed.selectedTimeSlot
+          ? "scheduled"
+          : parsed.selectedPackage?.requires_schedule === false
+            ? "unscheduled"
+            : null;
     return {
       selectedStudio: parsed.selectedStudio ?? null,
       selectedPackage: parsed.selectedPackage ?? null,
       selectedDurationHours: typeof parsed.selectedDurationHours === "number" ? parsed.selectedDurationHours : null,
       selectedDate: parsed.selectedDate ?? null,
       selectedTimeSlot: parsed.selectedTimeSlot ?? null,
+      packageSchedulePreference,
       selectedAddOns: Array.isArray(parsed.selectedAddOns) ? parsed.selectedAddOns : [],
     };
   } catch {
-    return { selectedStudio: null, selectedPackage: null, selectedDurationHours: null, selectedDate: null, selectedTimeSlot: null, selectedAddOns: [] };
+    return { selectedStudio: null, selectedPackage: null, selectedDurationHours: null, selectedDate: null, selectedTimeSlot: null, packageSchedulePreference: null, selectedAddOns: [] };
   }
 }
 
@@ -68,6 +80,7 @@ type BookingContextValue = BookingState & {
   setSelectedDurationHours: (h: number | null) => void;
   setSelectedDate: (d: string | null) => void;
   setSelectedTimeSlot: (t: string | null) => void;
+  setPackageSchedulePreference: (p: PackageSchedulePreference | null) => void;
   setSelectedAddOns: (a: SelectedAddon[]) => void;
   addAddon: (a: SelectedAddon) => void;
   removeAddon: (id: string) => void;
@@ -81,6 +94,7 @@ const defaultState: BookingState = {
   selectedDurationHours: null,
   selectedDate: null,
   selectedTimeSlot: null,
+  packageSchedulePreference: null,
   selectedAddOns: [],
 };
 
@@ -91,6 +105,7 @@ const BookingContext = createContext<BookingContextValue>({
   setSelectedDurationHours: () => {},
   setSelectedDate: () => {},
   setSelectedTimeSlot: () => {},
+  setPackageSchedulePreference: () => {},
   setSelectedAddOns: () => {},
   addAddon: () => {},
   removeAddon: () => {},
@@ -126,6 +141,9 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   const setSelectedTimeSlot = useCallback((t: string | null) => {
     setState((s) => ({ ...s, selectedTimeSlot: t }));
   }, []);
+  const setPackageSchedulePreference = useCallback((p: PackageSchedulePreference | null) => {
+    setState((s) => ({ ...s, packageSchedulePreference: p }));
+  }, []);
   const setSelectedAddOns = useCallback((a: SelectedAddon[]) => {
     setState((s) => ({ ...s, selectedAddOns: a }));
   }, []);
@@ -154,6 +172,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
         setSelectedDurationHours,
         setSelectedDate,
         setSelectedTimeSlot,
+        setPackageSchedulePreference,
         setSelectedAddOns,
         addAddon,
         removeAddon,

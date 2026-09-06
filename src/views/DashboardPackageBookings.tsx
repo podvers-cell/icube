@@ -32,6 +32,7 @@ type Booking = {
   project_details?: string | null;
   package_id?: string | null;
   package_name?: string | null;
+  schedule_preference?: "scheduled" | "unscheduled" | null;
   studio_id?: string | null;
   studio_name?: string | null;
   booking_duration_hours?: number | null;
@@ -68,6 +69,12 @@ function formatSubmitted(createdAt: Booking["created_at"]): string {
 
 function getPackageName(b: Booking, packages: BookingPackage[]): string {
   return getPackageDisplayName(b, packages);
+}
+
+function getScheduleLabel(b: Booking): string {
+  if (b.schedule_preference === "unscheduled") return "No date/time requested";
+  if (b.schedule_preference === "scheduled" || (b.booking_date && b.time_slot)) return "Date & time booked";
+  return "Not specified";
 }
 
 export default function DashboardPackageBookings() {
@@ -224,6 +231,7 @@ export default function DashboardPackageBookings() {
               <th className="pb-3 pr-4">Phone</th>
               <th className="pb-3 pr-4">Email</th>
               <th className="pb-3 pr-4">Package</th>
+              <th className="pb-3 pr-4">Schedule</th>
               <th className="pb-3 pr-4">Amount</th>
               <th className="pb-3 pr-4">Payment</th>
               <th className="pb-3 pr-4">Booking</th>
@@ -254,6 +262,9 @@ export default function DashboardPackageBookings() {
                 </td>
                 <td className="py-3 pr-4 text-gray-300 text-sm max-w-[180px]">
                   {getPackageName(b, packages)}
+                </td>
+                <td className="py-3 pr-4 text-gray-400 text-sm whitespace-nowrap">
+                  {getScheduleLabel(b)}
                 </td>
                 <td className="py-3 pr-4 text-icube-gold text-sm whitespace-nowrap">
                   {formatBookingAmount(b, getPackagePrice(b, packages))}
@@ -373,6 +384,14 @@ export default function DashboardPackageBookings() {
               <div>
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Package</p>
                 <p className="text-white">{getPackageName(selected, packages)}</p>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Schedule</p>
+                <p className="text-white">{getScheduleLabel(selected)}</p>
+                {selected.booking_date && selected.time_slot && (
+                  <p className="text-gray-400 text-sm mt-1">{selected.booking_date} · {selected.time_slot}</p>
+                )}
               </div>
 
               {selected.project_details && (

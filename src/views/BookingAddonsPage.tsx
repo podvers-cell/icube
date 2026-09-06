@@ -35,7 +35,7 @@ function parseIncludedFeatures(raw: string | null | undefined): string[] {
 
 export default function BookingAddonsPage() {
   const router = useRouter();
-  const { selectedPackage, selectedStudio, selectedDate, selectedTimeSlot, selectedAddOns, addAddon, removeAddon, totalAddonsAmount } = useBooking();
+  const { selectedPackage, selectedStudio, selectedDate, selectedTimeSlot, packageSchedulePreference, selectedAddOns, addAddon, removeAddon, totalAddonsAmount } = useBooking();
   const [addons, setAddons] = useState<BookingAddon[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -65,11 +65,18 @@ export default function BookingAddonsPage() {
   });
 
   useEffect(() => {
-    if (!selectedPackage || (selectedPackage.requires_schedule !== false && (!selectedDate || !selectedTimeSlot))) {
+    if (!selectedPackage) {
       router.replace("/packages");
       return;
     }
-  }, [selectedPackage, selectedDate, selectedTimeSlot, router]);
+    if (selectedPackage.requires_schedule !== false && packageSchedulePreference == null) {
+      router.replace("/packages/schedule");
+      return;
+    }
+    if (packageSchedulePreference === "scheduled" && (!selectedDate || !selectedTimeSlot)) {
+      router.replace("/packages/date-time");
+    }
+  }, [selectedPackage, packageSchedulePreference, selectedDate, selectedTimeSlot, router]);
 
   const handleContinue = () => {
     router.push("/packages/checkout");
@@ -83,20 +90,32 @@ export default function BookingAddonsPage() {
     else addAddon({ id: a.id, name: a.name, price_aed: a.price_aed });
   };
 
-  if (!selectedPackage || (selectedPackage.requires_schedule !== false && (!selectedDate || !selectedTimeSlot))) return null;
+  const isUnscheduled = selectedPackage?.requires_schedule === false || packageSchedulePreference === "unscheduled";
+  const isScheduledComplete = packageSchedulePreference === "scheduled" && !!selectedDate && !!selectedTimeSlot;
+
+  if (!selectedPackage || (!isUnscheduled && !isScheduledComplete)) return null;
 
   return (
     <div className="site-wrapper min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray to-icube-dark/80 text-white selection:bg-icube-gold selection:text-icube-dark transition-colors duration-300">
       <Navbar />
       <main className="relative py-24 md:py-28">
         <div className="max-w-6xl mx-auto px-5 sm:px-6 md:px-12">
-          <BookingProgress currentStep={2} steps={["Date & time", "Add-ons", "Checkout"]} />
+          <BookingProgress
+            currentStep={selectedPackage.requires_schedule === false ? 1 : isUnscheduled ? 2 : 3}
+            steps={
+              selectedPackage.requires_schedule === false
+                ? ["Add-ons", "Checkout"]
+                : isUnscheduled
+                  ? ["Schedule", "Add-ons", "Checkout"]
+                  : ["Schedule", "Date & time", "Add-ons", "Checkout"]
+            }
+          />
           <Link
-            href={selectedPackage.requires_schedule === false ? "/packages" : "/packages/date-time"}
+            href={selectedPackage.requires_schedule === false ? "/packages" : isUnscheduled ? "/packages/schedule" : "/packages/date-time"}
             className="inline-flex items-center gap-2 text-gray-400 hover:text-icube-gold text-sm font-medium mb-8 transition-colors"
           >
             <ChevronLeft size={18} />
-            {selectedPackage.requires_schedule === false ? "Back to packages" : "Back to date & time"}
+            {selectedPackage.requires_schedule === false ? "Back to packages" : isUnscheduled ? "Back to booking type" : "Back to date & time"}
           </Link>
 
           <div className="mb-10">
@@ -115,8 +134,14 @@ export default function BookingAddonsPage() {
                 <span className="text-gray-400">Studio: <span className="text-white">{selectedStudio.name}</span></span>
               )}
               <span className="text-white font-medium">{selectedPackage.name}</span>
-              <span className="text-gray-500">{selectedDate}</span>
-              <span className="text-gray-500">{selectedTimeSlot}</span>
+              {isUnscheduled ? (
+                <span className="text-gray-400">No date or time requested</span>
+              ) : (
+                <>
+                  <span className="text-gray-500">{selectedDate}</span>
+                  <span className="text-gray-500">{selectedTimeSlot}</span>
+                </>
+              )}
               <span className="text-icube-gold">{selectedPackage.price_aed} AED</span>
             </div>
           </div>
