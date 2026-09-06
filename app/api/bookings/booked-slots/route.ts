@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminFirestore } from "@/firebase-admin";
 import { getOccupiedSlotsForDate } from "@/lib/bookingSlots";
+import { toApiError } from "@/lib/apiErrors";
 
 export async function GET(request: Request) {
   try {
@@ -17,7 +18,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ slots });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to load booked slots";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const { message, status } = toApiError("bookings/booked-slots", err, "Failed to load booked slots.");
+    return NextResponse.json({ error: message }, { status });
   }
 }

@@ -1,6 +1,7 @@
 import type { Firestore } from "firebase-admin/firestore";
 import { isSlotTooSoonInRegion } from "@/utils/bookingTimezone";
 import type { BookingPayloadSchema } from "@/schemas/booking";
+import { ClientFacingError } from "@/lib/apiErrors";
 
 /** Lead time + admin blocks only — pending checkout does not reserve a slot. */
 export async function assertPendingCheckoutAllowed(
@@ -10,7 +11,7 @@ export async function assertPendingCheckoutAllowed(
   if (!booking.booking_date || !booking.time_slot) return;
 
   if (isSlotTooSoonInRegion(booking.booking_date, booking.time_slot, 180)) {
-    throw new Error("Please select a time slot at least 3 hours from now (Dubai time).");
+    throw new ClientFacingError("Please select a time slot at least 3 hours from now (Dubai time).");
   }
 
   const blockedSnaps = await db
@@ -29,7 +30,7 @@ export async function assertPendingCheckoutAllowed(
   });
 
   if (isBlocked) {
-    throw new Error("This time slot is blocked. Please choose another time.");
+    throw new ClientFacingError("This time slot is blocked. Please choose another time.");
   }
 }
 

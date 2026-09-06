@@ -1,5 +1,6 @@
 import type { Firestore } from "firebase-admin/firestore";
 import type { CreatePendingBookingSchema } from "@/schemas/booking";
+import { ClientFacingError } from "@/lib/apiErrors";
 
 const PAYMENT_CURRENCY = "AED";
 
@@ -44,7 +45,7 @@ function roundAed(value: number): number {
 
 export function aedToMinorUnits(value: number): number {
   if (!Number.isFinite(value) || value <= 0) {
-    throw new Error("Invalid checkout amount.");
+    throw new ClientFacingError("Invalid checkout amount.");
   }
   return Math.round(roundAed(value) * 100);
 }
@@ -106,14 +107,14 @@ async function findCatalogDocument(db: Firestore, collectionName: string, rawId:
 
 function requireName(data: Record<string, unknown>, label: string): string {
   const name = typeof data.name === "string" ? data.name.trim() : "";
-  if (!name) throw new Error(`${label} is unavailable.`);
+  if (!name) throw new ClientFacingError(`${label} is unavailable.`);
   return name;
 }
 
 function requirePositivePrice(value: unknown, label: string): number {
   const price = Number(value);
   if (!Number.isFinite(price) || price <= 0) {
-    throw new Error(`${label} price is unavailable.`);
+    throw new ClientFacingError(`${label} price is unavailable.`);
   }
   return roundAed(price);
 }
@@ -146,7 +147,7 @@ async function resolveDiscount(
   if (!code) return { percent: 0 };
 
   const snaps = await db.collection("discount_codes").where("code", "==", code).limit(1).get();
-  if (snaps.empty) throw new Error("Discount code is invalid or expired.");
+  if (snaps.empty) throw new ClientFacingError("Discount code is invalid or expired.");
 
   const data = snaps.docs[0].data() as Record<string, unknown>;
   const percent = Number(data.percent);
@@ -165,7 +166,7 @@ async function resolveDiscount(
     usedCount >= maxUses ||
     (data.valid_until != null && (expiryMs == null || expiryMs < Date.now()))
   ) {
-    throw new Error("Discount code is invalid or expired.");
+    throw new ClientFacingError("Discount code is invalid or expired.");
   }
 
   return { code, percent };
@@ -177,7 +178,7 @@ export async function resolveCanonicalBookingPricing(
 ): Promise<CanonicalBookingPricing> {
   const packageId = input.package_id?.trim();
   const studioId = input.studio_id?.trim();
-  if (!packageId && !studioId) throw new Error("A package or studio is required.");
+  if (!packageId && !studioId) throw new ClientFacingError("A package or studio is required.");
 
   let bookingType: CanonicalBookingPricing["booking_type"];
   let baseAmount = 0;
@@ -187,7 +188,7 @@ export async function resolveCanonicalBookingPricing(
 
   if (packageId) {
     const pkg = await findCatalogDocument(db, "booking_packages", packageId);
-    if (!pkg) throw new Error("Package is unavailable.");
+    if (!pkg) throw new ClientFacingError("Package is unavailable.");
     bookingType = "package";
     packageName = requireName(pkg.data, "Package");
     baseAmount = packagePrice(pkg.data);
@@ -195,10 +196,10 @@ export async function resolveCanonicalBookingPricing(
     bookingType = "studio";
     const duration = input.booking_duration_hours;
     if (!duration || !Number.isInteger(duration) || duration < 1 || duration > 24) {
-      throw new Error("Invalid studio booking duration.");
+      throw new ClientFacingError("Invalid studio booking duration.");
     }
     const studio = await findCatalogDocument(db, "studios", studioId!);
-    if (!studio) throw new Error("Studio is unavailable.");
+    if (!studio) throw new ClientFacingError("Studio is unavailable.");
     studioName = requireName(studio.data, "Studio");
     studioTotal = roundAed(requirePositivePrice(studio.data.price_aed_per_hour, "Studio") * duration);
     baseAmount = studioTotal;
@@ -206,19 +207,19 @@ export async function resolveCanonicalBookingPricing(
 
   if (studioId && bookingType === "package") {
     const studio = await findCatalogDocument(db, "studios", studioId);
-    if (!studio) throw new Error("Studio is unavailable.");
+    if (!studio) throw new ClientFacingError("Studio is unavailable.");
     studioName = requireName(studio.data, "Studio");
   }
 
   const addonIds = input.addon_ids ?? [];
   if (new Set(addonIds).size !== addonIds.length) {
-    throw new Error("Duplicate add-ons are not allowed.");
+    throw new ClientFacingError("Duplicate add-ons are not allowed.");
   }
 
   let addonsTotal = 0;
   for (const addonId of addonIds) {
     const addon = await findCatalogDocument(db, "booking_addons", addonId);
-    if (!addon) throw new Error("One or more add-ons are unavailable.");
+    if (!addon) throw new ClientFacingError("One or more add-ons are unavailable.");
     addonsTotal += requirePositivePrice(addon.data.price_aed, "Add-on");
   }
   addonsTotal = roundAed(addonsTotal);
@@ -247,10 +248,10 @@ export async function resolveCanonicalWorkshopPricing(
   workshopId: string
 ): Promise<CanonicalWorkshopPricing> {
   const workshop = await findCatalogDocument(db, "workshops", workshopId);
-  if (!workshop) throw new Error("Workshop is unavailable.");
+  if (!workshop) throw new ClientFacingError("Workshop is unavailable.");
 
   const title = typeof workshop.data.title === "string" ? workshop.data.title.trim() : "";
-  if (!title) throw new Error("Workshop is unavailable.");
+  if (!title) throw new ClientFacingError("Workshop is unavailable.");
   const amount = requirePositivePrice(workshop.data.price_aed, "Workshop");
   const workshopDate =
     typeof workshop.data.workshop_date === "string" && workshop.data.workshop_date.trim()

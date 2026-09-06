@@ -2,6 +2,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { NextResponse } from "next/server";
 import { getAdminFirestore } from "@/firebase-admin";
 import { bookingInquirySchema } from "@/schemas/booking";
+import { toApiError } from "@/lib/apiErrors";
 
 export async function POST(request: Request) {
   try {
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, inquiry_id: ref.id });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to submit inquiry";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const { message, status } = toApiError("bookings/inquiry", err, "Failed to submit inquiry.");
+    return NextResponse.json({ error: message }, { status });
   }
 }

@@ -3,6 +3,7 @@ import { getAdminFirestore, isFirebaseAdminConfigError } from "@/firebase-admin"
 import { createPendingBooking } from "@/lib/bookingPayment";
 import { createPendingBookingSchema } from "@/schemas/booking";
 import { validatePackageSchedule } from "@/lib/packageSchedule";
+import { toApiError } from "@/lib/apiErrors";
 
 export async function POST(request: Request) {
   try {
@@ -44,8 +45,8 @@ export async function POST(request: Request) {
         { status: 503 }
       );
     }
-    const message = err instanceof Error ? err.message : "Failed to create booking";
-    const status = message.includes("blocked") || message.includes("time slot") ? 400 : 500;
+    // Was chosen by substring-matching the message; domain errors now carry their own status.
+    const { message, status } = toApiError("bookings/create", err, "Could not create the booking. Please try again.");
     return NextResponse.json({ error: message }, { status });
   }
 }

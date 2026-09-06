@@ -3,6 +3,7 @@ import { FieldValue, type DocumentReference, type Firestore } from "firebase-adm
 import { NextResponse } from "next/server";
 import { getAdminFirestore } from "@/firebase-admin";
 import { resolveCanonicalWorkshopPricing } from "@/lib/bookingPricing";
+import { ClientFacingError, toApiError } from "@/lib/apiErrors";
 
 type BookingType = "package" | "studio" | "workshop";
 
@@ -76,7 +77,7 @@ function validateExpectedPayment(record: PaymentRecord): { amount: number; curre
   const amount = Number(record.expected_payment_amount_minor);
   const currency = record.expected_payment_currency?.trim().toUpperCase() ?? "";
   if (!Number.isInteger(amount) || amount <= 0 || currency !== "AED") {
-    throw new Error("Checkout price has not been verified by the server. Please restart the booking.");
+    throw new ClientFacingError("Checkout price has not been verified by the server. Please restart the booking.", 409);
   }
   return { amount, currency };
 }
@@ -85,17 +86,17 @@ async function loadPaymentTarget(db: Firestore, body: CreateIntentBody): Promise
   const bookingId = body.bookingId?.trim();
   const enrollmentId = body.workshopEnrollmentId?.trim();
   if ((bookingId ? 1 : 0) + (enrollmentId ? 1 : 0) !== 1) {
-    throw new Error("Exactly one booking reference is required.");
+    throw new ClientFacingError("Exactly one booking reference is required.", 400);
   }
 
   if (enrollmentId) {
-    if (body.bookingType !== "workshop") throw new Error("Booking type does not match the payment record.");
+    if (body.bookingType !== "workshop") throw new ClientFacingError("Booking type does not match the payment record.", 400);
     const ref = db.collection("workshop_enrollments").doc(enrollmentId);
     const snap = await ref.get();
-    if (!snap.exists) throw new Error("Workshop enrollment was not found.");
+    if (!snap.exists) throw new ClientFacingError("Workshop enrollment was not found.", 404);
     const stored = snap.data() as PaymentRecord;
     const workshopId = stored.workshop_id?.trim();
-    if (!workshopId) throw new Error("Workshop enrollment is missing its workshop reference.");
+    if (!workshopId) throw new ClientFacingError("Workshop enrollment is missing its workshop reference.", 409);
     const pricing = await resolveCanonicalWorkshopPricing(db, workshopId);
     return {
       ref,
@@ -110,11 +111,11 @@ async function loadPaymentTarget(db: Firestore, body: CreateIntentBody): Promise
   const pendingSnap = await pendingRef.get();
   const ref = pendingSnap.exists ? pendingRef : db.collection("bookings").doc(bookingId!);
   const snap = pendingSnap.exists ? pendingSnap : await ref.get();
-  if (!snap.exists) throw new Error("Booking was not found.");
+  if (!snap.exists) throw new ClientFacingError("Booking was not found.", 404);
 
   const record = snap.data() as PaymentRecord;
   const inferredType = inferBookingType(record);
-  if (body.bookingType !== inferredType) throw new Error("Booking type does not match the payment record.");
+  if (body.bookingType !== inferredType) throw new ClientFacingError("Booking type does not match the payment record.", 400);
   return { ref, record, type: inferredType, idParam: "booking_id", id: bookingId! };
 }
 
@@ -144,20 +145,20 @@ async function reservePaymentInitialization(db: Firestore, target: PaymentTarget
   const expected = validateExpectedPayment(target.record);
   await db.runTransaction(async (tx) => {
     const snap = await tx.get(target.ref);
-    if (!snap.exists) throw new Error("Payment record was not found.");
+    if (!snap.exists) throw new ClientFacingError("Payment record was not found.", 404);
     const current = snap.data() as PaymentRecord;
     if (target.type !== "workshop") validateExpectedPayment(current);
     if (current.payment_status === "paid" || current.promoted_booking_id) {
-      throw new Error("This booking has already been paid.");
+      throw new ClientFacingError("This booking has already been paid.", 409);
     }
     if (lockIsFresh(current)) {
-      throw new Error("Payment initialization is already in progress. Please wait a moment.");
+      throw new ClientFacingError("Payment initialization is already in progress. Please wait a moment.", 409);
     }
     // An unpaid intent left over from an abandoned checkout used to lock the booking forever.
     // It is superseded below instead; only an unbounded retry loop is refused.
     const superseded = Array.isArray(current.superseded_intent_ids) ? current.superseded_intent_ids : [];
     if (current.ziina_intent_id && superseded.length >= MAX_INTENT_REISSUES) {
-      throw new Error("Too many payment attempts for this booking. Please contact support.");
+      throw new ClientFacingError("Too many payment attempts for this booking. Please contact support.", 429);
     }
     tx.update(target.ref, {
       ...(target.type === "workshop"
@@ -241,10 +242,10 @@ export async function POST(request: Request) {
 
     await db.runTransaction(async (tx) => {
       const snap = await tx.get(target!.ref);
-      if (!snap.exists) throw new Error("Payment record was not found.");
+      if (!snap.exists) throw new ClientFacingError("Payment record was not found.", 404);
       const current = snap.data() as PaymentRecord;
       if (current.payment_initialization_token !== initializationToken) {
-        throw new Error("Payment initialization lock was lost.");
+        throw new ClientFacingError("Payment initialization could not be completed. Please try again.", 409);
       }
       const replacedIntentId =
         current.ziina_intent_id && current.ziina_intent_id !== ziinaBody.id ? current.ziina_intent_id : null;
@@ -276,14 +277,9 @@ export async function POST(request: Request) {
         console.error("[payments/create-intent] Failed to release initialization lock:", cleanupError);
       }
     }
-    const message = error instanceof Error ? error.message : "Unexpected server error.";
-    const isClientError =
-      message.includes("required") ||
-      message.includes("not found") ||
-      message.includes("does not match") ||
-      message.includes("already") ||
-      message.includes("restart") ||
-      message.includes("progress");
-    return NextResponse.json({ error: message }, { status: isClientError ? 409 : 500 });
+    // Previously the status was chosen by substring-matching the message, which both leaked
+    // internal error text and changed behaviour whenever a message was reworded.
+    const { message, status } = toApiError("payments/create-intent", error, "Could not start payment. Please try again.");
+    return NextResponse.json({ error: message }, { status });
   }
 }
