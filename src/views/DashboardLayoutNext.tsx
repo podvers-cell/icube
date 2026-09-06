@@ -86,7 +86,7 @@ export const navGroups: NavGroup[] = [
       { href: "/dashboard/hero", end: false, label: "Hero", icon: Image },
       { href: "/dashboard/services", end: false, label: "Services", icon: LayoutGrid },
       { href: "/dashboard/portfolio", end: false, label: "Portfolio", icon: FolderOpen },
-      { href: "/dashboard/videos", end: false, label: "Videos", icon: Video },
+      { href: "/dashboard/videos", end: false, label: "Showreel Videos", icon: Video },
       { href: "/dashboard/testimonials", end: false, label: "Testimonials", icon: MessageSquare },
       { href: "/dashboard/benefits", end: false, label: "Benefits", icon: Sparkles },
       { href: "/dashboard/why-us", end: false, label: "Why Us", icon: Award },

@@ -5,8 +5,9 @@ import { Pencil, Trash2 } from "lucide-react";
 import { api } from "../api";
 import { useSiteData, invalidateSiteCache } from "../SiteDataContext";
 import CloudinaryUploadField from "../components/CloudinaryUploadField";
+import MediaSlotList from "../components/dashboard/MediaSlotList";
 import { uploadToCloudinaryWithProgress } from "../lib/uploadCloudinary";
-import { getProjectVideos, parseLines } from "../lib/portfolioMedia";
+import { getProjectVideos } from "../lib/portfolioMedia";
 
 type Project = {
   id: number | string;
@@ -24,8 +25,9 @@ type Project = {
 };
 
 type EditingProject = Project & {
-  videoUrlsText: string;
-  galleryImagesText: string;
+  /** One entry per slot in the form. Empty strings are dropped on save. */
+  videoUrls: string[];
+  galleryImages: string[];
 };
 
 function emptyProject(listLength: number): EditingProject {
@@ -41,23 +43,23 @@ function emptyProject(listLength: number): EditingProject {
     gallery_images: [],
     visible: true,
     show_in_selected_work: false,
-    videoUrlsText: "",
-    galleryImagesText: "",
+    videoUrls: [],
+    galleryImages: [],
   };
 }
 
 function projectToEditing(p: Project): EditingProject {
-  const videos = getProjectVideos(p);
   return {
     ...p,
-    videoUrlsText: videos.join("\n"),
-    galleryImagesText: (p.gallery_images ?? []).join("\n"),
+    videoUrls: getProjectVideos(p),
+    galleryImages: p.gallery_images ?? [],
   };
 }
 
 function editingToPayload(editing: EditingProject): Record<string, unknown> {
-  const video_urls = parseLines(editing.videoUrlsText);
-  const gallery_images = parseLines(editing.galleryImagesText);
+  // A slot left blank is simply an unused row, not an entry.
+  const video_urls = editing.videoUrls.map((v) => v.trim()).filter(Boolean);
+  const gallery_images = editing.galleryImages.map((v) => v.trim()).filter(Boolean);
   const client = editing.client?.trim();
 
   // Firestore rejects `undefined` — only include defined values (use [] / "" to clear optional fields).
@@ -146,11 +148,7 @@ export default function DashboardPortfolio() {
         urls.push(url);
         setGalleryProgress(Math.round(((i + 1) / total) * 100));
       }
-      const current = editing.galleryImagesText.trim();
-      const newLines = urls.join("\n");
-      setEditing((x) =>
-        x ? { ...x, galleryImagesText: current ? `${current}\n${newLines}` : newLines } : null
-      );
+      setEditing((x) => (x ? { ...x, galleryImages: [...x.galleryImages, ...urls] } : null));
     } catch (err) {
       alert(err instanceof Error ? err.message : "Upload failed");
     } finally {
@@ -180,11 +178,7 @@ export default function DashboardPortfolio() {
         urls.push(url);
         setVideoProgress(Math.round(((i + 1) / total) * 100));
       }
-      const current = editing.videoUrlsText.trim();
-      const newLines = urls.join("\n");
-      setEditing((x) =>
-        x ? { ...x, videoUrlsText: current ? `${current}\n${newLines}` : newLines } : null
-      );
+      setEditing((x) => (x ? { ...x, videoUrls: [...x.videoUrls, ...urls] } : null));
     } catch (err) {
       alert(err instanceof Error ? err.message : "Upload failed");
     } finally {
@@ -200,7 +194,11 @@ export default function DashboardPortfolio() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-display font-bold text-white">Portfolio</h1>
-          <p className="text-gray-500 text-sm mt-1">Projects and case studies shown on the public site.</p>
+          <p className="mt-1 max-w-2xl text-sm text-gray-500">
+            Case studies on the <strong className="text-gray-400">Portfolio page</strong>. Each project has a cover
+            image and can hold as many videos and gallery images as you need. For loose videos on the homepage, use{" "}
+            <strong className="text-gray-400">Showreel Videos</strong>.
+          </p>
         </div>
         <button
           onClick={() => setEditing(emptyProject(list.length))}
@@ -266,48 +264,84 @@ export default function DashboardPortfolio() {
       {editing && (
         <form onSubmit={save} className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-icube-gray border border-white/10 rounded-sm p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto space-y-4">
-            <h2 className="text-xl font-display font-bold text-white">
-              {isCreating ? "Add Project" : "Edit Project"}
-            </h2>
-            <input
-              value={editing.title}
-              onChange={(e) => setEditing((x) => (x ? { ...x, title: e.target.value } : null))}
-              className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white"
-              placeholder="Title"
-            />
-            <input
-              value={editing.category}
-              onChange={(e) => setEditing((x) => (x ? { ...x, category: e.target.value } : null))}
-              className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white"
-              placeholder="Category (e.g. Commercial, Product)"
-            />
-            <input
-              value={editing.client ?? ""}
-              onChange={(e) => setEditing((x) => (x ? { ...x, client: e.target.value } : null))}
-              className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white"
-              placeholder="Client / Brand (optional; shown under title on portfolio page)"
-            />
-            <CloudinaryUploadField
-              label="Cover image URL"
-              value={editing.image_url}
-              onChange={(url) => setEditing((x) => (x ? { ...x, image_url: url } : null))}
-              type="image"
-              folder="portfolio"
-              placeholder="https://… or click Upload"
-            />
-
             <div>
-              <label className="block text-sm text-gray-400 mb-1">
-                Project videos (YouTube/Vimeo links or uploads — one URL per line)
+              <h2 className="font-display text-xl font-bold text-white">
+                {isCreating ? "Add project" : "Edit project"}
+              </h2>
+              <p className="mt-1 text-sm text-gray-500">
+                A project is one case study on the Portfolio page, with its own videos and gallery.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {/* Labels rather than placeholders: a placeholder disappears the moment you type,
+                  so a half-filled form stopped saying which field was which. */}
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-gray-300">Project title</span>
+                <input
+                  value={editing.title}
+                  onChange={(e) => setEditing((x) => (x ? { ...x, title: e.target.value } : null))}
+                  className="w-full rounded-sm border border-white/10 bg-black/50 p-3 text-white"
+                  placeholder="Nike — Summer campaign"
+                />
               </label>
-              <div className="flex gap-2 mb-2 items-center flex-wrap">
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <label className="block">
+                  <span className="mb-1 block text-sm font-medium text-gray-300">Category</span>
+                  <input
+                    value={editing.category}
+                    onChange={(e) => setEditing((x) => (x ? { ...x, category: e.target.value } : null))}
+                    className="w-full rounded-sm border border-white/10 bg-black/50 p-3 text-white"
+                    placeholder="Commercial"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="mb-1 block text-sm font-medium text-gray-300">
+                    Client <span className="font-normal text-gray-500">(optional)</span>
+                  </span>
+                  <input
+                    value={editing.client ?? ""}
+                    onChange={(e) => setEditing((x) => (x ? { ...x, client: e.target.value } : null))}
+                    className="w-full rounded-sm border border-white/10 bg-black/50 p-3 text-white"
+                    placeholder="Shown under the title"
+                  />
+                </label>
+              </div>
+
+              <div>
+                <span className="mb-1 block text-sm font-medium text-gray-300">Cover image</span>
+                <p className="mb-2 text-xs text-gray-500">The single image that represents this project in the grid.</p>
+                <CloudinaryUploadField
+                  value={editing.image_url}
+                  onChange={(url) => setEditing((x) => (x ? { ...x, image_url: url } : null))}
+                  type="image"
+                  folder="portfolio"
+                  placeholder="https://… or click Upload"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4 border-t border-white/10 pt-5">
+              <MediaSlotList
+                label="Project videos"
+                hint="YouTube or Vimeo links, or upload your own. Shown in the order below."
+                values={editing.videoUrls}
+                onChange={(videoUrls) => setEditing((x) => (x ? { ...x, videoUrls } : null))}
+                type="video"
+                folder="portfolio/videos"
+                addLabel="Add a video"
+                emptyHint="No videos yet. Add one slot at a time, or upload several at once below."
+              />
+              <div className="flex flex-wrap items-center gap-3">
                 <button
                   type="button"
                   onClick={() => videoInputRef.current?.click()}
                   disabled={uploadingVideos}
-                  className="px-4 py-2 bg-white/10 border border-white/10 rounded-sm text-sm text-gray-200 hover:bg-white/15 disabled:opacity-50"
+                  className="rounded-sm border border-white/10 bg-white/10 px-4 py-2 text-sm text-gray-200 hover:bg-white/15 disabled:opacity-50"
                 >
-                  {uploadingVideos ? `${videoProgress}%` : "Upload video(s)"}
+                  {uploadingVideos ? `${videoProgress}%` : "Upload several videos"}
                 </button>
                 {uploadingVideos && (
                   <span className="text-sm text-gray-400">
@@ -324,34 +358,34 @@ export default function DashboardPortfolio() {
                 />
               </div>
               {uploadingVideos && (
-                <div className="mb-2 h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
                   <div
-                    className="h-full bg-icube-gold rounded-full transition-[width] duration-200"
+                    className="h-full rounded-full bg-icube-gold transition-[width] duration-200"
                     style={{ width: `${videoProgress}%` }}
                   />
                 </div>
               )}
-              <textarea
-                value={editing.videoUrlsText}
-                onChange={(e) => setEditing((x) => (x ? { ...x, videoUrlsText: e.target.value } : null))}
-                rows={4}
-                className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white font-mono text-sm"
-                placeholder="https://youtube.com/…&#10;https://vimeo.com/…&#10;or use Upload video(s) above"
-              />
             </div>
 
-            <div>
-              <label className="block text-sm text-gray-400 mb-1">
-                Project gallery images (one URL per line)
-              </label>
-              <div className="flex gap-2 mb-2 items-center flex-wrap">
+            <div className="space-y-4 border-t border-white/10 pt-5">
+              <MediaSlotList
+                label="Gallery images"
+                hint="Shown on the project page, in the order below."
+                values={editing.galleryImages}
+                onChange={(galleryImages) => setEditing((x) => (x ? { ...x, galleryImages } : null))}
+                type="image"
+                folder="portfolio/gallery"
+                addLabel="Add an image"
+                emptyHint="No gallery images yet. Add one slot at a time, or upload several at once below."
+              />
+              <div className="flex flex-wrap items-center gap-3">
                 <button
                   type="button"
                   onClick={() => galleryInputRef.current?.click()}
                   disabled={uploadingGallery}
-                  className="px-4 py-2 bg-white/10 border border-white/10 rounded-sm text-sm text-gray-200 hover:bg-white/15 disabled:opacity-50"
+                  className="rounded-sm border border-white/10 bg-white/10 px-4 py-2 text-sm text-gray-200 hover:bg-white/15 disabled:opacity-50"
                 >
-                  {uploadingGallery ? `${galleryProgress}%` : "Upload image(s)"}
+                  {uploadingGallery ? `${galleryProgress}%` : "Upload several images"}
                 </button>
                 {uploadingGallery && (
                   <span className="text-sm text-gray-400">
@@ -368,22 +402,16 @@ export default function DashboardPortfolio() {
                 />
               </div>
               {uploadingGallery && (
-                <div className="mb-2 h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
                   <div
-                    className="h-full bg-icube-gold rounded-full transition-[width] duration-200"
+                    className="h-full rounded-full bg-icube-gold transition-[width] duration-200"
                     style={{ width: `${galleryProgress}%` }}
                   />
                 </div>
               )}
-              <textarea
-                value={editing.galleryImagesText}
-                onChange={(e) => setEditing((x) => (x ? { ...x, galleryImagesText: e.target.value } : null))}
-                rows={4}
-                className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white font-mono text-sm"
-                placeholder="https://…&#10;https://… or use Upload image(s) above"
-              />
             </div>
 
+            <div className="space-y-3 border-t border-white/10 pt-5">
             <label className="flex items-center gap-3 cursor-pointer">
               <input
                 type="checkbox"
@@ -402,7 +430,8 @@ export default function DashboardPortfolio() {
               />
               <span className="text-sm text-gray-300">Show in Selected Work on homepage</span>
             </label>
-            <div className="flex gap-2">
+            </div>
+            <div className="flex gap-2 border-t border-white/10 pt-5">
               <button type="submit" className="px-4 py-2 bg-icube-gold text-icube-dark font-semibold rounded-sm">Save</button>
               <button type="button" onClick={() => setEditing(null)} className="px-4 py-2 bg-white/10 text-white rounded-sm">Cancel</button>
             </div>

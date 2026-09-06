@@ -74,8 +74,12 @@ export default function DashboardVideos() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-display font-bold text-white">Videos</h1>
-          <p className="text-gray-500 text-sm mt-1">Add videos via YouTube or Vimeo links. They appear in the Videos section on the site.</p>
+          <h1 className="text-3xl font-display font-bold text-white">Showreel Videos</h1>
+          <p className="mt-1 max-w-2xl text-sm text-gray-500">
+            Standalone videos for the Videos strip on the <strong className="text-gray-400">homepage</strong>. Just a
+            title and a link each. For videos that belong to a specific project, use{" "}
+            <strong className="text-gray-400">Portfolio</strong> instead.
+          </p>
         </div>
         <button
           onClick={openCreate}

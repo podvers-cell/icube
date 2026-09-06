@@ -6,6 +6,7 @@ import { api } from "@/api";
 import { invalidateSiteCache } from "@/SiteDataContext";
 import CloudinaryUploadField from "@/components/CloudinaryUploadField";
 import { uploadToCloudinaryWithProgress } from "@/lib/uploadCloudinary";
+import MediaSlotList from "../components/dashboard/MediaSlotList";
 
 type WorkshopImage = { image_url: string; caption?: string | null; sort_order?: number };
 
@@ -87,7 +88,7 @@ export default function DashboardWorkshops() {
 
   const [highlightsText, setHighlightsText] = useState("");
   const [includesText, setIncludesText] = useState("");
-  const [videoUrlsText, setVideoUrlsText] = useState("");
+  const [videoUrls, setVideoUrls] = useState<string[]>([]);
   const [imagesJsonText, setImagesJsonText] = useState("");
 
   function load() {
@@ -105,7 +106,7 @@ export default function DashboardWorkshops() {
     setEditing({ ...emptyWorkshop, sort_order: list.length });
     setHighlightsText("");
     setIncludesText("");
-    setVideoUrlsText("");
+    setVideoUrls([]);
     setImagesJsonText("[]");
   }
 
@@ -114,7 +115,7 @@ export default function DashboardWorkshops() {
     setEditing({ ...w });
     setHighlightsText((w.highlights ?? []).join("\n"));
     setIncludesText((w.includes ?? []).join("\n"));
-    setVideoUrlsText((w.video_urls ?? []).join("\n"));
+    setVideoUrls(w.video_urls ?? []);
     setImagesJsonText(JSON.stringify(w.images ?? [], null, 2));
   }
 
@@ -162,7 +163,7 @@ export default function DashboardWorkshops() {
       level_label: (editing.level_label ?? "").trim(),
       highlights: parseLines(highlightsText),
       includes: parseLines(includesText),
-      video_urls: parseLines(videoUrlsText),
+      video_urls: videoUrls.map((v) => v.trim()).filter(Boolean),
       images: safeParseImages(imagesJsonText),
     };
 
@@ -542,12 +543,15 @@ export default function DashboardWorkshops() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs uppercase tracking-[0.18em] text-gray-400">Video URLs (one per line)</label>
-                      <textarea
-                        value={videoUrlsText}
-                        onChange={(e) => setVideoUrlsText(e.target.value)}
-                        rows={4}
-                        className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-3 text-sm text-white outline-none focus:border-icube-gold/50"
+                      <MediaSlotList
+                        label="Workshop videos"
+                        hint="YouTube or Vimeo links, or upload your own."
+                        values={videoUrls}
+                        onChange={setVideoUrls}
+                        type="video"
+                        folder="workshops/videos"
+                        addLabel="Add a video"
+                        emptyHint="No videos yet."
                       />
                     </div>
                   </div>
