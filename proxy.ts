@@ -4,8 +4,62 @@ type LimitRule = { key: string; max: number; methods?: string[] };
 type LimitEntry = { count: number; resetAt: number };
 
 const WINDOW_MS = 60_000;
+const WINDOW_SECONDS = WINDOW_MS / 1000;
 const MAX_STORE_SIZE = 10_000;
+
+/**
+ * Per-instance fallback counters.
+ *
+ * On serverless every instance keeps its own copy, so the real ceiling is max x instance count and
+ * it resets on every cold start. Configure a shared store (below) to make the limit mean what it
+ * says; this Map is what remains when none is configured, or when the shared store is unreachable.
+ */
 const store = new Map<string, LimitEntry>();
+
+/**
+ * Shared counters via the Upstash REST API, which also backs Vercel KV. REST rather than a client
+ * library because this runs on the edge runtime, where only fetch is available.
+ */
+function sharedStoreConfig(): { url: string; token: string } | null {
+  const url = (process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL)?.trim();
+  const token = (process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN)?.trim();
+  if (!url || !token) return null;
+  return { url: url.replace(/\/$/, ""), token };
+}
+
+async function checkLimitShared(
+  config: { url: string; token: string },
+  key: string,
+  max: number
+): Promise<{ limited: boolean; retryAfter: number } | null> {
+  try {
+    const response = await fetch(`${config.url}/pipeline`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${config.token}`,
+        "Content-Type": "application/json",
+      },
+      // INCR then set the window only on the first hit, so the window does not slide forward
+      // with every request inside it.
+      body: JSON.stringify([
+        ["INCR", key],
+        ["EXPIRE", key, WINDOW_SECONDS, "NX"],
+      ]),
+      signal: AbortSignal.timeout(1500),
+      cache: "no-store",
+    });
+    if (!response.ok) return null;
+
+    const results = (await response.json()) as Array<{ result?: unknown; error?: string }>;
+    const count = Number(results?.[0]?.result);
+    if (!Number.isFinite(count)) return null;
+
+    return { limited: count > max, retryAfter: WINDOW_SECONDS };
+  } catch {
+    // Unreachable or slow: fall back to the local counter rather than failing the request.
+    return null;
+  }
+}
 
 const RULES: Record<string, LimitRule> = {
   "/api/upload": { key: "upload", max: 10 },
@@ -54,14 +108,20 @@ function checkLimit(key: string, max: number): { limited: boolean; retryAfter: n
   };
 }
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const rule = RULES[request.nextUrl.pathname];
   if (!rule) return NextResponse.next();
 
   const methods = rule.methods ?? ["POST"];
   if (!methods.includes(request.method)) return NextResponse.next();
 
-  const result = checkLimit(`${rule.key}:${clientIp(request)}`, rule.max);
+  const counterKey = `ratelimit:${rule.key}:${clientIp(request)}`;
+  const config = sharedStoreConfig();
+
+  const result =
+    (config ? await checkLimitShared(config, counterKey, rule.max) : null) ??
+    checkLimit(counterKey, rule.max);
+
   if (!result.limited) return NextResponse.next();
 
   return NextResponse.json(
