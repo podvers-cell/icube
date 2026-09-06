@@ -9,6 +9,7 @@ import { useSwipeCarousel } from "@/hooks/useSwipeCarousel";
 import { isWorkshopSoldOut } from "@/utils/workshopCapacity";
 import { AnimatedSectionHeader } from "./ScrollReveal";
 import AnimatedStaggerItem from "./AnimatedStaggerItem";
+import { cloudinaryImage } from "@/lib/cloudinaryImage";
 
 type Workshop = {
   id: string;
@@ -54,7 +55,7 @@ function WorkshopCard({ w, index }: { w: Workshop; index: number }) {
           <div className="relative mb-5 -mx-7 md:-mx-8 -mt-7 md:-mt-8 overflow-hidden bg-black/30 aspect-[4/3]">
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
             <img
-              src={w.cover_image_url}
+              src={cloudinaryImage(w.cover_image_url, 800)}
               alt={w.title}
               className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.05] ${
                 isSoldOut ? "grayscale" : ""

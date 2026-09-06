@@ -11,6 +11,7 @@ import AnimatedStaggerItem from "../components/AnimatedStaggerItem";
 import { AnimatedSectionHeader } from "../components/ScrollReveal";
 import { WHATSAPP_URL } from "../constants/whatsapp";
 import { rentalAvailabilityLabel, type RentalEquipment } from "../types/rentalEquipment";
+import { cloudinaryImage } from "@/lib/cloudinaryImage";
 
 const ALL = "All";
 
@@ -37,7 +38,8 @@ function EquipmentCard({ item }: { item: RentalEquipment }) {
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-black/40">
         {item.image_url ? (
           <Image
-            src={item.image_url}
+            src={cloudinaryImage(item.image_url, 700)}
+            unoptimized
             alt={item.name}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"

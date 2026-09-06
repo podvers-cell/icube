@@ -9,6 +9,8 @@ import { useSiteData } from "@/SiteDataContext";
 import { getIcon } from "@/lib/icons";
 import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 import { requireFirestore } from "@/firebase";
+import Image from "next/image";
+import { cloudinaryImage } from "@/lib/cloudinaryImage";
 
 type CaseStudyItem = {
   title: string;
@@ -238,10 +240,16 @@ export default function ServiceCaseStudyPage({ serviceId }: { serviceId: string 
                 {caseStudies.map((cs, idx) => (
                   <article key={`${cs.title || "case"}-${idx}`} className="glass-card rounded-2xl border border-white/10 bg-white/[0.04] overflow-hidden">
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-0">
-                      <div className="md:col-span-4 bg-black/25 min-h-56">
+                      <div className="relative md:col-span-4 bg-black/25 min-h-56">
                         {cs.image_url ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={cs.image_url} alt={cs.title || `Case study ${idx + 1}`} className="h-full w-full object-cover" />
+                          <Image
+                            src={cloudinaryImage(cs.image_url, 800)}
+                            unoptimized
+                            alt={cs.title || `Case study ${idx + 1}`}
+                            fill
+                            sizes="(max-width: 768px) 100vw, 50vw"
+                            className="object-cover"
+                          />
                         ) : (
                           <div className="h-full w-full flex items-center justify-center text-gray-500 text-sm">Case image</div>
                         )}

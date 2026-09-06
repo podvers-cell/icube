@@ -12,6 +12,7 @@ import { getProjectMediaItems, projectHasMedia } from "../lib/portfolioMedia";
 import { VideoPlayerModal } from "./VideoPlayerModal";
 import AnimatedStaggerItem from "./AnimatedStaggerItem";
 import { AnimatedSectionHeader } from "./ScrollReveal";
+import { cloudinaryImage } from "@/lib/cloudinaryImage";
 
 type Project = {
   id: number | string;
@@ -282,7 +283,8 @@ function BentoFeaturedCard({ project, setPlayingProject }: { project: Project; s
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-icube-gold/0 to-transparent group-hover:via-icube-gold/70 transition-all duration-500 z-20 pointer-events-none rounded-t-2xl" />
         <div className="absolute inset-0">
           <Image
-            src={project.image_url}
+            src={cloudinaryImage(project.image_url, 900)}
+            unoptimized
             alt={project.title}
             fill
             sizes="(max-width: 1024px) 100vw, 66vw"
@@ -329,7 +331,8 @@ function BentoSmallCard({ project, setPlayingProject }: { project: Project; setP
         <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-icube-gold/0 to-transparent group-hover:via-icube-gold/60 transition-all duration-400 rounded-t-xl" />
         <div className="absolute inset-0">
           <Image
-            src={project.image_url}
+            src={cloudinaryImage(project.image_url, 900)}
+            unoptimized
             alt={project.title}
             fill
             sizes="(max-width: 1024px) 100vw, 33vw"
@@ -373,7 +376,8 @@ function StandalonePortfolioCard({ project, setPlayingProject }: { project: Proj
         className="relative aspect-[4/3] overflow-hidden rounded-xl bg-white/5 border border-white/10 cursor-pointer transition-all duration-300 hover:border-white/20"
       >
         <Image
-          src={project.image_url}
+          src={cloudinaryImage(project.image_url, 900)}
+          unoptimized
           alt={project.title}
           fill
           sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
@@ -439,7 +443,8 @@ function PortfolioCard({
         )}
         <div className="relative w-full h-full">
           <Image
-            src={project.image_url}
+            src={cloudinaryImage(project.image_url, 900)}
+            unoptimized
             alt={project.title}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"

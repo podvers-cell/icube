@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Play, ArrowRight } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useSiteData } from "../SiteDataContext";
+import { cloudinaryImage } from "@/lib/cloudinaryImage";
 
 function getYouTubeEmbedUrl(raw: string): string | null {
   try {
@@ -231,7 +232,7 @@ export default function Hero({ onHeroReady }: HeroProps) {
           />
         ) : bgImage ? (
           <Image
-            src={bgImage}
+            src={cloudinaryImage(bgImage, 1920)}
             alt="Hero Background"
             fill
             priority

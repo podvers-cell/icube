@@ -11,6 +11,7 @@ import { useSiteData } from "../SiteDataContext";
 import { useBooking } from "../BookingContext";
 import AnimatedStaggerItem from "./AnimatedStaggerItem";
 import { AnimatedSectionHeader } from "./ScrollReveal";
+import { cloudinaryImage } from "@/lib/cloudinaryImage";
 
 const OPTIMIZED_IMAGE_HOSTS = ["images.unsplash.com", "res.cloudinary.com"];
 function isOptimizedImageUrl(url: string): boolean {
@@ -61,7 +62,8 @@ function StudioCard({
         >
           {useNextImage ? (
             <Image
-              src={s.cover_image_url}
+              src={cloudinaryImage(s.cover_image_url, 900)}
+              unoptimized
               alt={s.name}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -71,7 +73,7 @@ function StudioCard({
             />
           ) : (
             <img
-              src={s.cover_image_url}
+              src={cloudinaryImage(s.cover_image_url, 900)}
               alt={s.name}
               className="w-full h-full object-cover hover:scale-105 transition-transform duration-500 ease-out"
               referrerPolicy="no-referrer"

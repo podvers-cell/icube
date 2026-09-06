@@ -12,6 +12,7 @@ import { getProjectMediaItems, projectHasMedia } from "../lib/portfolioMedia";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { VideoPlayerModal } from "../components/VideoPlayerModal";
+import { cloudinaryImage } from "@/lib/cloudinaryImage";
 
 const OPTIMIZED_IMAGE_HOSTS = ["images.unsplash.com", "res.cloudinary.com"];
 function isOptimizedImageUrl(url: string): boolean {
@@ -164,9 +165,9 @@ export default function StudioDetailPage() {
                   aria-label={`Thumbnail ${i + 1}`}
                 >
                   {isOptimizedImageUrl(img.image_url) ? (
-                    <Image src={img.image_url} alt="" fill sizes="96px" className="object-cover" loading="lazy" />
+                    <Image src={cloudinaryImage(img.image_url, 400)} alt="" fill sizes="96px" className="object-cover" loading="lazy" />
                   ) : (
-                    <img src={img.image_url} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" loading="lazy" />
+                    <img src={cloudinaryImage(img.image_url, 400)} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" loading="lazy" />
                   )}
                 </button>
               ))}
@@ -203,7 +204,8 @@ export default function StudioDetailPage() {
                   >
                     {isOptimizedImageUrl(images[activeImage].image_url) ? (
                       <Image
-                        src={images[activeImage].image_url}
+                        src={cloudinaryImage(images[activeImage].image_url, 1600)}
+                        unoptimized
                         alt={studio.name}
                         width={1200}
                         height={800}
@@ -214,7 +216,7 @@ export default function StudioDetailPage() {
                       />
                     ) : (
                       <img
-                        src={images[activeImage].image_url}
+                        src={cloudinaryImage(images[activeImage].image_url, 1600)}
                         alt={studio.name}
                         className="w-full h-auto max-h-[70vh] object-contain block"
                         referrerPolicy="no-referrer"
@@ -348,7 +350,7 @@ export default function StudioDetailPage() {
                     >
                       <div className="aspect-[4/3] overflow-hidden border border-white/10 bg-white/5 relative">
                         <Image
-                          src={project.image_url}
+                          src={cloudinaryImage(project.image_url, 700)}
                           alt={project.title}
                           fill
                           sizes="(max-width: 768px) 50vw, 33vw"

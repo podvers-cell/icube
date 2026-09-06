@@ -3,6 +3,7 @@
 import AnimatedStaggerItem from "./AnimatedStaggerItem";
 import { AnimatedSectionHeader } from "./ScrollReveal";
 import { useSiteData } from "../SiteDataContext";
+import { cloudinaryImage } from "@/lib/cloudinaryImage";
 
 const DEFAULTS = {
   benefits_section_label: "Why work with us",
@@ -88,7 +89,7 @@ export default function BenefitsSection() {
           {/* Visual – image from settings */}
           <AnimatedStaggerItem index={1} className="lg:col-span-5 xl:col-span-4 flex items-center justify-center lg:justify-end">
             <img
-              src={imageUrl}
+              src={cloudinaryImage(imageUrl, 800)}
               alt={imageAlt}
               className="w-full h-auto max-h-[480px] object-contain max-w-md lg:max-w-lg"
             />

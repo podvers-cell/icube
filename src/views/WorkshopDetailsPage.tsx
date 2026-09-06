@@ -9,6 +9,8 @@ import Footer from "@/components/Footer";
 import { useSiteData } from "@/SiteDataContext";
 import { getVideoEmbed } from "@/lib/videoEmbed";
 import { isWorkshopSoldOut } from "@/utils/workshopCapacity";
+import Image from "next/image";
+import { cloudinaryImage } from "@/lib/cloudinaryImage";
 
 export default function WorkshopDetailsPage() {
   const params = useParams<{ id: string }>();
@@ -121,7 +123,15 @@ export default function WorkshopDetailsPage() {
           <section className="mt-8 overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04]">
             {cover ? (
               <div className="relative h-[280px] md:h-[340px]">
-                <img src={cover} alt={(w as any).title} className="absolute inset-0 h-full w-full object-cover" />
+                <Image
+                  src={cloudinaryImage(cover, 1200)}
+                  unoptimized
+                  alt={(w as any).title}
+                  fill
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 1024px"
+                  className="object-cover"
+                />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
                   <p className="text-xs uppercase tracking-[0.2em] text-icube-gold">Workshop</p>
@@ -312,11 +322,13 @@ export default function WorkshopDetailsPage() {
                                   {slice.map((img, idx) => (
                                     <div key={`${pageIndex}-${idx}`} className="w-full max-w-[420px]">
                                       <div className="overflow-hidden rounded-2xl bg-black/20">
-                                        <img
-                                          src={String(img.image_url)}
+                                        <Image
+                                          src={cloudinaryImage(String(img.image_url), 600)}
+                                          unoptimized
                                           alt={String(img.caption ?? (w as any).title)}
+                                          width={480}
+                                          height={192}
                                           className="h-44 sm:h-48 w-full object-cover"
-                                          loading="lazy"
                                         />
                                       </div>
                                       {img.caption ? (
