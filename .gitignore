@@ -13,3 +13,4 @@ analyze/
 .env*.local
 firebase-service-account.json
 *-firebase-adminsdk-*.json
+tsconfig.tsbuildinfo
