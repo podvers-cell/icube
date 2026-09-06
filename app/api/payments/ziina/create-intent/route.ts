@@ -28,6 +28,7 @@ type PaymentRecord = {
   expected_payment_amount_minor?: number;
   expected_payment_currency?: string;
   ziina_intent_id?: string | null;
+  superseded_intent_ids?: string[];
   payment_status?: string | null;
   promoted_booking_id?: string | null;
   payment_initialization_token?: string | null;
@@ -43,6 +44,13 @@ type PaymentTarget = {
 };
 
 const INITIALIZATION_LOCK_MS = 10 * 60 * 1000;
+
+/**
+ * A customer who abandons the Ziina redirect must be able to pay later, so an existing unpaid
+ * intent is superseded rather than treated as permanent. Capped so a stuck client (or an
+ * unauthenticated caller, until checkout ownership lands) cannot mint intents without bound.
+ */
+const MAX_INTENT_REISSUES = 10;
 
 function getBaseUrl(request: Request): string {
   const configured = process.env.APP_URL?.trim() || process.env.NEXT_PUBLIC_APP_URL?.trim();
@@ -142,11 +150,14 @@ async function reservePaymentInitialization(db: Firestore, target: PaymentTarget
     if (current.payment_status === "paid" || current.promoted_booking_id) {
       throw new Error("This booking has already been paid.");
     }
-    if (current.ziina_intent_id) {
-      throw new Error("A payment session already exists for this booking.");
-    }
     if (lockIsFresh(current)) {
       throw new Error("Payment initialization is already in progress. Please wait a moment.");
+    }
+    // An unpaid intent left over from an abandoned checkout used to lock the booking forever.
+    // It is superseded below instead; only an unbounded retry loop is refused.
+    const superseded = Array.isArray(current.superseded_intent_ids) ? current.superseded_intent_ids : [];
+    if (current.ziina_intent_id && superseded.length >= MAX_INTENT_REISSUES) {
+      throw new Error("Too many payment attempts for this booking. Please contact support.");
     }
     tx.update(target.ref, {
       ...(target.type === "workshop"
@@ -235,7 +246,12 @@ export async function POST(request: Request) {
       if (current.payment_initialization_token !== initializationToken) {
         throw new Error("Payment initialization lock was lost.");
       }
+      const replacedIntentId =
+        current.ziina_intent_id && current.ziina_intent_id !== ziinaBody.id ? current.ziina_intent_id : null;
       tx.update(target!.ref, {
+        // Keep every intent this record has ever held: the webhook matches on the superseded
+        // ids too, so a late "paid" callback on an abandoned intent is still honoured.
+        ...(replacedIntentId ? { superseded_intent_ids: FieldValue.arrayUnion(replacedIntentId) } : {}),
         ziina_intent_id: ziinaBody.id,
         payment_status: "pending",
         payment_provider: "ziina",

@@ -1,5 +1,5 @@
 import { createHmac, timingSafeEqual } from "crypto";
-import { FieldValue } from "firebase-admin/firestore";
+import { FieldValue, type Firestore, type QueryDocumentSnapshot } from "firebase-admin/firestore";
 import { NextResponse } from "next/server";
 import { getAdminFirestore } from "@/firebase-admin";
 import {
@@ -38,6 +38,27 @@ function parseGroupSizeMax(raw: unknown): number | null {
   return Math.max(...nums);
 }
 
+/**
+ * Match a record by its current intent id *or* by any intent it previously held.
+ *
+ * A customer who abandons a checkout and pays on a second attempt leaves the first intent
+ * superseded. If that first intent was in fact paid and its callback arrives late, matching only
+ * on `ziina_intent_id` would silently drop a real payment — so superseded ids are matched too.
+ */
+async function findRecordsForIntent(
+  db: Firestore,
+  collection: string,
+  intentId: string
+): Promise<QueryDocumentSnapshot[]> {
+  const [direct, superseded] = await Promise.all([
+    db.collection(collection).where("ziina_intent_id", "==", intentId).get(),
+    db.collection(collection).where("superseded_intent_ids", "array-contains", intentId).get(),
+  ]);
+  const byId = new Map<string, QueryDocumentSnapshot>();
+  for (const doc of [...direct.docs, ...superseded.docs]) byId.set(doc.id, doc);
+  return [...byId.values()];
+}
+
 function buildPaymentMeta(payload: ZiinaWebhookPayload, eventName: string): PaymentMeta {
   return {
     eventName,
@@ -73,13 +94,13 @@ export async function POST(request: Request) {
     const paymentStatus = normalizeStoredPaymentStatus(providerStatus);
     const meta = buildPaymentMeta(payload, eventName);
 
-    const [bookingSnaps, pendingSnaps, enrollmentSnaps] = await Promise.all([
-      db.collection("bookings").where("ziina_intent_id", "==", intentId).get(),
-      db.collection("pending_bookings").where("ziina_intent_id", "==", intentId).get(),
-      db.collection("workshop_enrollments").where("ziina_intent_id", "==", intentId).get(),
+    const [bookingDocs, pendingDocs, enrollmentDocs] = await Promise.all([
+      findRecordsForIntent(db, "bookings", intentId),
+      findRecordsForIntent(db, "pending_bookings", intentId),
+      findRecordsForIntent(db, "workshop_enrollments", intentId),
     ]);
 
-    if (bookingSnaps.empty && pendingSnaps.empty && enrollmentSnaps.empty) {
+    if (!bookingDocs.length && !pendingDocs.length && !enrollmentDocs.length) {
       return NextResponse.json({ ok: true, ignored: true, reason: "No record for intent", intentId, event: eventName });
     }
 
@@ -89,7 +110,7 @@ export async function POST(request: Request) {
     let paymentMismatches = 0;
     let workshopCapacityConflicts = 0;
 
-    for (const booking of [...pendingSnaps.docs, ...bookingSnaps.docs]) {
+    for (const booking of [...pendingDocs, ...bookingDocs]) {
       if (paymentStatus === "paid") {
         const outcome = await finalizePaidBooking(booking.id, meta);
         if (outcome.slotConflict) {
@@ -103,32 +124,48 @@ export async function POST(request: Request) {
         await markBookingPaymentFailed(booking.id, meta);
         failedBookings += 1;
       } else {
-        await booking.ref.update({
-          payment_status: "pending",
-          payment_provider: "ziina",
-          payment_event: eventName,
-          payment_intent_status: providerStatus || null,
-          payment_amount_minor: payload.data?.amount ?? null,
-          payment_currency: payload.data?.currency_code ?? null,
-          payment_last_message: payload.data?.message ?? null,
-          updated_at: FieldValue.serverTimestamp(),
+        // Same protection as the failure path: a stale in-progress event must not walk a paid
+        // booking back to pending.
+        await db.runTransaction(async (tx) => {
+          const fresh = await tx.get(booking.ref);
+          if (!fresh.exists) return;
+          const existing = fresh.data() as { payment_status?: string; promoted_booking_id?: string | null };
+          if (existing.payment_status === "paid" || existing.promoted_booking_id) return;
+          tx.update(booking.ref, {
+            payment_status: "pending",
+            payment_provider: "ziina",
+            payment_event: eventName,
+            payment_intent_status: providerStatus || null,
+            payment_amount_minor: payload.data?.amount ?? null,
+            payment_currency: payload.data?.currency_code ?? null,
+            payment_last_message: payload.data?.message ?? null,
+            updated_at: FieldValue.serverTimestamp(),
+          });
         });
       }
     }
 
-    for (const enrollment of enrollmentSnaps.docs) {
+    for (const enrollment of enrollmentDocs) {
       const enrollmentRef = enrollment.ref;
       if (paymentStatus !== "paid") {
-        await enrollmentRef.update({
-          payment_status: paymentStatus === "failed" ? "failed" : "pending",
-          status: paymentStatus === "failed" ? "cancelled" : "awaiting_payment",
-          payment_provider: "ziina",
-          payment_event: eventName,
-          payment_intent_status: providerStatus || null,
-          payment_amount_minor: payload.data?.amount ?? null,
-          payment_currency: payload.data?.currency_code ?? null,
-          payment_last_message: payload.data?.message ?? null,
-          updated_at: FieldValue.serverTimestamp(),
+        // A late failure or cancellation — including one for a superseded intent the customer
+        // abandoned before paying on a later attempt — must never undo a paid enrolment.
+        await db.runTransaction(async (tx) => {
+          const fresh = await tx.get(enrollmentRef);
+          if (!fresh.exists) return;
+          const existing = fresh.data() as { payment_status?: string };
+          if (existing.payment_status === "paid") return;
+          tx.update(enrollmentRef, {
+            payment_status: paymentStatus === "failed" ? "failed" : "pending",
+            status: paymentStatus === "failed" ? "cancelled" : "awaiting_payment",
+            payment_provider: "ziina",
+            payment_event: eventName,
+            payment_intent_status: providerStatus || null,
+            payment_amount_minor: payload.data?.amount ?? null,
+            payment_currency: payload.data?.currency_code ?? null,
+            payment_last_message: payload.data?.message ?? null,
+            updated_at: FieldValue.serverTimestamp(),
+          });
         });
         continue;
       }
@@ -291,13 +328,13 @@ export async function POST(request: Request) {
       ok: true,
       event: eventName,
       intentId,
-      updatedBookings: bookingSnaps.size + pendingSnaps.size,
+      updatedBookings: bookingDocs.length + pendingDocs.length,
       finalizedBookings,
       slotConflicts,
       paymentMismatches,
       workshopCapacityConflicts,
       failedBookings,
-      updatedEnrollments: enrollmentSnaps.size,
+      updatedEnrollments: enrollmentDocs.length,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unexpected webhook error";
