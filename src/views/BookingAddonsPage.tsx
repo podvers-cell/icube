@@ -94,6 +94,8 @@ export default function BookingAddonsPage() {
   const isScheduledComplete = packageSchedulePreference === "scheduled" && !!selectedDate && !!selectedTimeSlot;
 
   if (!selectedPackage || (!isUnscheduled && !isScheduledComplete)) return null;
+  const backHref = selectedPackage.requires_schedule === false ? "/packages" : isUnscheduled ? "/packages/schedule" : "/packages/date-time";
+  const backLabel = selectedPackage.requires_schedule === false ? "Back to packages" : isUnscheduled ? "Back to booking type" : "Back to date & time";
 
   return (
     <div className="site-wrapper min-h-screen bg-gradient-to-b from-icube-dark via-icube-gray to-icube-dark/80 text-white selection:bg-icube-gold selection:text-icube-dark transition-colors duration-300">
@@ -111,11 +113,11 @@ export default function BookingAddonsPage() {
             }
           />
           <Link
-            href={selectedPackage.requires_schedule === false ? "/packages" : isUnscheduled ? "/packages/schedule" : "/packages/date-time"}
+            href={backHref}
             className="inline-flex items-center gap-2 text-gray-400 hover:text-icube-gold text-sm font-medium mb-8 transition-colors"
           >
             <ChevronLeft size={18} />
-            {selectedPackage.requires_schedule === false ? "Back to packages" : isUnscheduled ? "Back to booking type" : "Back to date & time"}
+            {backLabel}
           </Link>
 
           <div className="mb-10">
@@ -372,10 +374,10 @@ export default function BookingAddonsPage() {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-between items-stretch sm:items-center">
             <Link
-              href="/packages/date-time"
+              href={backHref}
               className="inline-flex items-center justify-center gap-2 py-4 px-6 rounded-xl border border-white/20 text-gray-300 hover:bg-white/10 transition-colors"
             >
-              Back
+              {backLabel}
             </Link>
             <button
               type="button"
