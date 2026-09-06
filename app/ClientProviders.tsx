@@ -13,8 +13,15 @@ import NavigationLoadingBar from "@/components/NavigationLoadingBar";
 import WhatsAppFloatingButton from "@/components/WhatsAppFloatingButton";
 import { ErrorBoundary } from "@/ErrorBoundary";
 import { usePathname } from "next/navigation";
+import type { PublicSiteData } from "@/lib/publicSiteData";
 
-export function ClientProviders({ children }: { children: React.ReactNode }) {
+export function ClientProviders({
+  children,
+  siteData,
+}: {
+  children: React.ReactNode;
+  siteData?: PublicSiteData | null;
+}) {
   // The WhatsApp bubble and the cookie banner speak to site visitors. In the admin console they
   // are noise, and the bubble sits on top of the controls in the bottom-right corner.
   const pathname = usePathname();
@@ -26,7 +33,7 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
       <SplashScreen />
       <NavigationLoadingBar />
       <AuthProvider>
-        <SiteDataProvider>
+        <SiteDataProvider initialData={siteData}>
           <MaintenanceGate>
             <BookingProvider>
               <ToastProvider>

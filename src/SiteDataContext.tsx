@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef, ty
 import * as api from "./api";
 import { CONTACT_EMAIL } from "./constants/contact";
 import { toUserFriendlyError, isNetworkError } from "./lib/errorMessages";
+import type { PublicSiteData } from "./lib/publicSiteData";
 
 type Settings = Record<string, string>;
 type Service = {
@@ -386,8 +387,30 @@ export function invalidateSiteCache(): void {
   }
 }
 
-export function SiteDataProvider({ children }: { children: ReactNode }) {
-  const [data, setData] = useState<SiteData>({
+export function SiteDataProvider({
+  children,
+  initialData,
+}: {
+  children: ReactNode;
+  /**
+   * Rendered on the server and passed in, so the first paint already has content and the twenty
+   * Firestore round-trips below are skipped entirely. Null when the server read failed — the
+   * client fetch then runs as it always did.
+   */
+  initialData?: PublicSiteData | null;
+}) {
+  const [data, setData] = useState<SiteData>(
+    initialData
+      ? {
+          ...defaultData,
+          ...(initialData as unknown as Partial<SiteData>),
+          workshops: applyWorkshopOverrides(
+            (initialData.workshops ?? []) as unknown as SiteData["workshops"]
+          ),
+          loading: false,
+          error: null,
+        }
+      : {
     ...defaultData,
     loading: true,
     error: null,
@@ -399,9 +422,10 @@ export function SiteDataProvider({ children }: { children: ReactNode }) {
     whyUs: [],
     studioEquipment: [],
     studios: [],
-    videos: [],
-    workshops: [],
-  });
+          videos: [],
+          workshops: [],
+        }
+  );
 
   const refreshRef = useRef<() => void>(() => {});
 
@@ -482,7 +506,13 @@ export function SiteDataProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
+  const hasServerData = Boolean(initialData);
+
   useEffect(() => {
+    // Server-rendered content is already on screen; refetching it on mount would spend the very
+    // round-trips this change removes. refresh() stays available for dashboard saves.
+    if (hasServerData) return;
+
     const now = Date.now();
     if (cachedData && now - cacheTime < CACHE_STALE_MS) {
       setData((d) => ({ ...cachedData!, refresh: refreshRef.current }));
@@ -539,7 +569,7 @@ export function SiteDataProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [fetchAll, refresh]);
+  }, [fetchAll, refresh, hasServerData]);
 
   return <SiteDataContext.Provider value={data}>{children}</SiteDataContext.Provider>;
 }

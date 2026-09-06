@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import { ClientProviders } from "./ClientProviders";
+import { getPublicSiteData } from "@/lib/publicSiteData";
 import Script from "next/script";
 const GA_ID = "G-71ZDWR0H40";
 const inter = Inter({
@@ -74,11 +75,21 @@ const jsonLd = {
   sameAs: [],
 };
 
-export default function RootLayout({
+/**
+ * The public content is re-read at most every 5 minutes rather than on every request, so a busy
+ * page costs no Firestore reads. Dashboard saves show up within that window.
+ */
+export const revalidate = 300;
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Read the public content here so it ships inside the HTML and the browser never loads the
+  // Firebase SDK to fetch it. Revalidated on a timer rather than per request.
+  const siteData = await getPublicSiteData();
+
   return (
     <html lang="en" className={`${inter.variable} ${outfit.variable}`} suppressHydrationWarning>
       
@@ -92,7 +103,7 @@ export default function RootLayout({
             __html: `(function(){var t=localStorage.getItem('icube-theme');document.documentElement.setAttribute('data-theme',t==='light'?'light':'dark');})();`,
           }}
         />
-        <ClientProviders>{children}</ClientProviders>
+        <ClientProviders siteData={siteData}>{children}</ClientProviders>
         <Script
   src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
   strategy="afterInteractive"
