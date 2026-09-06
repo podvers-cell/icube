@@ -4,6 +4,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { contactFormSchema } from "@/schemas/contact";
 import { CONTACT_EMAIL } from "@/constants/contact";
 import { getAdminFirestore } from "@/firebase-admin";
+import { claimConfirmationEmail, verifyTurnstile } from "@/lib/contactAbuse";
 
 const FROM_EMAIL = process.env.CONTACT_FROM_EMAIL || "onboarding@resend.dev";
 const TO_EMAIL = process.env.CONTACT_TO_EMAIL || CONTACT_EMAIL;
@@ -28,7 +29,16 @@ export async function handleContactSubmission(request: Request) {
   }
 
   const { name, email, subject, message } = parsed.data;
-  const ref = await getAdminFirestore().collection("contact_messages").add({
+
+  // Before any Firestore write or outbound mail, so a bot cannot spend either.
+  const clientIp = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
+  const challenge = await verifyTurnstile((body as { turnstileToken?: unknown }).turnstileToken, clientIp);
+  if (!challenge.ok) {
+    return NextResponse.json({ error: challenge.reason }, { status: 400 });
+  }
+
+  const db = getAdminFirestore();
+  const ref = await db.collection("contact_messages").add({
     name,
     email,
     subject,
@@ -68,7 +78,14 @@ export async function handleContactSubmission(request: Request) {
     return NextResponse.json({ success: true, message_id: ref.id, email_sent: false });
   }
 
-  // 2) Confirmation email to the customer – professional layout
+  // 2) Confirmation email to the customer – professional layout.
+  // This is the leg an attacker aims at a victim, so it is capped per address. The owner
+  // notification above is not capped: the studio should see every genuine enquiry.
+  if (!(await claimConfirmationEmail(db, email))) {
+    console.info("[contact] Skipped confirmation, address is within its cooldown window");
+    return NextResponse.json({ success: true, message_id: ref.id, email_sent: true });
+  }
+
   const customerName = name.trim() || "there";
   const customerHtml = `
     <!DOCTYPE html>

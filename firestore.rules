@@ -54,6 +54,11 @@ service cloud.firestore {
     // should ever read or write it. Set a TTL policy on received_at so it does not grow forever.
     match /webhook_events/{id} { allow read, write: if false; }
 
+    // Per-address cooldown ledger for contact confirmations. Holds only hashed addresses, is
+    // written solely by the Admin SDK, and no client should read or write it. A TTL policy on
+    // last_sent_at (7 days is ample) keeps it small.
+    match /contact_confirmation_cooldowns/{id} { allow read, write: if false; }
+
     // Admins collection: list of admin UIDs (add via Firebase Console). Logged-in user can read own doc to check if admin.
     match /admins/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
