@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import ContactPage from "@/views/ContactPage";
 
 export const metadata: Metadata = {
-  title: "Contact Us | ICUBE Media Studio",
+  title: "Contact Us",
   description:
     "Get in touch with ICUBE Media Studio in Dubai. Studio bookings, video production inquiries, and general contact.",
   alternates: { canonical: "/contact" },

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import StudioBookingDateTimePage from "@/views/StudioBookingDateTimePage";
 
 export const metadata: Metadata = {
-  title: "Select Date & Time | Book Studio | ICUBE Media Studio",
+  title: "Select Date & Time | Book Studio",
   description: "Choose your preferred date and time for your studio session.",
   alternates: { canonical: "/studio/booking/date-time" },
   openGraph: {

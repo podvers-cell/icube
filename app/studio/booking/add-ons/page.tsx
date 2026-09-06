@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import StudioBookingAddonsPage from "@/views/StudioBookingAddonsPage";
 
 export const metadata: Metadata = {
-  title: "Add-ons | Book Studio | ICUBE Media Studio",
+  title: "Add-ons | Book Studio",
   description: "Select extra services for your studio session.",
   alternates: { canonical: "/studio/booking/add-ons" },
   openGraph: {

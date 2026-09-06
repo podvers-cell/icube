@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import StudioBookingCheckoutPage from "@/views/StudioBookingCheckoutPage";
 
 export const metadata: Metadata = {
-  title: "Checkout | Book Studio | ICUBE Media Studio",
+  title: "Checkout | Book Studio",
   description: "Complete your studio booking request.",
   alternates: { canonical: "/studio/booking/checkout" },
   openGraph: {

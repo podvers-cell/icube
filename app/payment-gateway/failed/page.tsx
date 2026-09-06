@@ -5,7 +5,7 @@ import { WHATSAPP_URL } from "@/constants/whatsapp";
 import { getRetryUrl, verifyPaymentRecord } from "@/lib/paymentVerification";
 
 export const metadata: Metadata = {
-  title: "Payment Not Completed | ICUBE Media Studio",
+  title: "Payment Not Completed",
   description: "Your ICUBE payment was not completed.",
 };
 

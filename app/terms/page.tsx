@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Terms of Service | ICUBE Media Studio",
+  title: "Terms of Service",
   description: "Terms of service for ICUBE Media Studio and ICUBE Vision TV Production.",
 };
 

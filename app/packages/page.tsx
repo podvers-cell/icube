@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import PackagesPage from "@/views/PackagesPage";
 
 export const metadata: Metadata = {
-  title: "Studio Packages & Booking | ICUBE Media Studio",
+  title: "Studio Packages & Booking",
   description:
     "Book our Dubai podcast and video studios by the hour. Transparent pricing, professional equipment, and flexible packages for content creators and brands.",
   alternates: { canonical: "/packages" },

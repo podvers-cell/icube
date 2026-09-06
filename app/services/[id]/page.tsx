@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import ServiceCaseStudyPage from "@/views/ServiceCaseStudyPage";
 
 export const metadata: Metadata = {
-  title: "Service Case Study | ICUBE Media Studio",
+  title: "Service Case Study",
   description: "Explore service details and project case studies.",
 };
 

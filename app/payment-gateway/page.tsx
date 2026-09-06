@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Payment Gateway | ICUBE Media Studio",
+  title: "Payment Gateway",
   description: "Mock payment gateway screen for upcoming payment integration.",
 };
 

@@ -14,7 +14,7 @@ import {
 } from "@/lib/paymentVerification";
 
 export const metadata: Metadata = {
-  title: "Payment Status | ICUBE Media Studio",
+  title: "Payment Status",
   description: "View your ICUBE booking payment status.",
 };
 

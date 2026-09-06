@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import DashboardOverview from "@/views/DashboardOverview";
 
 export const metadata: Metadata = {
-  title: "Dashboard | ICUBE Media Studio",
+  title: "Dashboard",
   description: "Admin dashboard",
   robots: "noindex, nofollow",
 };

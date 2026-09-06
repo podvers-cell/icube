@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Signup from "@/views/Signup";
 
 export const metadata: Metadata = {
-  title: "Sign up | ICUBE Media Studio",
+  title: "Sign up",
   description: "Create an account",
   robots: "noindex, nofollow",
 };
