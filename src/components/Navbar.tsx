@@ -90,6 +90,7 @@ export default function Navbar() {
     { name: "Home", href: "/" },
     { name: "Portfolio", href: "/portfolio" },
     { name: "Packages", href: "/packages" },
+    { name: "Rent Equipment", href: "/rent-equipment" },
     { name: "Contact", href: "/contact" },
   ];
 
