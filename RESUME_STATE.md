@@ -30,18 +30,21 @@ Published; the page revalidates within 5 minutes.
 | `a65710b` | Content-Security-Policy (Report-Only) and header consolidation |
 | `0b4f303` | Public Rent Equipment catalogue, navbar link, sitemap entry |
 | `c54b4f9` | Stop duplicating the brand name in every page title |
+| `44e88d4` | Contact form abuse controls (Turnstile-ready + per-address cooldown) |
+| `bd79682` | Shared store support for rate limiting (Upstash / Vercel KV) |
 
 Also done outside git:
 
 - The Firebase Admin private key was moved out of the repo to `~/.config/icube/firebase-admin.json`
   (mode 600). `.env.local` now sets `FIREBASE_SERVICE_ACCOUNT_PATH`. Production is unaffected —
   it reads `FIREBASE_SERVICE_ACCOUNT_JSON` and never touches disk.
-- `UPLOAD_API_KEY` and `NEXT_PUBLIC_UPLOAD_API_KEY` were deleted from `.env.local`. They held
-  identical values, one under a browser-exposed prefix. **Still to delete from Vercel.**
+- `UPLOAD_API_KEY` and `NEXT_PUBLIC_UPLOAD_API_KEY` were deleted from `.env.local` **and from
+  Vercel** (owner confirmed). Production re-checked afterwards: unaffected, as expected — nothing
+  in the codebase read either name.
 
 ## Verification evidence
 
-- TypeScript clean; 63 tests across 12 files pass (was 28 across 7).
+- TypeScript clean; 72 tests across 13 files pass (was 28 across 7).
 - Production build succeeds and reports `Proxy (Middleware)`.
 - Against a running production build on port 3111:
   - All five security headers present on `/`, including `Content-Security-Policy-Report-Only`.
@@ -50,23 +53,31 @@ Also done outside git:
   - `POST /api/upload` unauthenticated → 401.
   - `GET /api/rental-equipment` → 429 on request 61, matching the configured limit of 60/min.
   - No errors in the server log.
+- Rate limiting re-verified after the shared-store change: 429 on request 61 with no store
+  configured, and with a deliberately unreachable store URL the site still served 200s while the
+  local counter still produced a 429 — an outage degrades the limit rather than breaking the site.
+- Production re-checked after every deploy: pages 200, `/api/upload` and `POST
+  /api/rental-equipment` 401, malformed `/api/contact` 400, CSP header present.
 
 ## Blocked — needs the owner
 
-1. **Delete `UPLOAD_API_KEY` and `NEXT_PUBLIC_UPLOAD_API_KEY` from the Vercel environment.** Treat
-   the value as compromised. Nothing in the code reads it.
-2. **Check Firebase Auth for `admin@icube.ae`.** If it exists and belongs to nobody, delete it; if
+1. **Check Firebase Auth for `admin@icube.ae`.** If it exists and belongs to nobody, delete it; if
    it does not exist, register it to a trusted address so it cannot be claimed. The code no longer
    grants anything from it either way.
-3. **Deploy the Firestore rules.** Still blocked: the local service account lacks
-   `serviceusage.services.use`. Three rule commits are now written and not live — `adc588a`, the
-   `rental_equipment` rule, and the new `webhook_events` rule. The repo's rules file describes
+2. **Deploy the Firestore rules.** Still blocked: the local service account lacks
+   `serviceusage.services.use`. Four rule commits are now written and not live — `adc588a`, the
+   `rental_equipment` rule, `webhook_events`, and `contact_confirmation_cooldowns`. The repo's rules file describes
    something different from production, and the gap is growing.
    Safety does not depend on this: Firestore denies undeclared paths by default, so both new
    collections are already closed to clients, and the Admin SDK bypasses rules.
-4. **Firestore TTL policy on `webhook_events.received_at`** (30 days suggested), or that collection
-   grows without bound. Needs console access.
-5. **Turnstile keys** for the contact-form abuse control (plan item 13).
+3. **Firestore TTL policies**, or these collections grow without bound. Needs console access:
+   `webhook_events.received_at` (30 days) and `contact_confirmation_cooldowns.last_sent_at`
+   (7 days).
+4. **Turnstile keys.** The server side is done and deployed; verification stays off until
+   `TURNSTILE_SECRET_KEY` is set. Add the key *and* the front-end widget together — see
+   `.env.example`.
+5. **Optional: a shared rate-limit store.** Attach Vercel KV or Upstash and the limits become
+   global; see `.env.example`. Until then they remain per-instance and best-effort.
 6. **Verify video upload against production.** Vercel caps a function's request body at 4.5 MB by
    default, well under the route's 100 MB video bound, so large video uploads likely fail at the
    platform before reaching the app. Untested here.
@@ -76,10 +87,9 @@ Also done outside git:
 1. Publish real equipment from the dashboard so `/rent-equipment` stops showing its empty state.
 2. Watch the CSP violation reports, then promote `Content-Security-Policy-Report-Only` to
    `Content-Security-Policy`.
-3. Contact-form abuse control once Turnstile keys exist (plan item 13).
-4. Shared-store rate limiting or a Cloudflare WAF (plan item 15). The in-process limiter is
-   verified working but is per-instance on serverless, so it is best-effort only.
-5. Optional: a cleanup job for orphan `pending_bookings` left by abandoned checkouts.
+3. Add the Turnstile widget to the contact form and set the keys — the server half is already live.
+4. Optional: a cleanup job for orphan `pending_bookings` left by abandoned checkouts.
+5. Optional: a server-side gate on `/dashboard` (plan item 21) for defence in depth.
 
 ## Notes for whoever continues
 

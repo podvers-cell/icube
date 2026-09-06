@@ -14,9 +14,12 @@ but uncommitted, 28 tests passing. Since superseded — see Status below.
 
 ## Status
 
-Items 0–12 and 16–20 are **done, pushed and verified live**. Only 13, 14 and 15 remain, and all
-three are blocked on owner access, plus optional item 21. See `RESUME_STATE.md` for the commit map,
-verification evidence and the owner-blocked list.
+**Items 0–13 and 15–20 are done, pushed and verified live.** Only item 14 (deploying the Firestore
+rules) is still fully blocked, on a missing service-account permission; item 21 remains optional.
+
+Items 13 and 15 shipped as configuration-gated: the code is live and inert until the owner adds
+Turnstile keys and a rate-limit store respectively, at which point each switches itself on with no
+further deploy. See `RESUME_STATE.md` for the commit map and the remaining owner actions.
 
 One correction to the original ranking: item 1 was ranked top as an active revenue loss. On
 checking the callers, every checkout page creates a *fresh* booking before calling create-intent
@@ -32,7 +35,7 @@ it was not costing money.
 | **1** | Abandoned checkout permanently locks a booking | ✅ `f35164b` | Latent: unreachable via the UI, but blocks any retry flow | 1–2 h |
 | **2** | Move the Firebase Admin private key out of the repo | ✅ moved | Full-privilege credential at rest in a synced folder | 10 min |
 | **3** | Remove the `admin@icube.ae` backdoor | ✅ `4879680` | Auth defect, possibly claimable account, ~5 lines | 15 min |
-| **4** | Burn `UPLOAD_API_KEY` | ⚠️ local done, Vercel pending | Same secret declared under a browser-exposed prefix | 10 min |
+| **4** | Burn `UPLOAD_API_KEY` | ✅ local + Vercel | Same secret declared under a browser-exposed prefix | 10 min |
 | **5** | Constrain `image_url` to HTTPS | ✅ `3eca446` | Becomes XSS the moment the catalog page renders it | 20 min |
 | **6** | Fix the equipment list filter bug | ✅ `3eca446` | Silently hides published items as the catalog grows | 20 min |
 | **7** | Explicit public field shape | ✅ `3eca446` | Any future internal field leaks the day it is added | 20 min |
@@ -41,9 +44,9 @@ it was not costing money.
 | **10** | Webhook replay protection | ✅ `f860555` | Signature is verified, replay is not blocked | 1–2 h |
 | **11** | Bound the upload route | ✅ `8d58c4b` | Unbounded memory read on a serverless function | 1 h |
 | **12** | Retrofit safe error messages | ✅ `358c9e7` | Old routes leak Firestore internals | 1–2 h |
-| **13** | Contact form abuse control | ⛔ needs Turnstile keys | Email relay on your Resend account | 2–3 h |
+| **13** | Contact form abuse control | ✅ `44e88d4` (keys pending) | Email relay on your Resend account | 2–3 h |
 | **14** | Deploy Firestore rules + track drift | ⛔ needs permission | Two rule commits written, none live | blocked |
-| **15** | Shared-store rate limiting / WAF | ⛔ needs account access | In-memory limiter is ineffective on serverless | blocked |
+| **15** | Shared-store rate limiting / WAF | ✅ `bd79682` (store pending) | In-memory limiter is ineffective on serverless | blocked |
 | **16** | Content-Security-Policy | ✅ `a65710b` (Report-Only) | Only missing header; needs care not to break the site | 2–3 h |
 | **17** | Delete the dead Express server | ✅ `479a4ba` | 6 production deps shipping for nothing | 30 min |
 | **18** | Dependency audit | ✅ 10 → 8 via `479a4ba` | 10 moderate transitive findings | 30 min |
