@@ -18,6 +18,8 @@ service cloud.firestore {
     match /booking_addons/{id} { allow read: if true; allow write: if isAdmin(); }
     match /why_us/{id} { allow read: if true; allow write: if isAdmin(); }
     match /studio_equipment/{id} { allow read: if true; allow write: if isAdmin(); }
+    // Rental equipment is served through authenticated/server-validated API routes.
+    match /rental_equipment/{id} { allow read, write: if false; }
     match /studios/{id} { allow read: if true; allow write: if isAdmin(); }
     match /videos/{id} { allow read: if true; allow write: if isAdmin(); }
     match /workshops/{id} { allow read: if true; allow write: if isAdmin(); }

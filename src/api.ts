@@ -17,6 +17,7 @@ import {
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { requireAuth, requireFirestore } from "./firebase";
 import { contactFormSchema } from "./schemas/contact";
+import type { RentalEquipment } from "./types/rentalEquipment";
 
 type IdDoc<T> = T & { id: string };
 
@@ -604,6 +605,56 @@ export async function getBookingAddons(): Promise<BookingAddon[]> {
   } catch {
     return [];
   }
+}
+
+async function rentalEquipmentAuthHeaders(): Promise<Record<string, string>> {
+  const user = requireAuth().currentUser;
+  if (!user) throw new Error("Please sign in as an administrator.");
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${await user.getIdToken()}`,
+  };
+}
+
+async function parseRentalEquipmentResponse(response: Response): Promise<{ items?: RentalEquipment[]; item?: RentalEquipment; error?: string }> {
+  const body = (await response.json().catch(() => ({}))) as { items?: RentalEquipment[]; item?: RentalEquipment; error?: string };
+  if (!response.ok) throw new Error(body.error || "Rental equipment request failed.");
+  return body;
+}
+
+export async function getRentalEquipment(includeHidden = false): Promise<RentalEquipment[]> {
+  const headers = includeHidden ? await rentalEquipmentAuthHeaders() : undefined;
+  const response = await fetch(`/api/rental-equipment${includeHidden ? "?include_hidden=1" : ""}`, { headers });
+  const body = await parseRentalEquipmentResponse(response);
+  return Array.isArray(body.items) ? body.items : [];
+}
+
+export async function createRentalEquipment(data: Omit<RentalEquipment, "id">): Promise<RentalEquipment> {
+  const response = await fetch("/api/rental-equipment", {
+    method: "POST",
+    headers: await rentalEquipmentAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  const body = await parseRentalEquipmentResponse(response);
+  if (!body.item) throw new Error("No equipment item returned.");
+  return body.item;
+}
+
+export async function updateRentalEquipment(id: string, data: Omit<RentalEquipment, "id">): Promise<void> {
+  const response = await fetch(`/api/rental-equipment/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    headers: await rentalEquipmentAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  await parseRentalEquipmentResponse(response);
+}
+
+export async function deleteRentalEquipment(id: string): Promise<void> {
+  const response = await fetch(`/api/rental-equipment/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    headers: await rentalEquipmentAuthHeaders(),
+  });
+  await parseRentalEquipmentResponse(response);
 }
 
 const MAX_SLOT_HOUR = 22; // 10:00 PM — kept for blocked_slots client merge
