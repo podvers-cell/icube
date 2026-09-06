@@ -153,7 +153,7 @@ export default function DashboardStudios() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {sorted.map((s) => (
-          <div key={s.id} className="bg-icube-gray border border-white/10 rounded-sm overflow-hidden">
+          <div key={s.id} className="border border-white/10 bg-white/[0.03] rounded-xl overflow-hidden">
             <img src={s.cover_image_url} alt={s.name} className="w-full h-40 object-cover" referrerPolicy="no-referrer" />
               <div className="p-4">
                 <p className="font-semibold text-white">{s.name}</p>
@@ -190,8 +190,8 @@ export default function DashboardStudios() {
       </div>
 
       {editing && (
-        <form onSubmit={save} className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-icube-gray border border-white/10 rounded-sm p-6 max-w-2xl w-full space-y-4 overflow-y-auto max-h-[90vh]">
+        <form onSubmit={save} className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-sm p-0 sm:items-center sm:p-4">
+          <div className="border border-white/10 bg-white/[0.03] rounded-xl p-6 max-w-2xl w-full space-y-4 overflow-y-auto max-h-[90vh]">
             <h2 className="text-xl font-display font-bold text-white">{creating ? "Add Studio" : "Edit Studio"}</h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

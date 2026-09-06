@@ -108,7 +108,7 @@ export default function DashboardDiscountCodes() {
       </div>
 
       {list.length === 0 ? (
-        <div className="bg-icube-gray border border-dashed border-white/15 rounded-sm p-8 text-center text-gray-400">
+        <div className="border border-dashed border-white/15 rounded-xl p-8 text-center text-gray-400">
           <p className="mb-3">No discount codes yet.</p>
           <button
             onClick={() =>
@@ -137,7 +137,7 @@ export default function DashboardDiscountCodes() {
             const expired =
               dc.valid_until && new Date(dc.valid_until).getTime() < Date.now();
             return (
-              <div key={dc.id} className="bg-icube-gray border border-white/10 rounded-sm p-4 flex flex-col gap-3">
+              <div key={dc.id} className="border border-white/10 bg-white/[0.03] rounded-xl p-4 flex flex-col gap-3">
                 <div className="flex justify-between items-start gap-3">
                   <div className="min-w-0 flex-1">
                     <p className="font-display font-semibold text-white text-lg tracking-wide">
@@ -199,8 +199,8 @@ export default function DashboardDiscountCodes() {
       )}
 
       {editing && (
-        <form onSubmit={save} className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-icube-gray border border-white/10 rounded-sm p-6 max-w-lg w-full space-y-4">
+        <form onSubmit={save} className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-sm p-0 sm:items-center sm:p-4">
+          <div className="border border-white/10 bg-white/[0.03] rounded-xl p-6 max-w-lg w-full space-y-4">
             <h2 className="text-xl font-display font-bold text-white">
               {isCreating ? "Add discount code" : "Edit discount code"}
             </h2>

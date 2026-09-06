@@ -102,7 +102,7 @@ export default function DashboardPackages() {
       </div>
 
       {list.length === 0 ? (
-        <div className="bg-icube-gray border border-dashed border-white/15 rounded-sm p-8 text-center text-gray-400">
+        <div className="border border-dashed border-white/15 rounded-xl p-8 text-center text-gray-400">
           <p className="mb-3">No booking packages yet.</p>
           <button
             onClick={() =>
@@ -158,7 +158,7 @@ export default function DashboardPackages() {
               </select>
             </div>
             {filteredList.length === 0 ? (
-              <div className="bg-icube-gray border border-dashed border-white/15 rounded-sm p-6 text-center text-gray-400">
+              <div className="border border-dashed border-white/15 rounded-xl p-6 text-center text-gray-400">
                 No packages for this category yet.
               </div>
             ) : (
@@ -166,7 +166,7 @@ export default function DashboardPackages() {
                 {[...filteredList]
                   .sort((a, b) => a.sort_order - b.sort_order)
                   .map((p) => (
-                    <div key={p.id} className="bg-icube-gray border border-white/10 rounded-sm p-4">
+                    <div key={p.id} className="border border-white/10 bg-white/[0.03] rounded-xl p-4">
                       <div className="flex justify-between items-start gap-3">
                         <div>
                           <p className="font-semibold text-white">{p.name}</p>
@@ -226,8 +226,8 @@ export default function DashboardPackages() {
       })()}
 
       {editing && (
-        <form onSubmit={save} className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-icube-gray border border-white/10 rounded-sm p-6 max-w-lg w-full space-y-4">
+        <form onSubmit={save} className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-sm p-0 sm:items-center sm:p-4">
+          <div className="border border-white/10 bg-white/[0.03] rounded-xl p-6 max-w-lg w-full space-y-4">
             <h2 className="text-xl font-display font-bold text-white">
               {isCreating ? "Add Package (AED)" : "Edit Package (AED)"}
             </h2>

@@ -74,7 +74,7 @@ export default function DashboardAddons() {
       </div>
 
       {list.length === 0 ? (
-        <div className="bg-icube-gray border border-dashed border-white/15 rounded-sm p-8 text-center text-gray-400">
+        <div className="border border-dashed border-white/15 rounded-xl p-8 text-center text-gray-400">
           <p className="mb-3">No add-ons yet.</p>
           <button
             onClick={() =>
@@ -99,7 +99,7 @@ export default function DashboardAddons() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {list.map((a) => (
-            <div key={a.id} className="bg-icube-gray border border-white/10 rounded-sm p-4">
+            <div key={a.id} className="border border-white/10 bg-white/[0.03] rounded-xl p-4">
               <div className="flex justify-between items-start gap-3">
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold text-white">{a.name}</p>
@@ -148,8 +148,8 @@ export default function DashboardAddons() {
       )}
 
       {editing && (
-        <form onSubmit={save} className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-icube-gray border border-white/10 rounded-sm max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col">
+        <form onSubmit={save} className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-sm p-0 sm:items-center sm:p-4">
+          <div className="border border-white/10 bg-white/[0.03] rounded-xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col">
             <div className="p-6 border-b border-white/10">
               <h2 className="text-xl font-display font-bold text-white">
                 {isCreating ? "Add Add-on (AED)" : "Edit Add-on (AED)"}

@@ -81,13 +81,15 @@ export default function MediaSlotList({
           {values.map((value, index) => (
             <li
               key={index}
-              className="flex items-start gap-3 rounded-sm border border-white/10 bg-black/30 p-3"
+              /* The URL field drops to its own line below sm: sharing one row with the thumbnail,
+                 the upload button and four controls left it a few pixels wide on a phone. */
+              className="flex flex-wrap items-center gap-3 rounded-lg border border-white/10 bg-black/30 p-3"
             >
-              <span className="mt-2 w-5 shrink-0 text-center text-xs font-semibold text-gray-500">
+              <span className="w-5 shrink-0 text-center text-xs font-semibold text-gray-500">
                 {index + 1}
               </span>
 
-              <div className="relative mt-0.5 h-12 w-16 shrink-0 overflow-hidden rounded-sm border border-white/10 bg-black/50">
+              <div className="relative h-12 w-16 shrink-0 overflow-hidden rounded-md border border-white/10 bg-black/50">
                 {type === "image" && isImageish(value) ? (
                   <Image src={value} alt="" fill sizes="64px" className="object-cover" unoptimized />
                 ) : (
@@ -97,7 +99,7 @@ export default function MediaSlotList({
                 )}
               </div>
 
-              <div className="min-w-0 flex-1">
+              <div className="order-last w-full min-w-0 sm:order-none sm:w-auto sm:flex-1">
                 <CloudinaryUploadField
                   value={value}
                   onChange={(url) => update(index, url)}
@@ -107,34 +109,32 @@ export default function MediaSlotList({
                 />
               </div>
 
-              <div className="mt-0.5 flex shrink-0 flex-col gap-1">
-                <div className="flex gap-1">
-                  <button
-                    type="button"
-                    onClick={() => move(index, -1)}
-                    disabled={index === 0}
-                    aria-label={`Move ${label} ${index + 1} up`}
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-sm border border-white/15 text-gray-400 transition-colors hover:border-icube-gold hover:text-icube-gold disabled:opacity-30 disabled:hover:border-white/15 disabled:hover:text-gray-400"
-                  >
-                    <ArrowUp size={13} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => move(index, 1)}
-                    disabled={index === values.length - 1}
-                    aria-label={`Move ${label} ${index + 1} down`}
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-sm border border-white/15 text-gray-400 transition-colors hover:border-icube-gold hover:text-icube-gold disabled:opacity-30 disabled:hover:border-white/15 disabled:hover:text-gray-400"
-                  >
-                    <ArrowDown size={13} />
-                  </button>
-                </div>
+              <div className="ml-auto flex shrink-0 items-center gap-1 sm:ml-0">
+                <button
+                  type="button"
+                  onClick={() => move(index, -1)}
+                  disabled={index === 0}
+                  aria-label={`Move ${label} ${index + 1} up`}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-white/15 text-gray-400 transition-colors hover:border-icube-gold hover:text-icube-gold disabled:opacity-30 disabled:hover:border-white/15 disabled:hover:text-gray-400"
+                >
+                  <ArrowUp size={14} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => move(index, 1)}
+                  disabled={index === values.length - 1}
+                  aria-label={`Move ${label} ${index + 1} down`}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-white/15 text-gray-400 transition-colors hover:border-icube-gold hover:text-icube-gold disabled:opacity-30 disabled:hover:border-white/15 disabled:hover:text-gray-400"
+                >
+                  <ArrowDown size={14} />
+                </button>
                 <button
                   type="button"
                   onClick={() => removeAt(index)}
                   aria-label={`Remove ${label} ${index + 1}`}
-                  className="inline-flex h-7 items-center justify-center gap-1 rounded-sm border border-red-500/30 bg-red-500/5 px-2 text-red-400 transition-colors hover:bg-red-500/15"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-red-500/30 bg-red-500/5 text-red-400 transition-colors hover:bg-red-500/15"
                 >
-                  <Trash2 size={13} />
+                  <Trash2 size={14} />
                 </button>
               </div>
             </li>

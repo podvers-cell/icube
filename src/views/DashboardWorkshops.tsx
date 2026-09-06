@@ -352,7 +352,7 @@ export default function DashboardWorkshops() {
       </div>
 
       {showModal ? (
-        <form onSubmit={save} className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+        <form onSubmit={save} className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-sm p-0 sm:items-center sm:p-4">
           <div
             className="bg-icube-gray border border-white/10 rounded-2xl p-6 max-w-3xl w-full space-y-5 overflow-y-auto max-h-[90vh] ws-modal-scroll"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" } as React.CSSProperties}

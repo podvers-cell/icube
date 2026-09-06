@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState, useRef, type FormEvent, type ChangeEvent } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import { ImageIcon, Pencil, Plus, Trash2 } from "lucide-react";
 import { api } from "../api";
 import { useSiteData, invalidateSiteCache } from "../SiteDataContext";
 import CloudinaryUploadField from "../components/CloudinaryUploadField";
 import MediaSlotList from "../components/dashboard/MediaSlotList";
+import { Badge, Button, Card, EmptyState, IconButton, PageHeader } from "../components/dashboard/ui";
 import { uploadToCloudinaryWithProgress } from "../lib/uploadCloudinary";
 import { getProjectVideos } from "../lib/portfolioMedia";
 
@@ -191,87 +192,85 @@ export default function DashboardPortfolio() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-display font-bold text-white">Portfolio</h1>
-          <p className="mt-1 max-w-2xl text-sm text-gray-500">
+      <PageHeader
+        title="Portfolio"
+        description={
+          <>
             Case studies on the <strong className="text-gray-400">Portfolio page</strong>. Each project has a cover
             image and can hold as many videos and gallery images as you need. For loose videos on the homepage, use{" "}
             <strong className="text-gray-400">Showreel Videos</strong>.
-          </p>
-        </div>
-        <button
-          onClick={() => setEditing(emptyProject(list.length))}
-          className="px-4 py-2 bg-icube-gold text-icube-dark font-semibold rounded-sm hover:bg-icube-gold-light"
-        >
-          Add Project
-        </button>
-      </div>
+          </>
+        }
+        actions={
+          <Button
+            tone="primary"
+            icon={Plus}
+            onClick={() => setEditing(emptyProject(list.length))}
+            className="max-sm:w-full"
+          >
+            Add project
+          </Button>
+        }
+      />
 
       {list.length === 0 ? (
-        <div className="bg-icube-gray border border-dashed border-white/15 rounded-sm p-8 text-center text-gray-400">
-          <p className="mb-3">No projects yet.</p>
-          <button
-            onClick={() => setEditing(emptyProject(list.length))}
-            className="px-4 py-2 bg-icube-gold text-icube-dark font-semibold rounded-sm hover:bg-icube-gold-light"
-          >
-            Create first project
-          </button>
-        </div>
+        <EmptyState
+          icon={ImageIcon}
+          title="No projects yet"
+          description="Add your first case study and it will appear on the public Portfolio page."
+          action={
+            <Button tone="primary" icon={Plus} onClick={() => setEditing(emptyProject(list.length))}>
+              Create first project
+            </Button>
+          }
+        />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {list.map((p) => (
-            <div key={p.id} className="bg-icube-gray border border-white/10 rounded-sm overflow-hidden">
-              <img src={p.image_url} alt={p.title} className="w-full h-40 object-cover" />
-              <div className="p-4">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <p className="font-semibold text-white">{p.title}</p>
-                  {p.visible === false && (
-                    <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-red-500/20 text-red-400">Hidden</span>
-                  )}
-                  {p.show_in_selected_work && (
-                    <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-icube-gold/20 text-icube-gold">Selected Work</span>
-                  )}
+            <Card key={p.id} as="article" className="overflow-hidden hover:border-icube-gold/30">
+              {p.image_url ? (
+                <img src={p.image_url} alt="" className="h-40 w-full object-cover" />
+              ) : (
+                <div className="flex h-40 w-full items-center justify-center bg-black/40 text-white/15">
+                  <ImageIcon size={32} />
                 </div>
-                <p className="text-gray-500 text-sm">{p.client || p.category}</p>
-                <p className="text-gray-600 text-xs mt-1">
-                  {getProjectVideos(p).length} video(s) · {(p.gallery_images ?? []).length} image(s)
+              )}
+              <div className="p-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="min-w-0 truncate font-semibold text-white">{p.title}</p>
+                  {p.visible === false && <Badge tone="danger">Hidden</Badge>}
+                  {p.show_in_selected_work && <Badge tone="gold">Selected Work</Badge>}
+                </div>
+                <p className="mt-1 truncate text-sm text-gray-500">{p.client || p.category}</p>
+                <p className="mt-1 text-xs text-gray-600">
+                  {getProjectVideos(p).length} videos · {(p.gallery_images ?? []).length} images
                 </p>
-                <div className="flex gap-2 mt-2 justify-end">
-                  <button
-                    type="button"
-                    onClick={() => setEditing(projectToEditing(p))}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/5 border border-white/15 text-gray-300 hover:border-icube-gold hover:text-icube-gold transition-colors"
-                    aria-label="Edit project"
-                  >
-                    <Pencil size={15} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => remove(p.id)}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-red-500/5 border border-red-500/30 text-red-400 hover:bg-red-500/15 transition-colors"
-                    aria-label="Delete project"
-                  >
-                    <Trash2 size={15} />
-                  </button>
+                <div className="mt-3 flex justify-end gap-2">
+                  <IconButton label="Edit project" icon={Pencil} onClick={() => setEditing(projectToEditing(p))} />
+                  <IconButton label="Delete project" icon={Trash2} tone="danger" onClick={() => remove(p.id)} />
                 </div>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}
 
       {editing && (
-        <form onSubmit={save} className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-icube-gray border border-white/10 rounded-sm p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto space-y-4">
-            <div>
-              <h2 className="font-display text-xl font-bold text-white">
+        <form
+          onSubmit={save}
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-sm sm:items-center sm:p-4"
+        >
+          <div className="flex max-h-[92vh] w-full flex-col rounded-t-2xl border border-white/10 bg-icube-gray shadow-2xl sm:max-h-[88vh] sm:max-w-2xl sm:rounded-2xl">
+            <div className="shrink-0 border-b border-white/10 px-5 py-4 sm:px-6">
+              <h2 className="font-display text-lg font-bold text-white sm:text-xl">
                 {isCreating ? "Add project" : "Edit project"}
               </h2>
               <p className="mt-1 text-sm text-gray-500">
                 A project is one case study on the Portfolio page, with its own videos and gallery.
               </p>
             </div>
+
+            <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-6">
 
             <div className="space-y-3">
               {/* Labels rather than placeholders: a placeholder disappears the moment you type,
@@ -431,9 +430,15 @@ export default function DashboardPortfolio() {
               <span className="text-sm text-gray-300">Show in Selected Work on homepage</span>
             </label>
             </div>
-            <div className="flex gap-2 border-t border-white/10 pt-5">
-              <button type="submit" className="px-4 py-2 bg-icube-gold text-icube-dark font-semibold rounded-sm">Save</button>
-              <button type="button" onClick={() => setEditing(null)} className="px-4 py-2 bg-white/10 text-white rounded-sm">Cancel</button>
+            </div>
+
+            <div className="flex shrink-0 gap-2 border-t border-white/10 px-5 py-4 sm:px-6">
+              <Button type="submit" tone="primary" className="max-sm:flex-1">
+                Save project
+              </Button>
+              <Button type="button" tone="secondary" onClick={() => setEditing(null)} className="max-sm:flex-1">
+                Cancel
+              </Button>
             </div>
           </div>
         </form>

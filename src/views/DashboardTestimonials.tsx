@@ -74,7 +74,7 @@ export default function DashboardTestimonials() {
       </div>
 
       {list.length === 0 ? (
-        <div className="bg-icube-gray border border-dashed border-white/15 rounded-sm p-8 text-center text-gray-400">
+        <div className="border border-dashed border-white/15 rounded-xl p-8 text-center text-gray-400">
           <p className="mb-3">No testimonials yet.</p>
           <button
             onClick={() =>
@@ -95,7 +95,7 @@ export default function DashboardTestimonials() {
       ) : (
         <div className="space-y-4">
           {list.map((t) => (
-            <div key={t.id} className="bg-icube-gray border border-white/10 rounded-sm p-4 flex gap-4 items-start">
+            <div key={t.id} className="border border-white/10 bg-white/[0.03] rounded-xl p-4 flex gap-4 items-start">
               <img src={t.image_url} alt={t.author} className="w-14 h-14 rounded-full object-cover" />
               <div className="flex-1 min-w-0">
                 <p className="text-gray-300 text-sm line-clamp-2">{t.quote}</p>
@@ -126,8 +126,8 @@ export default function DashboardTestimonials() {
       )}
 
       {editing && (
-        <form onSubmit={save} className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-icube-gray border border-white/10 rounded-sm p-6 max-w-lg w-full space-y-4">
+        <form onSubmit={save} className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-sm p-0 sm:items-center sm:p-4">
+          <div className="border border-white/10 bg-white/[0.03] rounded-xl p-6 max-w-lg w-full space-y-4">
             <h2 className="text-xl font-display font-bold text-white">
               {isCreating ? "Add Testimonial" : "Edit Testimonial"}
             </h2>

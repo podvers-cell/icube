@@ -12,8 +12,14 @@ import { SplashScreen } from "@/components/SplashScreen";
 import NavigationLoadingBar from "@/components/NavigationLoadingBar";
 import WhatsAppFloatingButton from "@/components/WhatsAppFloatingButton";
 import { ErrorBoundary } from "@/ErrorBoundary";
+import { usePathname } from "next/navigation";
 
 export function ClientProviders({ children }: { children: React.ReactNode }) {
+  // The WhatsApp bubble and the cookie banner speak to site visitors. In the admin console they
+  // are noise, and the bubble sits on top of the controls in the bottom-right corner.
+  const pathname = usePathname();
+  const isAdmin = pathname?.startsWith("/dashboard") ?? false;
+
   return (
     <ErrorBoundary>
     <ThemeProvider>
@@ -26,8 +32,12 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
               <ToastProvider>
                 <ContactModalProvider>
                   {children}
-                  <WhatsAppFloatingButton />
-                  <CookieConsent />
+                  {!isAdmin && (
+                    <>
+                      <WhatsAppFloatingButton />
+                      <CookieConsent />
+                    </>
+                  )}
                 </ContactModalProvider>
               </ToastProvider>
             </BookingProvider>

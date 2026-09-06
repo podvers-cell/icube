@@ -4,6 +4,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Check, RotateCcw } from "lucide-react";
 import { getPaymentIncidents, resolvePaymentIncident } from "../api";
 import {
+  Badge,
+  Button,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  PageHeader,
+} from "../components/dashboard/ui";
+import {
   formatMinorAmount,
   incidentSummary,
   type PaymentIncident,
@@ -35,28 +43,16 @@ function IncidentCard({
 
   return (
     <article
-      className={`rounded-sm border p-5 ${
-        open ? "border-red-400/40 bg-red-500/5" : "border-white/10 bg-icube-gray"
+      className={`rounded-xl border p-4 sm:p-5 ${
+        open ? "border-red-400/40 bg-red-500/5" : "border-white/10 bg-white/[0.03]"
       }`}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="font-display text-base font-semibold text-white">{title}</h3>
-            {open ? (
-              <span className="rounded-full border border-red-400/40 bg-red-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-red-300">
-                Needs action
-              </span>
-            ) : (
-              <span className="rounded-full border border-emerald-400/40 bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-300">
-                Resolved
-              </span>
-            )}
-            {incident.refund_status === "required" && open && (
-              <span className="rounded-full border border-icube-gold/40 bg-icube-gold/10 px-2.5 py-0.5 text-[11px] font-semibold text-icube-gold">
-                Refund required
-              </span>
-            )}
+            {open ? <Badge tone="danger">Needs action</Badge> : <Badge tone="success">Resolved</Badge>}
+            {incident.refund_status === "required" && open && <Badge tone="gold">Refund required</Badge>}
           </div>
           <p className="mt-2 text-sm leading-relaxed text-gray-400">{action}</p>
         </div>
@@ -101,23 +97,13 @@ function IncidentCard({
 
       <div className="mt-4 flex justify-end">
         {open ? (
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => onResolve(incident, "resolved")}
-            className="inline-flex items-center gap-2 rounded-sm bg-icube-gold px-4 py-2 text-sm font-semibold text-icube-dark transition-colors hover:bg-icube-gold-light disabled:opacity-50"
-          >
-            <Check size={16} /> Mark handled
-          </button>
+          <Button tone="primary" icon={Check} disabled={busy} onClick={() => onResolve(incident, "resolved")}>
+            Mark handled
+          </Button>
         ) : (
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => onResolve(incident, "open")}
-            className="inline-flex items-center gap-2 rounded-sm border border-white/15 px-4 py-2 text-sm font-semibold text-gray-300 transition-colors hover:border-icube-gold/50 hover:text-icube-gold disabled:opacity-50"
-          >
-            <RotateCcw size={16} /> Reopen
-          </button>
+          <Button tone="secondary" icon={RotateCcw} disabled={busy} onClick={() => onResolve(incident, "open")}>
+            Reopen
+          </Button>
         )}
       </div>
     </article>
@@ -170,33 +156,21 @@ export default function DashboardPaymentIncidents() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="font-display text-3xl font-bold text-white">Payment Issues</h1>
-        <p className="mt-2 max-w-2xl text-sm text-gray-400">
-          Payments that arrived but could not be honoured — a full or deleted workshop, a slot taken
-          first, or an amount that did not match. Each one is a customer waiting on you.
-        </p>
-      </div>
+      <PageHeader
+        title="Payment Issues"
+        description="Payments that arrived but could not be honoured — a full or deleted workshop, a slot taken first, or an amount that did not match. Each one is a customer waiting on you."
+      />
 
       {loading ? (
-        <p className="text-gray-500">Loading…</p>
+        <LoadingState />
       ) : error ? (
-        <div className="rounded-sm border border-red-400/30 bg-red-500/10 p-6">
-          <p className="text-red-300">{error}</p>
-          <button
-            type="button"
-            onClick={() => void load()}
-            className="mt-3 rounded-sm border border-white/15 px-4 py-2 text-sm text-gray-300 hover:border-icube-gold/50 hover:text-icube-gold"
-          >
-            Try again
-          </button>
-        </div>
+        <ErrorState message={error} onRetry={() => void load()} />
       ) : incidents.length === 0 ? (
-        <div className="rounded-sm border border-white/10 bg-icube-gray p-10 text-center">
-          <Check size={36} className="mx-auto mb-3 text-emerald-400/60" aria-hidden />
-          <p className="font-medium text-gray-300">No payment issues</p>
-          <p className="mt-1 text-sm text-gray-500">Every payment so far has been honoured normally.</p>
-        </div>
+        <EmptyState
+          icon={Check}
+          title="No payment issues"
+          description="Every payment so far has been honoured normally."
+        />
       ) : (
         <>
           {openIncidents.length > 0 && (
@@ -221,10 +195,7 @@ export default function DashboardPaymentIncidents() {
           </div>
 
           {openIncidents.length === 0 && (
-            <div className="rounded-sm border border-white/10 bg-icube-gray p-8 text-center">
-              <Check size={32} className="mx-auto mb-3 text-emerald-400/60" aria-hidden />
-              <p className="text-gray-300">Nothing open. All payment issues have been handled.</p>
-            </div>
+            <EmptyState icon={Check} title="Nothing open" description="All payment issues have been handled." />
           )}
 
           {resolved.length > 0 && (

@@ -216,7 +216,7 @@ export default function DashboardOverview() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
         <Link
           href="/dashboard/bookings"
-          className="bg-icube-gray border border-white/10 rounded-sm p-6 block hover:border-icube-gold/30 transition-colors"
+          className="border border-white/10 bg-white/[0.03] rounded-xl p-6 block hover:border-icube-gold/30 transition-colors"
         >
           <div className="flex items-center gap-3 text-icube-gold mb-2">
             <Calendar size={24} />
@@ -230,7 +230,7 @@ export default function DashboardOverview() {
 
         <Link
           href="/dashboard/package-bookings"
-          className="bg-icube-gray border border-white/10 rounded-sm p-6 block hover:border-icube-gold/30 transition-colors"
+          className="border border-white/10 bg-white/[0.03] rounded-xl p-6 block hover:border-icube-gold/30 transition-colors"
         >
           <div className="flex items-center gap-3 text-icube-gold mb-2">
             <ClipboardList size={24} />
@@ -242,7 +242,7 @@ export default function DashboardOverview() {
 
         <Link
           href="/dashboard/messages"
-          className="bg-icube-gray border border-white/10 rounded-sm p-6 block hover:border-icube-gold/30 transition-colors"
+          className="border border-white/10 bg-white/[0.03] rounded-xl p-6 block hover:border-icube-gold/30 transition-colors"
         >
           <div className="flex items-center gap-3 text-icube-gold mb-2">
             <Mail size={24} />
@@ -277,7 +277,7 @@ export default function DashboardOverview() {
         </Link>
       </div>
 
-      <div className="bg-icube-gray border border-white/10 rounded-sm p-6">
+      <div className="border border-white/10 bg-white/[0.03] rounded-xl p-6">
         <h2 className="text-xl font-display font-semibold text-white mb-4">Recent Bookings</h2>
         {recentBookings.length === 0 ? (
           <p className="text-gray-500">No bookings yet.</p>
@@ -324,7 +324,7 @@ export default function DashboardOverview() {
       </div>
 
       {/* Trend chart */}
-      <div className="bg-icube-gray border border-white/10 rounded-sm p-6 mt-6">
+      <div className="border border-white/10 bg-white/[0.03] rounded-xl p-6 mt-6">
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-4">
           <div className="lg:max-w-[55%]">
             <h2 className="text-xl font-display font-semibold text-white">Activity ({getPeriodLabel(period)})</h2>

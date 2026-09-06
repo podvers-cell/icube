@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
@@ -31,11 +31,9 @@ import {
   Award,
   Mic,
   Menu,
-  X,
 } from "lucide-react";
 import { api, getSiteSettings } from "../api";
 import { needsSidebarAttention } from "@/lib/dashboardBookingUi";
-import UserProfile from "../components/UserProfile";
 
 type NavItem = {
   href: string;
@@ -173,180 +171,159 @@ export default function DashboardLayoutNext({ children }: { children: React.Reac
     }
   }, [mobileNavOpen]);
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-icube-dark/95 via-icube-gray/90 to-icube-dark/80 text-white">
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-10 flex gap-5 lg:gap-8">
-        {/* Mobile nav toggle – visible only when sidebar is hidden */}
-        <div className="sm:hidden fixed top-4 left-4 z-50 flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setMobileNavOpen((o) => !o)}
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 border border-white/20 text-white hover:bg-white/15 transition-colors"
-            aria-label={mobileNavOpen ? "Close menu" : "Open menu"}
-          >
-            {mobileNavOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
-          <span className="font-display text-sm font-semibold text-gray-200">Dashboard</span>
+  const activeLabel =
+    navGroups.flatMap((g) => g.items).find((item) =>
+      item.end ? pathname === item.href : pathname === item.href || pathname.startsWith(item.href + "/")
+    )?.label ?? "Dashboard";
+
+  const statusTone =
+    cloudStatus === "online"
+      ? { dot: "bg-emerald-400", text: "text-emerald-300", border: "border-emerald-500/50" }
+      : cloudStatus === "offline"
+        ? { dot: "bg-red-400", text: "text-red-300", border: "border-red-500/50" }
+        : { dot: "bg-gray-400", text: "text-gray-400", border: "border-white/20" };
+
+  const sidebar = (
+    <>
+      <div className="flex shrink-0 items-center gap-3 border-b border-white/10 px-5 py-4">
+        <img src="/icube-logo.svg" alt="" className="h-8 w-auto shrink-0" />
+        <div className="flex min-w-0 flex-col">
+          <span className="font-display text-sm font-bold uppercase tracking-[0.2em] text-gray-200">ICUBE</span>
+          <span className="text-[11px] uppercase tracking-[0.18em] text-gray-500">Admin Console</span>
         </div>
+      </div>
 
-        {/* Mobile nav overlay */}
-        {mobileNavOpen && (
-          <div
-            className="sm:hidden fixed inset-0 z-40 bg-black/80 backdrop-blur-sm"
-            aria-hidden
-            onClick={() => setMobileNavOpen(false)}
-          />
-        )}
-        <aside
-          className={`sm:flex w-64 flex-col bg-white/5 border border-white/10 rounded-2xl shadow-xl backdrop-blur-xl ${
-            mobileNavOpen
-              ? "fixed inset-y-0 left-0 z-40 flex mt-0 rounded-none border-r border-white/10"
-              : "hidden"
-          }`}
-          onClick={() => mobileNavOpen && setMobileNavOpen(false)}
-        >
-          <div className="px-4 py-4 border-b border-white/10 flex items-center gap-3">
-            <img src="/icube-logo.svg" alt="ICUBE" className="h-8 w-auto shrink-0" />
-            <div className="flex flex-col">
-              <span className="font-display font-bold text-sm tracking-[0.2em] uppercase text-gray-200">
-                ICUBE
-              </span>
-              <span className="text-[11px] text-gray-500 uppercase tracking-[0.18em]">
-                Admin Console
-              </span>
-            </div>
-          </div>
-          <nav className="px-3 py-3 flex-1 overflow-y-auto space-y-1">
-            {navGroups.map((group, groupIndex) => (
-              <div key={group.title} className={groupIndex > 0 ? "pt-5" : undefined}>
-                <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-600">
-                  {group.title}
-                </p>
-                <div className="space-y-1">
-                  {group.items.map(({ href, end, label, icon: Icon, countKey }) => {
-                    const isActive = end ? pathname === href : pathname.startsWith(href + "/") || pathname === href;
-                    const count = countKey != null ? notificationCounts[countKey] : 0;
-                    return (
-                      <Link
-                        key={href}
-                        href={href}
-                        aria-current={isActive ? "page" : undefined}
-                        className={`group flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all ${
-                          isActive
-                            ? "bg-icube-gold/15 text-icube-gold border border-icube-gold/40 shadow-[0_0_0_1px_rgba(0,0,0,0.4)]"
-                            : "text-gray-400 hover:text-white hover:bg-white/5 border border-transparent"
-                        }`}
-                      >
-                        <Icon size={18} className="shrink-0" />
-                        <span className="truncate flex-1 min-w-0">{label}</span>
-                        {count > 0 ? (
-                          <span
-                            className="shrink-0 min-w-[1.25rem] h-5 px-1.5 flex items-center justify-center rounded-full bg-icube-gold text-icube-dark text-xs font-bold"
-                            aria-label={`${count} new`}
-                          >
-                            {count > 99 ? "99+" : count}
-                          </span>
-                        ) : null}
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </nav>
-          <div className="px-4 py-4 border-t border-white/10 text-xs space-y-2">
-            <div>
-              <p className="text-gray-400 truncate">{user?.email}</p>
-              <p
-                className={`mt-1 flex items-center gap-1 ${
-                  cloudStatus === "online"
-                    ? "text-emerald-400"
-                    : cloudStatus === "offline"
-                      ? "text-red-400"
-                      : "text-gray-500"
-                }`}
-              >
-                <span
-                  className={`h-1.5 w-1.5 rounded-full ${
-                    cloudStatus === "online"
-                      ? "bg-emerald-400"
-                      : cloudStatus === "offline"
-                        ? "bg-red-400"
-                        : "bg-gray-500"
-                  }`}
-                />
-                {cloudStatus === "online"
-                  ? "Cloud sync: Firebase connected"
-                  : cloudStatus === "offline"
-                    ? "Cloud sync: error – check config"
-                    : "Cloud sync: checking…"}
-              </p>
-            </div>
-            <div className="flex items-center justify-between pt-1">
-              <Link href="/" className="flex items-center gap-1.5 text-gray-400 hover:text-white">
-                <Home size={14} /> <span>View site</span>
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-1.5 text-gray-400 hover:text-red-400"
-              >
-                <LogOut size={14} /> <span>Logout</span>
-              </button>
-            </div>
-          </div>
-        </aside>
-
-        <main className="flex-1 pt-14 sm:pt-0">
-          <div className="bg-white/5 border border-white/10 rounded-2xl shadow-2xl backdrop-blur-xl h-full overflow-hidden">
-            <header className="px-4 md:px-6 py-4 border-b border-white/10 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3 min-w-0">
-                <h1 className="font-display text-lg font-semibold text-white shrink-0">Dashboard</h1>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCloudStatus("checking");
-                    getSiteSettings()
-                      .then(() => setCloudStatus("online"))
-                      .catch(() => setCloudStatus("offline"));
-                  }}
-                  className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium bg-black/30 shrink-0 ${
-                    cloudStatus === "online"
-                      ? "border-emerald-500/60 text-emerald-300"
-                      : cloudStatus === "offline"
-                        ? "border-red-500/60 text-red-300"
-                        : "border-gray-500/60 text-gray-300"
-                  }`}
-                >
-                  <span
-                    className={`h-1.5 w-1.5 rounded-full ${
-                      cloudStatus === "online"
-                        ? "bg-emerald-400"
-                        : cloudStatus === "offline"
-                          ? "bg-red-400"
-                          : "bg-gray-400"
+      <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-4" aria-label="Dashboard sections">
+        {navGroups.map((group, groupIndex) => (
+          <div key={group.title} className={groupIndex > 0 ? "pt-5" : undefined}>
+            <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-600">
+              {group.title}
+            </p>
+            <div className="space-y-0.5">
+              {group.items.map(({ href, end, label, icon: Icon, countKey }) => {
+                const isActive = end ? pathname === href : pathname === href || pathname.startsWith(href + "/");
+                const count = countKey != null ? notificationCounts[countKey] : 0;
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    aria-current={isActive ? "page" : undefined}
+                    onClick={() => setMobileNavOpen(false)}
+                    className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                      isActive
+                        ? "bg-icube-gold/15 text-icube-gold"
+                        : "text-gray-400 hover:bg-white/5 hover:text-white"
                     }`}
-                  />
-                  {cloudStatus === "online"
-                    ? "Cloud sync: Firebase"
-                    : cloudStatus === "offline"
-                      ? "Cloud sync: Error"
-                      : "Cloud sync: Checking…"}
-                </button>
-              </div>
-              <UserProfile onLogout={() => router.replace("/")} className="shrink-0" />
-            </header>
-            <div className="p-4 md:p-6 lg:p-8 overflow-auto h-[calc(100vh-5rem)] sm:h-[calc(100vh-6rem)]">
-              <Suspense
-                fallback={
-                  <div className="flex items-center justify-center min-h-[200px]">
-                    <div className="w-8 h-8 border-2 border-icube-gold border-t-transparent rounded-full animate-spin" />
-                  </div>
-                }
-              >
-                {children}
-              </Suspense>
+                  >
+                    <Icon size={17} className="shrink-0" />
+                    <span className="min-w-0 flex-1 truncate">{label}</span>
+                    {count > 0 && (
+                      <span
+                        className="flex h-5 min-w-[1.25rem] shrink-0 items-center justify-center rounded-full bg-icube-gold px-1.5 text-xs font-bold text-icube-dark"
+                        aria-label={`${count} needing attention`}
+                      >
+                        {count > 99 ? "99+" : count}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
             </div>
           </div>
+        ))}
+      </nav>
+
+      <div className="shrink-0 space-y-3 border-t border-white/10 px-5 py-4">
+        <p className="truncate text-xs text-gray-500">{user?.email}</p>
+        <div className="flex items-center justify-between text-xs">
+          <Link href="/" className="flex items-center gap-1.5 text-gray-400 transition-colors hover:text-white">
+            <Home size={14} /> <span>View site</span>
+          </Link>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-1.5 text-gray-400 transition-colors hover:text-red-400"
+          >
+            <LogOut size={14} /> <span>Log out</span>
+          </button>
+        </div>
+      </div>
+    </>
+  );
+
+  return (
+    <div className="min-h-screen bg-icube-dark text-white">
+      {/*
+        The sidebar used to appear from 640px, where a fixed 256px rail left barely 380px for the
+        page and could not be dismissed. It is now a drawer below 1024px and a fixed rail above,
+        so phones and tablets get the full width.
+      */}
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[272px] flex-col border-r border-white/10 bg-white/[0.03] backdrop-blur-xl lg:flex">
+        {sidebar}
+      </aside>
+
+      {mobileNavOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm lg:hidden"
+          aria-hidden
+          onClick={() => setMobileNavOpen(false)}
+        />
+      )}
+      <aside
+        id="dashboard-nav"
+        className={`fixed inset-y-0 left-0 z-50 flex w-[min(300px,85vw)] flex-col border-r border-white/10 bg-icube-gray shadow-2xl transition-transform duration-200 lg:hidden ${
+          mobileNavOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+        aria-hidden={!mobileNavOpen}
+      >
+        {sidebar}
+      </aside>
+
+      <div className="lg:pl-[272px]">
+        <header className="sticky top-0 z-20 border-b border-white/10 bg-icube-dark/85 backdrop-blur-xl">
+          <div className="flex items-center gap-3 px-4 py-3 sm:px-6">
+            <button
+              type="button"
+              onClick={() => setMobileNavOpen(true)}
+              aria-label="Open menu"
+              aria-controls="dashboard-nav"
+              aria-expanded={mobileNavOpen}
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/15 text-gray-300 transition-colors hover:border-icube-gold/50 hover:text-icube-gold lg:hidden"
+            >
+              <Menu size={18} />
+            </button>
+
+            <h2 className="min-w-0 flex-1 truncate font-display text-base font-semibold text-white sm:text-lg">
+              {activeLabel}
+            </h2>
+
+            <button
+              type="button"
+              onClick={() => {
+                setCloudStatus("checking");
+                getSiteSettings()
+                  .then(() => setCloudStatus("online"))
+                  .catch(() => setCloudStatus("offline"));
+              }}
+              title={
+                cloudStatus === "online"
+                  ? "Connected to Firebase"
+                  : cloudStatus === "offline"
+                    ? "Connection error — check configuration"
+                    : "Checking connection…"
+              }
+              className={`inline-flex shrink-0 items-center gap-2 rounded-full border bg-black/30 px-3 py-1.5 text-xs font-medium ${statusTone.border} ${statusTone.text}`}
+            >
+              <span className={`h-1.5 w-1.5 rounded-full ${statusTone.dot}`} />
+              {/* The word is noise on a phone; the dot already carries the state. */}
+              <span className="hidden sm:inline">
+                {cloudStatus === "online" ? "Connected" : cloudStatus === "offline" ? "Offline" : "Checking…"}
+              </span>
+            </button>
+          </div>
+        </header>
+
+        <main className="px-4 py-6 sm:px-6 sm:py-8">
+          <div className="mx-auto max-w-6xl">{children}</div>
         </main>
       </div>
     </div>

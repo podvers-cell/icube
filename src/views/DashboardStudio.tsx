@@ -65,7 +65,7 @@ export default function DashboardStudio() {
       </div>
 
       {list.length === 0 ? (
-        <div className="bg-icube-gray border border-dashed border-white/15 rounded-sm p-8 text-center text-gray-400">
+        <div className="border border-dashed border-white/15 rounded-xl p-8 text-center text-gray-400">
           <p className="mb-3">No equipment items yet.</p>
           <button
             onClick={() =>
@@ -84,7 +84,7 @@ export default function DashboardStudio() {
       ) : (
         <div className="space-y-4">
           {list.map((e) => (
-            <div key={e.id} className="bg-icube-gray border border-white/10 rounded-sm p-4 flex justify-between items-center gap-3">
+            <div key={e.id} className="border border-white/10 bg-white/[0.03] rounded-xl p-4 flex justify-between items-center gap-3">
               <div>
                 <p className="font-semibold text-white">{e.label}</p>
                 <p className="text-gray-500 text-sm">{e.description}</p>
@@ -112,8 +112,8 @@ export default function DashboardStudio() {
         </div>
       )}
       {editing && (
-        <form onSubmit={save} className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-icube-gray border border-white/10 rounded-sm p-6 max-w-lg w-full space-y-4">
+        <form onSubmit={save} className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-sm p-0 sm:items-center sm:p-4">
+          <div className="border border-white/10 bg-white/[0.03] rounded-xl p-6 max-w-lg w-full space-y-4">
             <h2 className="text-xl font-display font-bold text-white">
               {isCreating ? "Add Equipment" : "Edit Equipment"}
             </h2>
