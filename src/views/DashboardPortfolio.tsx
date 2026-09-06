@@ -6,6 +6,7 @@ import { api } from "../api";
 import { useSiteData, invalidateSiteCache } from "../SiteDataContext";
 import CloudinaryUploadField from "../components/CloudinaryUploadField";
 import MediaSlotList from "../components/dashboard/MediaSlotList";
+import DashboardModal from "../components/dashboard/DashboardModal";
 import { Badge, Button, Card, EmptyState, IconButton, PageHeader } from "../components/dashboard/ui";
 import { uploadToCloudinaryWithProgress } from "../lib/uploadCloudinary";
 import { getProjectVideos } from "../lib/portfolioMedia";
@@ -256,21 +257,22 @@ export default function DashboardPortfolio() {
       )}
 
       {editing && (
-        <form
+        <DashboardModal
+          title={isCreating ? "Add project" : "Edit project"}
+          description="A project is one case study on the Portfolio page, with its own videos and gallery."
+          onClose={() => setEditing(null)}
           onSubmit={save}
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-sm sm:items-center sm:p-4"
+          footer={
+            <>
+              <Button type="submit" tone="primary" className="max-sm:flex-1">
+                Save project
+              </Button>
+              <Button type="button" tone="secondary" onClick={() => setEditing(null)} className="max-sm:flex-1">
+                Cancel
+              </Button>
+            </>
+          }
         >
-          <div className="flex max-h-[92vh] w-full flex-col rounded-t-2xl border border-white/10 bg-icube-gray shadow-2xl sm:max-h-[88vh] sm:max-w-2xl sm:rounded-2xl">
-            <div className="shrink-0 border-b border-white/10 px-5 py-4 sm:px-6">
-              <h2 className="font-display text-lg font-bold text-white sm:text-xl">
-                {isCreating ? "Add project" : "Edit project"}
-              </h2>
-              <p className="mt-1 text-sm text-gray-500">
-                A project is one case study on the Portfolio page, with its own videos and gallery.
-              </p>
-            </div>
-
-            <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-6">
 
             <div className="space-y-3">
               {/* Labels rather than placeholders: a placeholder disappears the moment you type,
@@ -430,18 +432,7 @@ export default function DashboardPortfolio() {
               <span className="text-sm text-gray-300">Show in Selected Work on homepage</span>
             </label>
             </div>
-            </div>
-
-            <div className="flex shrink-0 gap-2 border-t border-white/10 px-5 py-4 sm:px-6">
-              <Button type="submit" tone="primary" className="max-sm:flex-1">
-                Save project
-              </Button>
-              <Button type="button" tone="secondary" onClick={() => setEditing(null)} className="max-sm:flex-1">
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </form>
+        </DashboardModal>
       )}
     </div>
   );

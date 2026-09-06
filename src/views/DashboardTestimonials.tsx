@@ -4,6 +4,8 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { api } from "../api";
 import CloudinaryUploadField from "../components/CloudinaryUploadField";
+import DashboardModal from "../components/dashboard/DashboardModal";
+import { Button } from "../components/dashboard/ui";
 
 type Testimonial = { id: number; quote: string; author: string; role: string; image_url: string; sort_order: number };
 
@@ -126,11 +128,23 @@ export default function DashboardTestimonials() {
       )}
 
       {editing && (
-        <form onSubmit={save} className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-sm p-0 sm:items-center sm:p-4">
-          <div className="border border-white/10 bg-white/[0.03] rounded-xl p-6 max-w-lg w-full space-y-4">
-            <h2 className="text-xl font-display font-bold text-white">
-              {isCreating ? "Add Testimonial" : "Edit Testimonial"}
-            </h2>
+        <DashboardModal
+          title={isCreating ? "Add Testimonial" : "Edit Testimonial"}
+          description="Client quotes shown on the public site."
+          size="md"
+          onClose={() => setEditing(null)}
+          onSubmit={save}
+          footer={
+            <>
+              <Button type="submit" tone="primary" className="max-sm:flex-1">
+                Save testimonial
+              </Button>
+              <Button type="button" tone="secondary" onClick={() => setEditing(null)} className="max-sm:flex-1">
+                Cancel
+              </Button>
+            </>
+          }
+        >
             <textarea
               value={editing.quote}
               onChange={(e) => setEditing((x) => (x ? { ...x, quote: e.target.value } : null))}
@@ -157,13 +171,7 @@ export default function DashboardTestimonials() {
               type="image"
               folder="testimonials"
               placeholder="https://… or click Upload"
-            />
-            <div className="flex gap-2">
-              <button type="submit" className="px-4 py-2 bg-icube-gold text-icube-dark font-semibold rounded-sm">Save</button>
-              <button type="button" onClick={() => setEditing(null)} className="px-4 py-2 bg-white/10 text-white rounded-sm">Cancel</button>
-            </div>
-          </div>
-        </form>
+            />        </DashboardModal>
       )}
     </div>
   );

@@ -5,6 +5,8 @@ import { Pencil, Trash2 } from "lucide-react";
 import { api } from "../api";
 import CloudinaryUploadField from "../components/CloudinaryUploadField";
 import { uploadToCloudinaryWithProgress } from "../lib/uploadCloudinary";
+import DashboardModal from "../components/dashboard/DashboardModal";
+import { Button } from "../components/dashboard/ui";
 
 type Studio = {
   id: number;
@@ -190,8 +192,23 @@ export default function DashboardStudios() {
       </div>
 
       {editing && (
-        <form onSubmit={save} className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-sm p-0 sm:items-center sm:p-4">
-          <div className="border border-white/10 bg-white/[0.03] rounded-xl p-6 max-w-2xl w-full space-y-4 overflow-y-auto max-h-[90vh]">
+        <DashboardModal
+          title={creating ? "Add studio" : "Edit studio"}
+          description="Studios shown in the gallery and bookable by customers."
+          size="lg"
+          onClose={() => setEditing(null)}
+          onSubmit={save}
+          footer={
+            <>
+              <Button type="submit" tone="primary" className="max-sm:flex-1">
+                Save studio
+              </Button>
+              <Button type="button" tone="secondary" onClick={() => setEditing(null)} className="max-sm:flex-1">
+                Cancel
+              </Button>
+            </>
+          }
+        >
             <h2 className="text-xl font-display font-bold text-white">{creating ? "Add Studio" : "Edit Studio"}</h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -321,18 +338,7 @@ export default function DashboardStudios() {
                 className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white font-mono text-sm"
                 placeholder="https://...\nhttps://... or use Upload image(s) above"
               />
-            </div>
-
-            <div className="flex gap-2">
-              <button type="submit" className="px-4 py-2 bg-icube-gold text-icube-dark font-semibold rounded-sm">
-                Save
-              </button>
-              <button type="button" onClick={() => setEditing(null)} className="px-4 py-2 bg-white/10 text-white rounded-sm">
-                Cancel
-              </button>
-            </div>
-          </div>
-        </form>
+            </div>        </DashboardModal>
       )}
     </div>
   );

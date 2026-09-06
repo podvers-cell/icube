@@ -5,6 +5,8 @@ import { Pencil, Trash2, Plus } from "lucide-react";
 import { api } from "../api";
 import type { BookingAddon } from "../api";
 import CloudinaryUploadField from "../components/CloudinaryUploadField";
+import DashboardModal from "../components/dashboard/DashboardModal";
+import { Button } from "../components/dashboard/ui";
 
 type AddonForm = BookingAddon & { id: string };
 
@@ -148,14 +150,23 @@ export default function DashboardAddons() {
       )}
 
       {editing && (
-        <form onSubmit={save} className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-sm p-0 sm:items-center sm:p-4">
-          <div className="border border-white/10 bg-white/[0.03] rounded-xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col">
-            <div className="p-6 border-b border-white/10">
-              <h2 className="text-xl font-display font-bold text-white">
-                {isCreating ? "Add Add-on (AED)" : "Edit Add-on (AED)"}
-              </h2>
-            </div>
-            <div className="p-6 overflow-y-auto space-y-4">
+        <DashboardModal
+          title={isCreating ? "Add add-on" : "Edit add-on"}
+          description="Optional extras a customer can add to a booking, priced in AED."
+          size="md"
+          onClose={() => setEditing(null)}
+          onSubmit={save}
+          footer={
+            <>
+              <Button type="submit" tone="primary" className="max-sm:flex-1">
+                Save add-on
+              </Button>
+              <Button type="button" tone="secondary" onClick={() => setEditing(null)} className="max-sm:flex-1">
+                Cancel
+              </Button>
+            </>
+          }
+        >
             <div>
               <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
                 Name
@@ -292,21 +303,7 @@ export default function DashboardAddons() {
                 placeholder="0 = first"
               />
             </div>
-            </div>
-            <div className="p-6 border-t border-white/10 flex gap-2 bg-icube-gray/80">
-              <button type="submit" className="px-4 py-2 bg-icube-gold text-icube-dark font-semibold rounded-sm">
-                Save
-              </button>
-              <button
-                type="button"
-                onClick={() => setEditing(null)}
-                className="px-4 py-2 bg-white/10 text-white rounded-sm"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </form>
+        </DashboardModal>
       )}
     </div>
   );

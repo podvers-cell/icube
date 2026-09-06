@@ -7,6 +7,8 @@ import { invalidateSiteCache } from "@/SiteDataContext";
 import CloudinaryUploadField from "@/components/CloudinaryUploadField";
 import { uploadToCloudinaryWithProgress } from "@/lib/uploadCloudinary";
 import MediaSlotList from "../components/dashboard/MediaSlotList";
+import DashboardModal from "../components/dashboard/DashboardModal";
+import { Button } from "../components/dashboard/ui";
 
 type WorkshopImage = { image_url: string; caption?: string | null; sort_order?: number };
 
@@ -352,29 +354,29 @@ export default function DashboardWorkshops() {
       </div>
 
       {showModal ? (
-        <form onSubmit={save} className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-sm p-0 sm:items-center sm:p-4">
-          <div
-            className="bg-icube-gray border border-white/10 rounded-2xl p-6 max-w-3xl w-full space-y-5 overflow-y-auto max-h-[90vh] ws-modal-scroll"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" } as React.CSSProperties}
-          >
-            <style jsx>{`
-              .ws-modal-scroll::-webkit-scrollbar {
-                display: none;
-              }
-            `}</style>
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="text-xl font-display font-bold text-white">{creating ? "Add Workshop" : "Edit Workshop"}</h2>
-              <button
-                type="button"
-                onClick={() => {
-                  setEditing(null);
-                  setCreating(false);
-                }}
-                className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
-              >
-                Close
-              </button>
-            </div>
+        <DashboardModal
+          title={creating ? "Add workshop" : "Edit workshop"}
+          description="Workshops customers can enrol in and pay for."
+          size="xl"
+          onClose={() => {
+                setEditing(null);
+                setCreating(false);
+              }}
+          onSubmit={save}
+          footer={
+            <>
+              <Button type="submit" tone="primary" className="max-sm:flex-1">
+                Save workshop
+              </Button>
+              <Button type="button" tone="secondary" onClick={() => {
+                setEditing(null);
+                setCreating(false);
+              }} className="max-sm:flex-1">
+                Cancel
+              </Button>
+            </>
+          }
+        >
             <div className="grid grid-cols-1 gap-6">
               <div className="space-y-6">
                 <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 md:p-6">
@@ -586,28 +588,7 @@ export default function DashboardWorkshops() {
                 </section>
               </div>
 
-            </div>
-
-            <div className="pt-5 border-t border-white/10 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setEditing(null);
-                  setCreating(false);
-                }}
-                className="w-full sm:w-auto rounded-xl border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="w-full sm:w-auto rounded-xl bg-icube-gold px-6 py-3 text-sm font-semibold text-icube-dark hover:bg-icube-gold-light transition-colors"
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        </form>
+            </div>        </DashboardModal>
       ) : null}
     </div>
   );

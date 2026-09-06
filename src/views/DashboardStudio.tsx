@@ -3,6 +3,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { api } from "../api";
+import DashboardModal from "../components/dashboard/DashboardModal";
+import { Button } from "../components/dashboard/ui";
 
 type Equipment = { id: number; label: string; description: string; sort_order: number };
 
@@ -112,19 +114,25 @@ export default function DashboardStudio() {
         </div>
       )}
       {editing && (
-        <form onSubmit={save} className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-sm p-0 sm:items-center sm:p-4">
-          <div className="border border-white/10 bg-white/[0.03] rounded-xl p-6 max-w-lg w-full space-y-4">
-            <h2 className="text-xl font-display font-bold text-white">
-              {isCreating ? "Add Equipment" : "Edit Equipment"}
-            </h2>
+        <DashboardModal
+          title={isCreating ? "Add Equipment" : "Edit Equipment"}
+          description="Gear listed in the studio section of the site."
+          size="md"
+          onClose={() => setEditing(null)}
+          onSubmit={save}
+          footer={
+            <>
+              <Button type="submit" tone="primary" className="max-sm:flex-1">
+                Save equipment
+              </Button>
+              <Button type="button" tone="secondary" onClick={() => setEditing(null)} className="max-sm:flex-1">
+                Cancel
+              </Button>
+            </>
+          }
+        >
             <input value={editing.label} onChange={(e) => setEditing((x) => (x ? { ...x, label: e.target.value } : null))} className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white" placeholder="Label" />
-            <input value={editing.description} onChange={(e) => setEditing((x) => (x ? { ...x, description: e.target.value } : null))} className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white" placeholder="Description" />
-            <div className="flex gap-2">
-              <button type="submit" className="px-4 py-2 bg-icube-gold text-icube-dark font-semibold rounded-sm">Save</button>
-              <button type="button" onClick={() => setEditing(null)} className="px-4 py-2 bg-white/10 text-white rounded-sm">Cancel</button>
-            </div>
-          </div>
-        </form>
+            <input value={editing.description} onChange={(e) => setEditing((x) => (x ? { ...x, description: e.target.value } : null))} className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white" placeholder="Description" />        </DashboardModal>
       )}
     </div>
   );

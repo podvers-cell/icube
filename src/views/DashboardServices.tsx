@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Pencil, RefreshCcw, Trash2 } from "lucide-react";
 import { api } from "../api";
+import DashboardModal from "../components/dashboard/DashboardModal";
+import { Button } from "../components/dashboard/ui";
 
 type CaseStudyItem = {
   title: string;
@@ -230,12 +232,23 @@ export default function DashboardServices() {
       )}
 
       {editing && (
-        <form onSubmit={save} className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-sm border border-white/10 bg-icube-gray">
-            <div className="border-b border-white/10 p-6">
-              <h2 className="text-xl font-display font-bold text-white">{creating ? "Add Service" : "Edit Service"}</h2>
-            </div>
-            <div className="space-y-4 overflow-y-auto p-6">
+        <DashboardModal
+          title={creating ? "Add service" : "Edit service"}
+          description="Service cards and their case-study page content."
+          size="xl"
+          onClose={() => setEditing(null)}
+          onSubmit={save}
+          footer={
+            <>
+              <Button type="submit" tone="primary" className="max-sm:flex-1">
+                Save service
+              </Button>
+              <Button type="button" tone="secondary" onClick={() => setEditing(null)} className="max-sm:flex-1">
+                Cancel
+              </Button>
+            </>
+          }
+        >
               <section className="space-y-3 rounded-sm border border-white/10 bg-black/20 p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">Service card data</p>
                 <div>
@@ -466,14 +479,7 @@ export default function DashboardServices() {
                     </div>
                   </div>
                 ))}
-              </div>
-            </div>
-            <div className="flex gap-2 border-t border-white/10 bg-icube-gray/80 p-6">
-              <button type="submit" className="rounded-sm bg-icube-gold px-4 py-2 font-semibold text-icube-dark">Save</button>
-              <button type="button" onClick={() => setEditing(null)} className="rounded-sm bg-white/10 px-4 py-2 text-white">Cancel</button>
-            </div>
-          </div>
-        </form>
+              </div>        </DashboardModal>
       )}
     </div>
   );

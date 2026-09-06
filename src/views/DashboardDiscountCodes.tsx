@@ -3,6 +3,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Pencil, Trash2, Plus, ToggleLeft, ToggleRight } from "lucide-react";
 import { api } from "../api";
+import DashboardModal from "../components/dashboard/DashboardModal";
+import { Button } from "../components/dashboard/ui";
 
 type DiscountCode = {
   id: string;
@@ -199,11 +201,23 @@ export default function DashboardDiscountCodes() {
       )}
 
       {editing && (
-        <form onSubmit={save} className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-sm p-0 sm:items-center sm:p-4">
-          <div className="border border-white/10 bg-white/[0.03] rounded-xl p-6 max-w-lg w-full space-y-4">
-            <h2 className="text-xl font-display font-bold text-white">
-              {isCreating ? "Add discount code" : "Edit discount code"}
-            </h2>
+        <DashboardModal
+          title={isCreating ? "Add discount code" : "Edit discount code"}
+          description="Percentage discounts customers can apply at checkout."
+          size="md"
+          onClose={() => setEditing(null)}
+          onSubmit={save}
+          footer={
+            <>
+              <Button type="submit" tone="primary" className="max-sm:flex-1">
+                Save code
+              </Button>
+              <Button type="button" tone="secondary" onClick={() => setEditing(null)} className="max-sm:flex-1">
+                Cancel
+              </Button>
+            </>
+          }
+        >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
@@ -281,21 +295,7 @@ export default function DashboardDiscountCodes() {
               <label htmlFor="dc-active" className="text-xs text-gray-300">
                 Active
               </label>
-            </div>
-            <div className="flex gap-2">
-              <button type="submit" className="px-4 py-2 bg-icube-gold text-icube-dark font-semibold rounded-sm">
-                Save
-              </button>
-              <button
-                type="button"
-                onClick={() => setEditing(null)}
-                className="px-4 py-2 bg-white/10 text-white rounded-sm"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </form>
+            </div>        </DashboardModal>
       )}
     </div>
   );

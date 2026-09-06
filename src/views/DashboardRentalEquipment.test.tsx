@@ -28,7 +28,7 @@ describe("DashboardRentalEquipment", () => {
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Sony A7 IV" } });
     fireEvent.change(screen.getByLabelText("Category"), { target: { value: "Cameras" } });
     fireEvent.change(screen.getByLabelText("Price (AED)"), { target: { value: "250" } });
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    fireEvent.click(screen.getByRole("button", { name: /save equipment/i }));
 
     await waitFor(() => {
       expect(apiMocks.createRentalEquipment).toHaveBeenCalledWith(

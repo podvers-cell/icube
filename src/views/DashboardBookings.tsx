@@ -20,6 +20,7 @@ import {
   paymentStatusLabel,
   type BookingFilterTab,
 } from "@/lib/dashboardBookingUi";
+import DashboardModal from "../components/dashboard/DashboardModal";
 
 type BookingPackage = { id: number; name: string; price_aed: number };
 
@@ -333,26 +334,42 @@ export default function DashboardBookings() {
 
       {/* Detail modal */}
       {selected && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-          onClick={() => setSelected(null)}
-        >
-          <div
-            className="bg-icube-gray border border-white/10 rounded-2xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
-              <h2 className="text-xl font-display font-bold text-white">Booking details</h2>
+        <DashboardModal
+          title="Booking details"
+          description="Everything the customer submitted, plus payment state."
+          onClose={() => setSelected(null)}
+          footer={<div className="flex w-full flex-wrap items-center gap-2">
+              {selected.status !== "confirmed" && selected.status !== "cancelled" && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => canAdminConfirm(selected) && setStatus(selected.id, "confirmed", selected)}
+                    disabled={!canAdminConfirm(selected)}
+                    title={canAdminConfirm(selected) ? "Confirm booking" : "Payment must be completed before confirming"}
+                    className="px-4 py-2 rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30 text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    Confirm
+                  </button>
+                  <button onClick={() => setStatus(selected.id, "cancelled")} className="px-4 py-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 text-sm font-medium">
+                    Cancel
+                  </button>
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => removeBooking(selected.id)}
+                className="px-4 py-2 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/30 text-sm font-medium"
+              >
+                Remove booking
+              </button>
               <button
                 type="button"
                 onClick={() => setSelected(null)}
-                className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
-                aria-label="Close"
+                className="ml-auto px-4 py-2 rounded-lg border border-white/20 text-gray-300 hover:bg-white/10 text-sm font-medium"
               >
-                <X size={20} />
+                Close
               </button>
-            </div>
-            <div className="overflow-y-auto px-6 py-5 space-y-5">
+            </div>}
+        >
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Submitted</p>
@@ -516,41 +533,7 @@ export default function DashboardBookings() {
                   <p className="text-gray-300 text-sm">{selected.package_id}</p>
                 </div>
               )}
-            </div>
-
-            <div className="border-t border-white/10 px-6 py-4 flex items-center justify-between gap-4 bg-white/[0.02]">
-              {selected.status !== "confirmed" && selected.status !== "cancelled" && (
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => canAdminConfirm(selected) && setStatus(selected.id, "confirmed", selected)}
-                    disabled={!canAdminConfirm(selected)}
-                    title={canAdminConfirm(selected) ? "Confirm booking" : "Payment must be completed before confirming"}
-                    className="px-4 py-2 rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30 text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    Confirm
-                  </button>
-                  <button onClick={() => setStatus(selected.id, "cancelled")} className="px-4 py-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 text-sm font-medium">
-                    Cancel
-                  </button>
-                </div>
-              )}
-              <button
-                type="button"
-                onClick={() => removeBooking(selected.id)}
-                className="px-4 py-2 rounded-lg bg-red-500/20 text-red-300 hover:bg-red-500/30 text-sm font-medium"
-              >
-                Remove booking
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelected(null)}
-                className="ml-auto px-4 py-2 rounded-lg border border-white/20 text-gray-300 hover:bg-white/10 text-sm font-medium"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
+        </DashboardModal>
       )}
     </div>
   );

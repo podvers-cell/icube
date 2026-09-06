@@ -4,6 +4,8 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { api } from "../api";
 import { isValidVideoUrl } from "../lib/videoEmbed";
+import DashboardModal from "../components/dashboard/DashboardModal";
+import { Button, Field, inputClass } from "../components/dashboard/ui";
 
 type Video = { id: string; title: string; url: string; sort_order: number };
 
@@ -137,36 +139,41 @@ export default function DashboardVideos() {
       )}
 
       {editing && (
-        <form onSubmit={save} className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-sm p-0 sm:items-center sm:p-4">
-          <div className="border border-white/10 bg-white/[0.03] rounded-xl p-6 max-w-lg w-full space-y-4">
-            <h2 className="text-xl font-display font-bold text-white">
-              {creating ? "Add video" : "Edit video"}
-            </h2>
+        <DashboardModal
+          title={creating ? "Add video" : "Edit video"}
+          description="Shown in the Videos strip on the homepage."
+          size="md"
+          onClose={() => setEditing(null)}
+          onSubmit={save}
+          footer={
+            <>
+              <Button type="submit" tone="primary" className="max-sm:flex-1">
+                Save video
+              </Button>
+              <Button type="button" tone="secondary" onClick={() => setEditing(null)} className="max-sm:flex-1">
+                Cancel
+              </Button>
+            </>
+          }
+        >
+          <Field label="Title">
             <input
               value={editing.title}
               onChange={(e) => setEditing((x) => (x ? { ...x, title: e.target.value } : null))}
-              className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white"
-              placeholder="Video title"
+              className={inputClass}
+              placeholder="Behind the scenes — Nike shoot"
             />
+          </Field>
+
+          <Field label="Video URL" hint="YouTube, Vimeo, Instagram, or a direct mp4 link such as Cloudinary.">
             <input
               value={editing.url}
               onChange={(e) => setEditing((x) => (x ? { ...x, url: e.target.value } : null))}
-              className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white"
-              placeholder="YouTube or Vimeo URL"
+              className={inputClass}
+              placeholder="https://youtube.com/watch?v=…"
             />
-            <p className="text-xs text-gray-500">
-              Example: YouTube / Vimeo / Instagram, or a direct mp4 URL (e.g. Cloudinary).
-            </p>
-            <div className="flex gap-2">
-              <button type="submit" className="px-4 py-2 bg-icube-gold text-icube-dark font-semibold rounded-sm">
-                Save
-              </button>
-              <button type="button" onClick={() => setEditing(null)} className="px-4 py-2 bg-white/10 text-white rounded-sm">
-                Cancel
-              </button>
-            </div>
-          </div>
-        </form>
+          </Field>
+        </DashboardModal>
       )}
     </div>
   );

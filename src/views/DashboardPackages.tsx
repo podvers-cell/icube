@@ -3,6 +3,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { api } from "../api";
+import DashboardModal from "../components/dashboard/DashboardModal";
+import { Button } from "../components/dashboard/ui";
 
 type Pkg = {
   id: number | string;
@@ -226,8 +228,23 @@ export default function DashboardPackages() {
       })()}
 
       {editing && (
-        <form onSubmit={save} className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-sm p-0 sm:items-center sm:p-4">
-          <div className="border border-white/10 bg-white/[0.03] rounded-xl p-6 max-w-lg w-full space-y-4">
+        <DashboardModal
+          title={isCreating ? "Add package" : "Edit package"}
+          description="Bookable packages and their pricing in AED."
+          size="lg"
+          onClose={() => setEditing(null)}
+          onSubmit={save}
+          footer={
+            <>
+              <Button type="submit" tone="primary" className="max-sm:flex-1">
+                {isCreating ? "Add package" : "Save package"}
+              </Button>
+              <Button type="button" tone="secondary" onClick={() => setEditing(null)} className="max-sm:flex-1">
+                Cancel
+              </Button>
+            </>
+          }
+        >
             <h2 className="text-xl font-display font-bold text-white">
               {isCreating ? "Add Package (AED)" : "Edit Package (AED)"}
             </h2>
@@ -352,17 +369,7 @@ export default function DashboardPackages() {
               className="w-full bg-black/50 border border-white/10 p-3 rounded-sm text-white"
               placeholder="Display order (0 = first)"
             />
-            {/* 9. CTA */}
-            <div className="flex gap-2 pt-1">
-              <button type="submit" className="px-4 py-2 bg-icube-gold text-icube-dark font-semibold rounded-sm">
-                {isCreating ? "Add Package" : "Save Package"}
-              </button>
-              <button type="button" onClick={() => setEditing(null)} className="px-4 py-2 bg-white/10 text-white rounded-sm">
-                Cancel
-              </button>
-            </div>
-          </div>
-        </form>
+            {/* 9. CTA */}        </DashboardModal>
       )}
     </div>
   );

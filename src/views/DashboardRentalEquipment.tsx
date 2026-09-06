@@ -10,6 +10,8 @@ import {
   type RentalEquipment,
   type RentalPriceUnit,
 } from "../types/rentalEquipment";
+import DashboardModal from "../components/dashboard/DashboardModal";
+import { Button } from "../components/dashboard/ui";
 
 const emptyEquipment: RentalEquipment = {
   id: "",
@@ -170,12 +172,23 @@ export default function DashboardRentalEquipment() {
       )}
 
       {editing && (
-        <form onSubmit={save} className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-          <div className="w-full max-w-2xl max-h-[92vh] overflow-hidden flex flex-col rounded-xl border border-white/10 bg-icube-gray shadow-2xl">
-            <div className="px-6 py-5 border-b border-white/10">
-              <h2 className="text-xl font-display font-bold text-white">{isCreating ? "Add rental equipment" : "Edit rental equipment"}</h2>
-            </div>
-            <div className="p-6 overflow-y-auto space-y-5">
+        <DashboardModal
+          title={isCreating ? "Add rental equipment" : "Edit rental equipment"}
+          description="Gear customers can rent, shown on the public Rent Equipment page."
+          size="lg"
+          onClose={() => setEditing(null)}
+          onSubmit={save}
+          footer={
+            <>
+              <Button type="submit" tone="primary" disabled={saving} className="max-sm:flex-1">
+                {saving ? "Saving…" : "Save equipment"}
+              </Button>
+              <Button type="button" tone="secondary" onClick={() => setEditing(null)} disabled={saving} className="max-sm:flex-1">
+                Cancel
+              </Button>
+            </>
+          }
+        >
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <label className="space-y-1.5 text-sm text-gray-400">
                   <span>Name</span>
@@ -234,14 +247,7 @@ export default function DashboardRentalEquipment() {
                 <label className="flex items-center gap-3 rounded-sm border border-white/10 bg-black/30 px-4 py-3 text-sm text-gray-300">
                   <input type="checkbox" checked={editing.is_featured} onChange={(e) => setEditing((x) => x ? { ...x, is_featured: e.target.checked } : null)} className="accent-[#D4AF37]" /> Featured equipment
                 </label>
-              </div>
-            </div>
-            <div className="px-6 py-4 border-t border-white/10 flex gap-3">
-              <button type="submit" disabled={saving} className="px-5 py-2.5 bg-icube-gold text-icube-dark font-semibold rounded-sm disabled:opacity-50">{saving ? "Saving…" : "Save"}</button>
-              <button type="button" onClick={() => setEditing(null)} disabled={saving} className="px-5 py-2.5 bg-white/10 text-white rounded-sm">Cancel</button>
-            </div>
-          </div>
-        </form>
+              </div>        </DashboardModal>
       )}
     </div>
   );
