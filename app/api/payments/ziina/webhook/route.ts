@@ -1,5 +1,10 @@
-import { createHmac, timingSafeEqual } from "crypto";
-import { FieldValue, type Firestore, type QueryDocumentSnapshot } from "firebase-admin/firestore";
+import { createHash, createHmac, timingSafeEqual } from "crypto";
+import {
+  FieldValue,
+  type DocumentReference,
+  type Firestore,
+  type QueryDocumentSnapshot,
+} from "firebase-admin/firestore";
 import { NextResponse } from "next/server";
 import { getAdminFirestore } from "@/firebase-admin";
 import {
@@ -70,6 +75,10 @@ function buildPaymentMeta(payload: ZiinaWebhookPayload, eventName: string): Paym
 }
 
 export async function POST(request: Request) {
+  // Held so a failed run can release its claim: Ziina's own retry of a genuinely unprocessed
+  // event must not be mistaken for a replay.
+  let claimedEventRef: DocumentReference | null = null;
+
   try {
     const rawBody = await request.text();
     const signature = request.headers.get("x-hmac-signature") || "";
@@ -91,6 +100,27 @@ export async function POST(request: Request) {
     }
 
     const db = getAdminFirestore();
+
+    // The signature proves the body came from Ziina, not that it is new: a captured delivery can
+    // be replayed indefinitely. Claim each event exactly once before doing any work. The payload
+    // schema is not assumed to carry a unique event id, so the key is a hash of the body itself.
+    const eventKey = createHash("sha256").update(rawBody).digest("hex");
+    const eventRef = db.collection("webhook_events").doc(eventKey);
+    const claimed = await db.runTransaction(async (tx) => {
+      if ((await tx.get(eventRef)).exists) return false;
+      tx.set(eventRef, {
+        provider: "ziina",
+        event: eventName,
+        intent_id: intentId,
+        received_at: FieldValue.serverTimestamp(),
+      });
+      return true;
+    });
+    if (!claimed) {
+      return NextResponse.json({ ok: true, ignored: true, reason: "Duplicate event", intentId, event: eventName });
+    }
+    claimedEventRef = eventRef;
+
     const paymentStatus = normalizeStoredPaymentStatus(providerStatus);
     const meta = buildPaymentMeta(payload, eventName);
 
@@ -337,7 +367,13 @@ export async function POST(request: Request) {
       updatedEnrollments: enrollmentDocs.length,
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unexpected webhook error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    // Release the claim so Ziina's retry is processed rather than dismissed as a duplicate.
+    if (claimedEventRef) {
+      await claimedEventRef.delete().catch((cleanupError) => {
+        console.error("[payments/webhook] Failed to release event claim:", cleanupError);
+      });
+    }
+    console.error("[payments/webhook]", err);
+    return NextResponse.json({ error: "Webhook processing failed." }, { status: 500 });
   }
 }

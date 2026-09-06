@@ -50,6 +50,10 @@ service cloud.firestore {
       allow read, update, delete: if isAdmin();
     }
 
+    // Webhook replay ledger. Written only by the Admin SDK, which bypasses rules; no client
+    // should ever read or write it. Set a TTL policy on received_at so it does not grow forever.
+    match /webhook_events/{id} { allow read, write: if false; }
+
     // Admins collection: list of admin UIDs (add via Firebase Console). Logged-in user can read own doc to check if admin.
     match /admins/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
