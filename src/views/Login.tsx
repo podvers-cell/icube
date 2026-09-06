@@ -134,11 +134,6 @@ export default function Login() {
             >
               {submitting ? "Signing in…" : "Sign in"}
             </button>
-            {process.env.NODE_ENV === "development" && (
-              <p className="text-gray-500 text-[11px] text-center mt-2">
-                Admin (local): admin@icube.ae / admin123
-              </p>
-            )}
             <p className="text-gray-400 text-xs text-center mt-4">
               Don&apos;t have an account?{" "}
               <Link

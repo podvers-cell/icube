@@ -8,8 +8,6 @@ import { isFirebaseConfigured, requireAuth, requireFirestore } from "./firebase"
 
 export type User = { id: string; email: string; name: string | null; photoURL: string | null };
 
-const ADMIN_EMAIL = "admin@icube.ae";
-
 const AuthContext = createContext<{
   user: User | null;
   loading: boolean;
@@ -39,12 +37,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       setUser({ id: u.uid, email: u.email || "", name: u.displayName || null, photoURL: u.photoURL || null });
       try {
-        const emailIsAdmin = (u.email || "").trim().toLowerCase() === ADMIN_EMAIL.toLowerCase();
+        // Membership of the admins collection is the only source of truth. Never infer admin
+        // rights from the email address: signup is public, so an address can be claimed.
         const adminSnap = await getDoc(doc(db, "admins", u.uid));
-        setIsAdmin(emailIsAdmin || adminSnap.exists());
+        setIsAdmin(adminSnap.exists());
       } catch {
-        const emailIsAdmin = (u.email || "").trim().toLowerCase() === ADMIN_EMAIL.toLowerCase();
-        setIsAdmin(emailIsAdmin);
+        // Fail closed — a failed check is not a pass.
+        setIsAdmin(false);
       }
       setLoading(false);
     });
