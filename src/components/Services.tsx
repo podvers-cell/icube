@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useSiteData } from "../SiteDataContext";
 import { useSwipeCarousel } from "../hooks/useSwipeCarousel";
 import { getIcon } from "../lib/icons";
@@ -142,6 +143,17 @@ function MobileServicesCarousel({
 
 export default function Services() {
   const { services, loading } = useSiteData();
+  const [desktopPage, setDesktopPage] = useState(0);
+  const desktopCardsPerPage = 3;
+  const desktopTotalPages = Math.max(1, Math.ceil(services.length / desktopCardsPerPage));
+  const desktopStartIndex = desktopPage * desktopCardsPerPage;
+  const desktopPageServices = services.slice(desktopStartIndex, desktopStartIndex + desktopCardsPerPage);
+  const canGoPrev = desktopPage > 0;
+  const canGoNext = desktopPage < desktopTotalPages - 1;
+
+  useEffect(() => {
+    setDesktopPage((page) => Math.min(page, desktopTotalPages - 1));
+  }, [desktopTotalPages]);
 
   if (loading && services.length === 0) {
     return (
@@ -186,16 +198,67 @@ export default function Services() {
           <MobileServicesCarousel services={services} />
         </div>
 
-        <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 gap-7 items-stretch">
-          {services.map((service, index) => {
-            return (
-              <AnimatedStaggerItem key={service.id} index={index} className="h-full">
-                <div className="card-flip-wrap h-full">
-                  <ServiceCard service={service} colorClass={colors[index % colors.length]} />
-                </div>
-              </AnimatedStaggerItem>
-            );
-          })}
+        {/* Desktop: one row of 3 cards with the same navigation pattern as Studios */}
+        <div className="hidden md:block">
+          <div className="relative flex items-stretch">
+            <button
+              type="button"
+              onClick={() => setDesktopPage((page) => Math.max(0, page - 1))}
+              disabled={!canGoPrev}
+              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-10 z-10 w-11 h-11 rounded-full bg-icube-dark/90 border border-white/20 text-white flex items-center justify-center hover:bg-icube-gold hover:text-icube-dark hover:border-icube-gold disabled:opacity-40 disabled:pointer-events-none transition-colors shadow-lg"
+              aria-label="Previous services"
+            >
+              <ChevronLeft size={24} />
+            </button>
+
+            <div className="flex-1 overflow-visible px-4">
+              <div
+                data-testid="desktop-services-page"
+                className="grid grid-cols-3 gap-7 items-stretch max-w-[110%] mx-auto"
+              >
+                {desktopPageServices.map((service, index) => (
+                  <AnimatedStaggerItem
+                    key={service.id}
+                    index={desktopStartIndex + index}
+                    className="h-full"
+                  >
+                    <div className="card-flip-wrap h-full">
+                      <ServiceCard
+                        service={service}
+                        colorClass={colors[(desktopStartIndex + index) % colors.length]}
+                      />
+                    </div>
+                  </AnimatedStaggerItem>
+                ))}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setDesktopPage((page) => Math.min(desktopTotalPages - 1, page + 1))}
+              disabled={!canGoNext}
+              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-10 z-10 w-11 h-11 rounded-full bg-icube-dark/90 border border-white/20 text-white flex items-center justify-center hover:bg-icube-gold hover:text-icube-dark hover:border-icube-gold disabled:opacity-40 disabled:pointer-events-none transition-colors shadow-lg"
+              aria-label="Next services"
+            >
+              <ChevronRight size={24} />
+            </button>
+          </div>
+
+          {desktopTotalPages > 1 && (
+            <div className="flex justify-center gap-2 mt-6">
+              {Array.from({ length: desktopTotalPages }).map((_, page) => (
+                <button
+                  key={page}
+                  type="button"
+                  onClick={() => setDesktopPage(page)}
+                  className={`h-1.5 rounded-full transition-all duration-200 ${
+                    page === desktopPage ? "bg-icube-gold w-6" : "bg-white/20 w-1.5"
+                  }`}
+                  aria-label={`Services page ${page + 1}`}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </section>
