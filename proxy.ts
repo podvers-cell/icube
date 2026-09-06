@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-type LimitRule = { key: string; max: number };
+type LimitRule = { key: string; max: number; methods?: string[] };
 type LimitEntry = { count: number; resetAt: number };
 
 const WINDOW_MS = 60_000;
@@ -17,6 +17,9 @@ const RULES: Record<string, LimitRule> = {
   "/api/bookings/inquiry": { key: "booking-inquiry", max: 5 },
   "/api/payments/ziina/create-intent": { key: "payment-intent", max: 10 },
   "/api/workshops/enroll": { key: "workshop-enroll", max: 10 },
+  // Unauthenticated and reads up to 500 Firestore documents per call, so it is limited on GET
+  // as well. Generous, because the public catalogue legitimately polls it.
+  "/api/rental-equipment": { key: "rental-equipment-read", max: 60, methods: ["GET", "POST"] },
 };
 
 function clientIp(request: NextRequest): string {
@@ -52,10 +55,11 @@ function checkLimit(key: string, max: number): { limited: boolean; retryAfter: n
 }
 
 export function proxy(request: NextRequest) {
-  if (request.method !== "POST") return NextResponse.next();
-
   const rule = RULES[request.nextUrl.pathname];
   if (!rule) return NextResponse.next();
+
+  const methods = rule.methods ?? ["POST"];
+  if (!methods.includes(request.method)) return NextResponse.next();
 
   const result = checkLimit(`${rule.key}:${clientIp(request)}`, rule.max);
   if (!result.limited) return NextResponse.next();
@@ -80,5 +84,6 @@ export const config = {
     "/api/bookings/inquiry",
     "/api/payments/ziina/create-intent",
     "/api/workshops/enroll",
+    "/api/rental-equipment",
   ],
 };
