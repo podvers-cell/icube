@@ -180,10 +180,10 @@ export default function BookingDateTimePage() {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-between items-stretch sm:items-center">
             <Link
-              href="/packages"
+              href="/packages/schedule"
               className="inline-flex items-center justify-center gap-2 py-4 px-6 rounded-xl border border-white/20 text-gray-300 hover:bg-white/10 transition-colors"
             >
-              Back
+              Back to booking type
             </Link>
             <button
               type="button"
