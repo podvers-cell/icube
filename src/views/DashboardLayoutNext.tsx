@@ -24,6 +24,12 @@ import {
   Building2,
   Percent,
   Camera,
+  LayoutDashboard,
+  AlertTriangle,
+  CalendarCheck,
+  FolderOpen,
+  Award,
+  Mic,
   Menu,
   X,
 } from "lucide-react";
@@ -39,26 +45,58 @@ type NavItem = {
   countKey?: "bookings" | "package-bookings" | "messages";
 };
 
-const nav: NavItem[] = [
-  { href: "/dashboard", end: true, label: "Overview", icon: LayoutGrid },
-  { href: "/dashboard/settings", end: false, label: "Site Settings", icon: Settings },
-  { href: "/dashboard/hero", end: false, label: "Hero", icon: Image },
-  { href: "/dashboard/services", end: false, label: "Services", icon: LayoutGrid },
-  { href: "/dashboard/portfolio", end: false, label: "Portfolio", icon: Image },
-  { href: "/dashboard/testimonials", end: false, label: "Testimonials", icon: MessageSquare },
-  { href: "/dashboard/packages", end: false, label: "Booking Packages", icon: Package },
-  { href: "/dashboard/addons", end: false, label: "Add-ons", icon: PlusCircle },
-  { href: "/dashboard/rental-equipment", end: false, label: "Rental Equipment", icon: Camera },
-  { href: "/dashboard/discount-codes", end: false, label: "Discount Codes", icon: Percent },
-  { href: "/dashboard/blocked-slots", end: false, label: "Blocked Slots", icon: Ban },
-  { href: "/dashboard/bookings", end: false, label: "Bookings", icon: Calendar, countKey: "bookings" },
-  { href: "/dashboard/package-bookings", end: false, label: "Package Bookings", icon: ClipboardList, countKey: "package-bookings" },
-  { href: "/dashboard/workshop-bookings", end: false, label: "Workshop Bookings", icon: ClipboardList },
-  { href: "/dashboard/messages", end: false, label: "Contact Messages", icon: Mail, countKey: "messages" },
-  { href: "/dashboard/benefits", end: false, label: "Benefits", icon: Sparkles },
-  { href: "/dashboard/workshops", end: false, label: "Workshops", icon: GraduationCap },
-  { href: "/dashboard/studios", end: false, label: "Studios", icon: Building2 },
-  { href: "/dashboard/studio", end: false, label: "Studio Equipment", icon: Video },
+type NavGroup = { title: string; items: NavItem[] };
+
+/**
+ * Grouped by what the owner is trying to do, not by which collection the data lives in.
+ *
+ * "Today" is the queue you work through each morning and sits first. "Selling" is what customers
+ * can buy. "Website" is what visitors read. Settings last.
+ *
+ * Every entry has a distinct icon: a repeated one makes the list harder to scan than no icon.
+ */
+export const navGroups: NavGroup[] = [
+  {
+    title: "Today",
+    items: [
+      { href: "/dashboard", end: true, label: "Overview", icon: LayoutDashboard },
+      { href: "/dashboard/payment-issues", end: false, label: "Payment Issues", icon: AlertTriangle },
+      // This page filters to bookings without a package, so the old "Bookings" label was wrong.
+      { href: "/dashboard/bookings", end: false, label: "Studio Bookings", icon: Calendar, countKey: "bookings" },
+      { href: "/dashboard/package-bookings", end: false, label: "Package Bookings", icon: ClipboardList, countKey: "package-bookings" },
+      { href: "/dashboard/workshop-bookings", end: false, label: "Workshop Bookings", icon: CalendarCheck },
+      { href: "/dashboard/messages", end: false, label: "Contact Messages", icon: Mail, countKey: "messages" },
+      { href: "/dashboard/blocked-slots", end: false, label: "Blocked Slots", icon: Ban },
+    ],
+  },
+  {
+    title: "Selling",
+    items: [
+      { href: "/dashboard/packages", end: false, label: "Booking Packages", icon: Package },
+      { href: "/dashboard/addons", end: false, label: "Add-ons", icon: PlusCircle },
+      { href: "/dashboard/rental-equipment", end: false, label: "Rental Equipment", icon: Camera },
+      { href: "/dashboard/workshops", end: false, label: "Workshops", icon: GraduationCap },
+      { href: "/dashboard/studios", end: false, label: "Studios Gallery", icon: Building2 },
+      { href: "/dashboard/discount-codes", end: false, label: "Discount Codes", icon: Percent },
+    ],
+  },
+  {
+    title: "Website",
+    items: [
+      { href: "/dashboard/hero", end: false, label: "Hero", icon: Image },
+      { href: "/dashboard/services", end: false, label: "Services", icon: LayoutGrid },
+      { href: "/dashboard/portfolio", end: false, label: "Portfolio", icon: FolderOpen },
+      { href: "/dashboard/videos", end: false, label: "Videos", icon: Video },
+      { href: "/dashboard/testimonials", end: false, label: "Testimonials", icon: MessageSquare },
+      { href: "/dashboard/benefits", end: false, label: "Benefits", icon: Sparkles },
+      { href: "/dashboard/why-us", end: false, label: "Why Us", icon: Award },
+      { href: "/dashboard/studio", end: false, label: "Studio Equipment", icon: Mic },
+    ],
+  },
+  {
+    title: "Settings",
+    items: [{ href: "/dashboard/settings", end: false, label: "Site Settings", icon: Settings }],
+  },
 ];
 
 type BookingRow = { id: string; status?: string; package_id?: string | null; payment_status?: string | null };
@@ -179,32 +217,42 @@ export default function DashboardLayoutNext({ children }: { children: React.Reac
             </div>
           </div>
           <nav className="px-3 py-3 flex-1 overflow-y-auto space-y-1">
-            {nav.map(({ href, end, label, icon: Icon, countKey }) => {
-              const isActive = end ? pathname === href : pathname.startsWith(href + "/") || pathname === href;
-              const count = countKey != null ? notificationCounts[countKey] : 0;
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  className={`group flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all ${
-                    isActive
-                      ? "bg-icube-gold/15 text-icube-gold border border-icube-gold/40 shadow-[0_0_0_1px_rgba(0,0,0,0.4)]"
-                      : "text-gray-400 hover:text-white hover:bg-white/5 border border-transparent"
-                  }`}
-                >
-                  <Icon size={18} className="shrink-0" />
-                  <span className="truncate flex-1 min-w-0">{label}</span>
-                  {count > 0 ? (
-                    <span
-                      className="shrink-0 min-w-[1.25rem] h-5 px-1.5 flex items-center justify-center rounded-full bg-icube-gold text-icube-dark text-xs font-bold"
-                      aria-label={`${count} new`}
-                    >
-                      {count > 99 ? "99+" : count}
-                    </span>
-                  ) : null}
-                </Link>
-              );
-            })}
+            {navGroups.map((group, groupIndex) => (
+              <div key={group.title} className={groupIndex > 0 ? "pt-5" : undefined}>
+                <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-600">
+                  {group.title}
+                </p>
+                <div className="space-y-1">
+                  {group.items.map(({ href, end, label, icon: Icon, countKey }) => {
+                    const isActive = end ? pathname === href : pathname.startsWith(href + "/") || pathname === href;
+                    const count = countKey != null ? notificationCounts[countKey] : 0;
+                    return (
+                      <Link
+                        key={href}
+                        href={href}
+                        aria-current={isActive ? "page" : undefined}
+                        className={`group flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all ${
+                          isActive
+                            ? "bg-icube-gold/15 text-icube-gold border border-icube-gold/40 shadow-[0_0_0_1px_rgba(0,0,0,0.4)]"
+                            : "text-gray-400 hover:text-white hover:bg-white/5 border border-transparent"
+                        }`}
+                      >
+                        <Icon size={18} className="shrink-0" />
+                        <span className="truncate flex-1 min-w-0">{label}</span>
+                        {count > 0 ? (
+                          <span
+                            className="shrink-0 min-w-[1.25rem] h-5 px-1.5 flex items-center justify-center rounded-full bg-icube-gold text-icube-dark text-xs font-bold"
+                            aria-label={`${count} new`}
+                          >
+                            {count > 99 ? "99+" : count}
+                          </span>
+                        ) : null}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </nav>
           <div className="px-4 py-4 border-t border-white/10 text-xs space-y-2">
             <div>

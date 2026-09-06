@@ -2,8 +2,23 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { api } from "../api";
-import { Calendar, Mail, Package, Image, CalendarRange, Printer } from "lucide-react";
+import { api, getPaymentIncidents } from "../api";
+import { AlertTriangle, Calendar, ClipboardList, Mail, CalendarRange, Printer } from "lucide-react";
+
+type OverviewBooking = {
+  id: string;
+  created_at: FirestoreTimestampLike;
+  package_id?: string | null;
+  package_name?: string | null;
+  studio_name?: string | null;
+  workshop_title?: string | null;
+  name?: string | null;
+  email?: string | null;
+  payment_status?: string | null;
+  status?: string | null;
+  total_amount_aed?: number | null;
+  booking_date?: string | null;
+};
 
 type FirestoreTimestampLike =
   | string
@@ -30,17 +45,27 @@ function formatCreatedAt(raw: FirestoreTimestampLike): string {
 }
 
 export default function DashboardOverview() {
-  const [bookings, setBookings] = useState<{ id: string; created_at: FirestoreTimestampLike; package_id?: string | null }[]>([]);
+  const [bookings, setBookings] = useState<OverviewBooking[]>([]);
   const [messages, setMessages] = useState<{ id: string; created_at: FirestoreTimestampLike; read_at?: string | null }[]>([]);
+  const [openIssues, setOpenIssues] = useState<number | null>(null);
   const [period, setPeriod] = useState<"7d" | "15d" | "month" | "quarter" | "year">("15d");
 
   useEffect(() => {
-    api.get<{ id: string; created_at: string; package_id?: string | null }[]>("/dashboard/bookings").then(setBookings).catch(() => {});
+    api.get<OverviewBooking[]>("/dashboard/bookings").then(setBookings).catch(() => {});
+    // Payments that arrived but could not be honoured. Surfaced here because nothing else tells
+    // the owner a customer is waiting on a refund.
+    getPaymentIncidents()
+      .then((items) => setOpenIssues(items.filter((i) => i.status !== "resolved").length))
+      .catch(() => setOpenIssues(null));
     api.get<{ id: string; created_at: FirestoreTimestampLike; read_at?: string | null }[]>("/dashboard/messages").then(setMessages).catch(() => {});
   }, []);
 
   const unreadMessages = messages.filter((m) => !m.read_at).length;
   const recentBookings = bookings.slice(0, 5);
+  // The Studio Bookings page filters the same way, so the figures agree.
+  const studioBookings = bookings.filter((b) => !b.package_id);
+  const packageBookings = bookings.filter((b) => b.package_id);
+  const awaitingPayment = studioBookings.filter((b) => b.payment_status !== "paid").length;
 
   function getPeriodDays(p: typeof period): number {
     // Use rolling windows based on days, to keep logic simple & consistent.
@@ -171,15 +196,50 @@ export default function DashboardOverview() {
         }
       `}</style>
       <h1 className="text-3xl font-display font-bold text-white mb-8">Dashboard</h1>
+      {openIssues != null && openIssues > 0 && (
+        <Link
+          href="/dashboard/payment-issues"
+          className="no-print mb-6 flex items-start gap-3 rounded-sm border border-red-400/40 bg-red-500/10 p-4 transition-colors hover:border-red-400/70"
+        >
+          <AlertTriangle size={20} className="mt-0.5 shrink-0 text-red-300" aria-hidden />
+          <div>
+            <p className="font-semibold text-red-200">
+              {openIssues} {openIssues === 1 ? "payment needs" : "payments need"} your attention
+            </p>
+            <p className="mt-0.5 text-sm text-red-200/70">
+              Money arrived but the booking could not be honoured. Review and refund.
+            </p>
+          </div>
+        </Link>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-        <div className="bg-icube-gray border border-white/10 rounded-sm p-6">
+        <Link
+          href="/dashboard/bookings"
+          className="bg-icube-gray border border-white/10 rounded-sm p-6 block hover:border-icube-gold/30 transition-colors"
+        >
           <div className="flex items-center gap-3 text-icube-gold mb-2">
             <Calendar size={24} />
-            <span className="font-semibold">Bookings</span>
+            <span className="font-semibold">Studio Bookings</span>
           </div>
-          <p className="text-3xl font-bold text-white">{bookings.length}</p>
+          <p className="text-3xl font-bold text-white">{studioBookings.length}</p>
+          <p className="text-gray-500 text-sm">
+            {awaitingPayment > 0 ? `${awaitingPayment} awaiting payment` : "All settled"}
+          </p>
+        </Link>
+
+        <Link
+          href="/dashboard/package-bookings"
+          className="bg-icube-gray border border-white/10 rounded-sm p-6 block hover:border-icube-gold/30 transition-colors"
+        >
+          <div className="flex items-center gap-3 text-icube-gold mb-2">
+            <ClipboardList size={24} />
+            <span className="font-semibold">Package Bookings</span>
+          </div>
+          <p className="text-3xl font-bold text-white">{packageBookings.length}</p>
           <p className="text-gray-500 text-sm">Total requests</p>
-        </div>
+        </Link>
+
         <Link
           href="/dashboard/messages"
           className="bg-icube-gray border border-white/10 rounded-sm p-6 block hover:border-icube-gold/30 transition-colors"
@@ -189,35 +249,76 @@ export default function DashboardOverview() {
             <span className="font-semibold">Messages</span>
           </div>
           <p className="text-3xl font-bold text-white">{messages.length}</p>
-          <p className="text-gray-500 text-sm">{unreadMessages} unread</p>
+          <p className="text-gray-500 text-sm">
+            {unreadMessages > 0 ? `${unreadMessages} unread` : "All read"}
+          </p>
         </Link>
-        <div className="bg-icube-gray border border-white/10 rounded-sm p-6">
-          <div className="flex items-center gap-3 text-icube-gold mb-2">
-            <Package size={24} />
-            <span className="font-semibold">Packages</span>
+
+        <Link
+          href="/dashboard/payment-issues"
+          className={`rounded-sm p-6 block border transition-colors ${
+            openIssues && openIssues > 0
+              ? "border-red-400/40 bg-red-500/10 hover:border-red-400/70"
+              : "bg-icube-gray border-white/10 hover:border-icube-gold/30"
+          }`}
+        >
+          <div
+            className={`flex items-center gap-3 mb-2 ${
+              openIssues && openIssues > 0 ? "text-red-300" : "text-icube-gold"
+            }`}
+          >
+            <AlertTriangle size={24} />
+            <span className="font-semibold">Payment Issues</span>
           </div>
-          <p className="text-gray-400 text-sm">Manage in Booking Packages</p>
-        </div>
-        <div className="bg-icube-gray border border-white/10 rounded-sm p-6">
-          <div className="flex items-center gap-3 text-icube-gold mb-2">
-            <Image size={24} />
-            <span className="font-semibold">Portfolio</span>
-          </div>
-          <p className="text-gray-400 text-sm">Manage in Portfolio</p>
-        </div>
+          <p className="text-3xl font-bold text-white">{openIssues ?? "—"}</p>
+          <p className="text-gray-500 text-sm">
+            {openIssues === 0 ? "Nothing to handle" : "Open, needs a refund or a decision"}
+          </p>
+        </Link>
       </div>
+
       <div className="bg-icube-gray border border-white/10 rounded-sm p-6">
         <h2 className="text-xl font-display font-semibold text-white mb-4">Recent Bookings</h2>
         {recentBookings.length === 0 ? (
           <p className="text-gray-500">No bookings yet.</p>
         ) : (
-          <ul className="space-y-2">
-            {recentBookings.map((b) => (
-              <li key={b.id} className="text-gray-300 text-sm flex justify-between">
-                <span>Booking #{b.id}</span>
-                <span className="text-gray-500">{formatCreatedAt(b.created_at)}</span>
-              </li>
-            ))}
+          <ul className="divide-y divide-white/5">
+            {recentBookings.map((b) => {
+              const paid = b.payment_status === "paid";
+              const failed = b.payment_status === "failed";
+              return (
+                <li key={b.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-white">
+                      {b.name?.trim() || b.email?.trim() || "Unnamed customer"}
+                    </p>
+                    <p className="truncate text-xs text-gray-500">
+                      {b.package_name || b.studio_name || b.workshop_title || "Booking"}
+                      {b.booking_date ? ` · ${b.booking_date}` : ""}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-3">
+                    {b.total_amount_aed != null && (
+                      <span className="text-sm text-gray-300">
+                        AED {Number(b.total_amount_aed).toLocaleString("en-AE")}
+                      </span>
+                    )}
+                    <span
+                      className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${
+                        paid
+                          ? "border-emerald-400/40 bg-emerald-500/15 text-emerald-300"
+                          : failed
+                            ? "border-red-400/40 bg-red-500/15 text-red-300"
+                            : "border-icube-gold/40 bg-icube-gold/10 text-icube-gold"
+                      }`}
+                    >
+                      {paid ? "Paid" : failed ? "Failed" : "Awaiting payment"}
+                    </span>
+                    <span className="w-24 text-right text-xs text-gray-500">{formatCreatedAt(b.created_at)}</span>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
