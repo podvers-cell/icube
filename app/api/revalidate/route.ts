@@ -1,22 +1,31 @@
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import { verifyAdminApiRequest } from "@/lib/adminApiAuth";
+import { PUBLIC_SITE_DATA_TAG } from "@/lib/publicSiteData";
+import { RENTAL_EQUIPMENT_TAG } from "@/lib/rentalEquipmentQuery";
 
 /**
- * Purge the server-rendered public pages after a dashboard save.
+ * Refresh the public site after a dashboard write.
  *
- * The public site reads its content on the server and caches it for five minutes, which is what
- * keeps a busy page from costing Firestore reads. Without this, an admin who added a video or a
- * project had to wait out that window before it appeared — the old cache-bust only refreshed the
- * client-side store, which server-rendered pages no longer use.
+ * Order matters. The tags are cleared first so the shared datasets are known stale, then the
+ * rendered pages are invalidated. The first page to re-render refetches once and every other page
+ * reuses that result — previously each of ~43 routes ran its own ten Firestore queries.
+ *
+ * Equipment has its own tag so a hero edit does not force the catalogue to be re-read, and vice
+ * versa.
  */
 export async function POST(request: Request) {
   const auth = await verifyAdminApiRequest(request);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   try {
-    // The content lives in the root layout, so revalidating it covers every public page.
+    // Next 16 requires an expiry profile; { expire: 0 } marks the tag stale immediately.
+    revalidateTag(PUBLIC_SITE_DATA_TAG, { expire: 0 });
+    revalidateTag(RENTAL_EQUIPMENT_TAG, { expire: 0 });
+
+    // The content lives in the root layout, so this covers every public page.
     revalidatePath("/", "layout");
+
     return NextResponse.json({ revalidated: true });
   } catch (err) {
     console.error("[revalidate]", err);

@@ -43,6 +43,8 @@ export default function DashboardRentalEquipment() {
   const [list, setList] = useState<RentalEquipment[]>([]);
   const [editing, setEditing] = useState<RentalEquipment | null>(null);
   const [saving, setSaving] = useState(false);
+  /** Shown inside the dialog; alert() interrupts and does not say which product failed. */
+  const [saveError, setSaveError] = useState<string | null>(null);
   const isCreating = editing?.id === "";
 
   function load() {
@@ -61,14 +63,25 @@ export default function DashboardRentalEquipment() {
   );
 
   function openCreate() {
+    setSaveError(null);
     setEditing({ ...emptyEquipment, sort_order: list.length });
   }
 
   async function save(e: FormEvent) {
     e.preventDefault();
     if (!editing || saving) return;
+    const images = (editing.image_urls ?? []).map((url) => url.trim()).filter(Boolean);
+    // The form disables the add button at the limit, so this can only be reached by a product
+    // saved before the cap existed. Refuse it and say so, rather than silently dropping images.
+    if (images.length > RENTAL_IMAGE_LIMIT) {
+      setSaveError(
+        `This product has ${images.length} images. Remove ${images.length - RENTAL_IMAGE_LIMIT} so it is within the limit of ${RENTAL_IMAGE_LIMIT}, then save again.`
+      );
+      return;
+    }
+
     setSaving(true);
-    const images = (editing.image_urls ?? []).map((url) => url.trim()).filter(Boolean).slice(0, RENTAL_IMAGE_LIMIT);
+    setSaveError(null);
     const payload = {
       name: editing.name.trim(),
       category: editing.category.trim(),
@@ -90,7 +103,7 @@ export default function DashboardRentalEquipment() {
       setEditing(null);
       load();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to save equipment.");
+      setSaveError(err instanceof Error ? err.message : "Failed to save equipment.");
     } finally {
       setSaving(false);
     }
@@ -159,7 +172,7 @@ export default function DashboardRentalEquipment() {
                     <p className="text-xs text-gray-500">per {item.price_unit} · qty {item.quantity_available ?? 0}</p>
                   </div>
                   <div className="flex gap-2">
-                    <button type="button" onClick={() => setEditing({ ...item, image_urls: rentalImages(item) })} aria-label={`Edit ${item.name}`} className="p-2 rounded-full border border-white/15 text-gray-300 hover:text-icube-gold hover:border-icube-gold">
+                    <button type="button" onClick={() => { setSaveError(null); setEditing({ ...item, image_urls: rentalImages(item) }); }} aria-label={`Edit ${item.name}`} className="p-2 rounded-full border border-white/15 text-gray-300 hover:text-icube-gold hover:border-icube-gold">
                       <Pencil size={15} />
                     </button>
                     <button type="button" onClick={() => remove(item.id)} aria-label={`Delete ${item.name}`} className="p-2 rounded-full border border-red-500/30 text-red-400 hover:bg-red-500/10">
@@ -182,19 +195,24 @@ export default function DashboardRentalEquipment() {
           title={isCreating ? "Add rental equipment" : "Edit rental equipment"}
           description="Gear customers can rent, shown on the public Rent Equipment page."
           size="lg"
-          onClose={() => setEditing(null)}
+          onClose={() => { setSaveError(null); setEditing(null); }}
           onSubmit={save}
           footer={
             <>
               <Button type="submit" tone="primary" disabled={saving} className="max-sm:flex-1">
                 {saving ? "Saving…" : "Save equipment"}
               </Button>
-              <Button type="button" tone="secondary" onClick={() => setEditing(null)} disabled={saving} className="max-sm:flex-1">
+              <Button type="button" tone="secondary" onClick={() => { setSaveError(null); setEditing(null); }} disabled={saving} className="max-sm:flex-1">
                 Cancel
               </Button>
             </>
           }
         >
+              {saveError && (
+                <p role="alert" className="rounded-lg border border-red-400/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+                  {saveError}
+                </p>
+              )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <label className="space-y-1.5 text-sm text-gray-400">
                   <span>Name</span>

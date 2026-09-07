@@ -15,11 +15,40 @@ upgraded:
   rather than the old, misleading *"Invalid or expired authentication"* — but it still cannot
   proceed.
 - Any other admin API call that checks admin membership is affected the same way.
-- The public site is unaffected: it is server-rendered and cached, so it is not reading Firestore
-  per request.
+- **Correction to an earlier claim in this file.** "The public site is unaffected" was wrong.
+  Public *pages* return 200, but their Firestore-backed content is affected: `/rent-equipment`
+  renders its empty state because the read fails, and `GET /api/rental-equipment` answers 503.
+  Cached pages keep serving until their window expires, then show missing or stale content.
 
 Do not read a successful deploy as evidence that uploads work. That needs a real admin session
 **and** a working quota.
+
+## Firestore read volume — before and after
+
+The quota was being spent by the architecture, not by traffic. `app/layout.tsx` calls
+`getPublicSiteData`, which issues ten collection reads, and it ran once **per route**.
+
+Measured on this machine, same code path, quota exhausted so every attempt is logged:
+
+| | Before | After |
+|---|---|---|
+| `[publicSiteData]` reads in one production build | **43** | **16** |
+| Firestore reads across 40 runtime page requests | 40 renders' worth | **0** |
+| Firestore attempts across 15 `/api/rental-equipment` requests | **15** | **1** |
+
+What changed: both datasets sit behind `unstable_cache` with a fixed key, a tag and a 5-minute
+TTL, so one fetch serves every route. `/api/revalidate` clears the tags before invalidating the
+pages, so a dashboard write causes one refetch rather than one per route. The equipment reader
+returns `null` instead of throwing, because `unstable_cache` does not cache a throw — that is what
+turned every request into its own retry.
+
+The build figure is 16 rather than 1 because Next builds routes across parallel workers that do
+not share an in-memory cache. Runtime, which is what actually consumes quota, is the row that
+matters.
+
+**Trade-off, stated plainly:** failures are cached too. That is what stops the retry storm, and it
+means during a Firestore outage public content can disappear or stay stale for up to the TTL, or
+until a dashboard write clears the tag.
 
 ## Current phase
 

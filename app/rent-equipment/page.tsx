@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import RentEquipmentPage from "@/views/RentEquipmentPage";
-import { getAdminFirestore, isFirebaseAdminConfigError } from "@/firebase-admin";
+import { isFirebaseAdminConfigError } from "@/firebase-admin";
 import { getPublishedRentalEquipment } from "@/lib/rentalEquipmentQuery";
 import type { RentalEquipment } from "@/types/rentalEquipment";
 
@@ -31,7 +31,7 @@ export default async function RentEquipmentRoute() {
   let items: RentalEquipment[] = [];
 
   try {
-    items = await getPublishedRentalEquipment(getAdminFirestore());
+    items = (await getPublishedRentalEquipment()) ?? [];
   } catch (err) {
     // The page still renders its empty state and contact CTA rather than failing outright — a
     // catalogue outage should not take a marketing page down.

@@ -27,7 +27,14 @@ export async function GET(request: Request) {
         .get();
       items = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     } else {
-      items = await getPublishedRentalEquipment(db);
+      const published = await getPublishedRentalEquipment();
+      if (published === null) {
+        return NextResponse.json(
+          { error: "Rental equipment is temporarily unavailable." },
+          { status: 503 }
+        );
+      }
+      items = published;
     }
 
     return NextResponse.json({ items });

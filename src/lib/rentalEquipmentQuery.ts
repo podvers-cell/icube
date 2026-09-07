@@ -1,4 +1,6 @@
+import { unstable_cache } from "next/cache";
 import type { Firestore } from "firebase-admin/firestore";
+import { getAdminFirestore } from "@/firebase-admin";
 import type { RentalEquipment } from "@/types/rentalEquipment";
 import { RENTAL_IMAGE_LIMIT } from "@/schemas/rentalEquipment";
 
@@ -62,7 +64,7 @@ export function toPublicEquipment(id: string, data: FirebaseFirestore.DocumentDa
  * permission as the Firestore rules. Both paths here are served by automatic single-field indexes,
  * and a few hundred rows sort in memory for nothing.
  */
-export async function getPublishedRentalEquipment(db: Firestore): Promise<RentalEquipment[]> {
+async function readPublishedRentalEquipment(db: Firestore): Promise<RentalEquipment[]> {
   const snapshot = await db
     .collection("rental_equipment")
     .where("is_published", "==", true)
@@ -73,6 +75,31 @@ export async function getPublishedRentalEquipment(db: Firestore): Promise<Rental
     .map((doc) => toPublicEquipment(doc.id, doc.data()))
     .sort((a, b) => a.sort_order - b.sort_order);
 }
+
+/** Invalidated from /api/revalidate after a rental equipment write. */
+export const RENTAL_EQUIPMENT_TAG = "rental-equipment";
+
+/**
+ * Shared between the public catalogue page and the public GET, so the two do not read separately.
+ *
+ * Its own tag rather than the site-wide one: equipment changes far more often than hero copy, and
+ * clearing one should not force the other to be re-read.
+ */
+export const getPublishedRentalEquipment = unstable_cache(
+  async (): Promise<RentalEquipment[] | null> => {
+    try {
+      return await readPublishedRentalEquipment(getAdminFirestore());
+    } catch (err) {
+      // Returned rather than thrown so the failure is cached: unstable_cache does not cache a
+      // throw, so every request retried and 15 requests meant 15 Firestore attempts. Callers get
+      // null and decide how to present it.
+      console.error("[rentalEquipment] read failed:", err);
+      return null;
+    }
+  },
+  ["published-rental-equipment"],
+  { tags: [RENTAL_EQUIPMENT_TAG], revalidate: 300 }
+);
 
 /** Distinct categories in catalogue order, for the filter row. */
 export function rentalCategories(items: RentalEquipment[]): string[] {

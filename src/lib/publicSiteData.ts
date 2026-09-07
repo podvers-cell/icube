@@ -1,5 +1,12 @@
+import { unstable_cache } from "next/cache";
 import type { Firestore } from "firebase-admin/firestore";
 import { getAdminFirestore, isFirebaseAdminConfigError } from "@/firebase-admin";
+
+/** Invalidated from /api/revalidate after a dashboard write. */
+export const PUBLIC_SITE_DATA_TAG = "public-site-data";
+
+/** Matches the layout's own revalidate window. */
+const PUBLIC_SITE_DATA_TTL_SECONDS = 300;
 
 /**
  * Server-side copy of everything the public site renders.
@@ -69,7 +76,7 @@ async function listBySortOrder(db: Firestore, name: string): Promise<Record<stri
  * its own fetch and its bundled fallbacks, so a Firestore hiccup degrades to the old behaviour
  * instead of taking the marketing site down.
  */
-export async function getPublicSiteData(): Promise<PublicSiteData | null> {
+async function readPublicSiteData(): Promise<PublicSiteData | null> {
   try {
     const db = getAdminFirestore();
 
@@ -114,3 +121,20 @@ export async function getPublicSiteData(): Promise<PublicSiteData | null> {
     return null;
   }
 }
+
+/**
+ * One shared read for the whole site.
+ *
+ * The root layout calls this, so every route used to run its own ten Firestore queries: a single
+ * build issued 43 separate reads of the same data, and revalidatePath("/", "layout") made every
+ * page repeat them again. Behind this cache the dataset is fetched once per window and every
+ * route reuses it.
+ *
+ * A failed read is cached too, deliberately. Caching the failure is what stops an outage turning
+ * into one retry per route; the cost is that public content can disappear or stay stale for up to
+ * the TTL, or until a dashboard write clears the tag. That is a real trade-off, not a free win.
+ */
+export const getPublicSiteData = unstable_cache(readPublicSiteData, ["public-site-data"], {
+  tags: [PUBLIC_SITE_DATA_TAG],
+  revalidate: PUBLIC_SITE_DATA_TTL_SECONDS,
+});
