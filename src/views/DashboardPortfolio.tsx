@@ -121,6 +121,13 @@ export default function DashboardPortfolio() {
   }
 
   async function remove(id: number | string) {
+    // Let the browser paint before opening the dialog.
+    //
+    // window.confirm blocks the main thread, so nothing can be painted while it is open. INP
+    // measures click-to-next-paint, which meant the metric recorded however long the operator
+    // spent reading the prompt — 1,685ms in the reported case, against 25-34ms for every other
+    // render on the page. Yielding first lets the pending paint land, then the same prompt opens.
+    await new Promise((resolve) => setTimeout(resolve, 0));
     if (!confirm("Delete this project?")) return;
     try {
       await api.delete(`/dashboard/portfolio/${id}`);
