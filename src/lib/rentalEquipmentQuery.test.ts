@@ -19,7 +19,30 @@ describe("toPublicEquipment", () => {
   };
 
   it("maps the stored document onto the public shape", () => {
-    expect(toPublicEquipment("abc", stored)).toEqual({ id: "abc", ...stored });
+    // image_urls is part of the shape now; a document without one publishes an empty gallery.
+    expect(toPublicEquipment("abc", stored)).toEqual({ id: "abc", ...stored, image_urls: [] });
+  });
+
+  it("publishes a gallery, dropping anything that is not an https URL", () => {
+    const result = toPublicEquipment("abc", {
+      ...stored,
+      image_urls: [
+        "https://res.cloudinary.com/1.jpg",
+        "http://insecure.example/2.jpg",
+        "javascript:alert(1)",
+        42,
+        "https://res.cloudinary.com/3.jpg",
+      ],
+    });
+    expect(result.image_urls).toEqual([
+      "https://res.cloudinary.com/1.jpg",
+      "https://res.cloudinary.com/3.jpg",
+    ]);
+  });
+
+  it("caps the published gallery at ten images", () => {
+    const many = Array.from({ length: 25 }, (_, i) => `https://res.cloudinary.com/${i}.jpg`);
+    expect(toPublicEquipment("abc", { ...stored, image_urls: many }).image_urls).toHaveLength(10);
   });
 
   // The whole reason this is an explicit list rather than a spread.
@@ -34,7 +57,7 @@ describe("toPublicEquipment", () => {
     expect(result.cost_price_aed).toBeUndefined();
     expect(result.supplier_notes).toBeUndefined();
     expect(result.internal_ref).toBeUndefined();
-    expect(Object.keys(result)).toHaveLength(13);
+    expect(Object.keys(result)).toHaveLength(14);
   });
 
   it("fills sane defaults for a partial document", () => {

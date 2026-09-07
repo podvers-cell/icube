@@ -10,7 +10,7 @@ import Footer from "../components/Footer";
 import AnimatedStaggerItem from "../components/AnimatedStaggerItem";
 import { AnimatedSectionHeader } from "../components/ScrollReveal";
 import { WHATSAPP_URL } from "../constants/whatsapp";
-import { rentalAvailabilityLabel, type RentalEquipment } from "../types/rentalEquipment";
+import { rentalAvailabilityLabel, rentalImages, type RentalEquipment } from "../types/rentalEquipment";
 import { cloudinaryImage } from "@/lib/cloudinaryImage";
 
 const ALL = "All";
@@ -29,6 +29,10 @@ function availabilityClasses(status: RentalEquipment["availability_status"]): st
 }
 
 function EquipmentCard({ item }: { item: RentalEquipment }) {
+  const images = rentalImages(item);
+  const [active, setActive] = useState(0);
+  const cover = images[active] ?? images[0];
+
   return (
     <motion.article
       className="glass-card group relative flex h-full flex-col overflow-hidden rounded-2xl transition-[border-color,box-shadow] duration-300 hover:border-icube-gold/40 hover:shadow-[0_24px_56px_rgba(0,0,0,0.35),0_0_0_1px_rgba(212,175,55,0.12)]"
@@ -36,11 +40,11 @@ function EquipmentCard({ item }: { item: RentalEquipment }) {
       transition={{ type: "tween", duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
     >
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-black/40">
-        {item.image_url ? (
+        {cover ? (
           <Image
-            src={cloudinaryImage(item.image_url, 700)}
+            src={cloudinaryImage(cover, 700)}
             unoptimized
-            alt={item.name}
+            alt={images.length > 1 ? `${item.name} — image ${active + 1} of ${images.length}` : item.name}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
             className="object-cover transition-transform duration-500 group-hover:scale-105"
@@ -62,6 +66,39 @@ function EquipmentCard({ item }: { item: RentalEquipment }) {
           {rentalAvailabilityLabel(item.availability_status)}
         </span>
       </div>
+
+      {images.length > 1 && (
+        <div
+          className="flex gap-2 border-b border-white/10 bg-black/20 px-3 py-2"
+          role="group"
+          aria-label={`${item.name} images`}
+        >
+          {images.map((image, index) => (
+            <button
+              key={image}
+              type="button"
+              onClick={() => setActive(index)}
+              aria-label={`Show image ${index + 1} of ${images.length}`}
+              aria-current={index === active}
+              className={`relative h-11 w-14 shrink-0 overflow-hidden rounded-md border transition-colors ${
+                index === active
+                  ? "border-icube-gold"
+                  : "border-white/10 hover:border-icube-gold/50"
+              }`}
+            >
+              {/* Requested at thumbnail size, not the cover size. */}
+              <Image
+                src={cloudinaryImage(image, 120)}
+                unoptimized
+                alt=""
+                fill
+                sizes="56px"
+                className="object-cover"
+              />
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="flex flex-1 flex-col p-6">
         <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-icube-gold">{item.category}</p>

@@ -3,9 +3,10 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Camera, Pencil, Plus, Trash2 } from "lucide-react";
 import { createRentalEquipment, deleteRentalEquipment, getRentalEquipment, updateRentalEquipment } from "../api";
-import CloudinaryUploadField from "../components/CloudinaryUploadField";
+import MediaSlotList from "../components/dashboard/MediaSlotList";
 import {
   rentalAvailabilityLabel,
+  rentalImages,
   type RentalAvailability,
   type RentalEquipment,
   type RentalPriceUnit,
@@ -21,6 +22,7 @@ const emptyEquipment: RentalEquipment = {
   short_description: "",
   details: "",
   image_url: "",
+  image_urls: [],
   price_aed: 0,
   price_unit: "day",
   quantity_available: 1,
@@ -65,12 +67,14 @@ export default function DashboardRentalEquipment() {
     e.preventDefault();
     if (!editing || saving) return;
     setSaving(true);
+    const images = (editing.image_urls ?? []).map((url) => url.trim()).filter(Boolean).slice(0, 10);
     const payload = {
       name: editing.name.trim(),
       category: editing.category.trim(),
       short_description: editing.short_description?.trim() ?? "",
       details: editing.details?.trim() ?? "",
-      image_url: editing.image_url?.trim() ?? "",
+      image_urls: images,
+      image_url: images[0] ?? "",
       price_aed: Math.max(0, Number(editing.price_aed) || 0),
       price_unit: editing.price_unit,
       quantity_available: Math.max(0, Math.floor(Number(editing.quantity_available) || 0)),
@@ -131,8 +135,8 @@ export default function DashboardRentalEquipment() {
           {sorted.map((item) => (
             <article key={item.id} className="overflow-hidden rounded-xl border border-white/10 bg-icube-gray">
               <div className="aspect-[4/3] bg-black/30 overflow-hidden">
-                {item.image_url ? (
-                  <img src={cloudinaryImage(item.image_url, 300)} alt={item.name} className="h-full w-full object-cover" referrerPolicy="no-referrer" />
+                {rentalImages(item)[0] ? (
+                  <img src={cloudinaryImage(rentalImages(item)[0], 300)} alt={item.name} className="h-full w-full object-cover" referrerPolicy="no-referrer" />
                 ) : (
                   <div className="h-full flex items-center justify-center text-gray-600"><Camera size={38} /></div>
                 )}
@@ -154,7 +158,7 @@ export default function DashboardRentalEquipment() {
                     <p className="text-xs text-gray-500">per {item.price_unit} · qty {item.quantity_available ?? 0}</p>
                   </div>
                   <div className="flex gap-2">
-                    <button type="button" onClick={() => setEditing({ ...item })} aria-label={`Edit ${item.name}`} className="p-2 rounded-full border border-white/15 text-gray-300 hover:text-icube-gold hover:border-icube-gold">
+                    <button type="button" onClick={() => setEditing({ ...item, image_urls: rentalImages(item) })} aria-label={`Edit ${item.name}`} className="p-2 rounded-full border border-white/15 text-gray-300 hover:text-icube-gold hover:border-icube-gold">
                       <Pencil size={15} />
                     </button>
                     <button type="button" onClick={() => remove(item.id)} aria-label={`Delete ${item.name}`} className="p-2 rounded-full border border-red-500/30 text-red-400 hover:bg-red-500/10">
@@ -202,7 +206,16 @@ export default function DashboardRentalEquipment() {
                 </label>
               </div>
 
-              <CloudinaryUploadField label="Product image" value={editing.image_url ?? ""} onChange={(url) => setEditing((x) => x ? { ...x, image_url: url } : null)} type="image" folder="rental-equipment" placeholder="Upload or paste image URL" />
+              <MediaSlotList
+                label="Product images"
+                hint="The first image is the cover shown in the catalogue. Up to 10."
+                values={editing.image_urls ?? []}
+                onChange={(image_urls) => setEditing((x) => (x ? { ...x, image_urls } : null))}
+                type="image"
+                folder="rental-equipment"
+                addLabel="Add an image"
+                emptyHint="No images yet. The first one you add becomes the cover."
+              />
 
               <label className="block space-y-1.5 text-sm text-gray-400">
                 <span>Short description</span>

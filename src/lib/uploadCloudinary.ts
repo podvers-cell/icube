@@ -33,6 +33,46 @@ type SignaturePayload = {
   signature: string;
 };
 
+/**
+ * Ask the server to sign the upload, retrying once with a forced token refresh.
+ *
+ * A cached ID token can expire between page load and upload. Exactly one retry, and only for 401
+ * — a 403 (not an admin) or 503 (the check could not run) is not helped by a new token, and
+ * retrying those would loop for no reason.
+ */
+async function requestSignature(
+  user: { getIdToken: (forceRefresh?: boolean) => Promise<string> },
+  folder: string,
+  resourceType: "image" | "video"
+): Promise<SignaturePayload> {
+  async function attempt(forceRefresh: boolean) {
+    const idToken = await user.getIdToken(forceRefresh);
+    const response = await fetch("/api/upload/signature", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
+      body: JSON.stringify({ folder, type: resourceType }),
+    });
+    const body = (await response.json().catch(() => ({}))) as SignaturePayload & { error?: string };
+    return { response, body };
+  }
+
+  let { response, body } = await attempt(false);
+
+  if (response.status === 401) {
+    ({ response, body } = await attempt(true));
+  }
+
+  if (!response.ok || !body.signature) {
+    throw new Error(
+      body.error ||
+        (response.status === 401
+          ? "Your session has expired. Please sign in again."
+          : "Could not authorise the upload.")
+    );
+  }
+  return body;
+}
+
 function resolveType(file: File, requested: UploadOptions["type"]): "image" | "video" {
   if (requested === "image" || requested === "video") return requested;
   const mime = (file.type || "").toLowerCase();
@@ -58,19 +98,7 @@ export async function uploadToCloudinaryWithProgress(
     );
   }
 
-  const idToken = await user.getIdToken();
-  const signatureResponse = await fetch("/api/upload/signature", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
-    body: JSON.stringify({ folder, type: resourceType }),
-  });
-
-  const signed = (await signatureResponse.json().catch(() => ({}))) as SignaturePayload & {
-    error?: string;
-  };
-  if (!signatureResponse.ok || !signed.signature) {
-    throw new Error(signed.error || "Could not authorise the upload.");
-  }
+  const signed = await requestSignature(user, folder, resourceType);
 
   const form = new FormData();
   form.set("file", file);

@@ -19,6 +19,13 @@ export function toPublicEquipment(id: string, data: FirebaseFirestore.DocumentDa
     short_description: data.short_description ?? "",
     details: data.details ?? "",
     image_url: data.image_url ?? "",
+    // Sanitised on the way out as well as on the way in: a document written before the schema
+    // required HTTPS must not reach a public page unchecked.
+    image_urls: Array.isArray(data.image_urls)
+      ? (data.image_urls as unknown[])
+          .filter((url): url is string => typeof url === "string" && url.startsWith("https://"))
+          .slice(0, 10)
+      : [],
     price_aed: Number(data.price_aed ?? 0),
     price_unit: data.price_unit ?? "day",
     quantity_available: Number(data.quantity_available ?? 0),

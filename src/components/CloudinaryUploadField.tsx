@@ -25,12 +25,16 @@ export default function CloudinaryUploadField({
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
+  // Shown in place rather than through alert(), which interrupts the operator and blocks the
+  // main thread — and told them nothing about which field failed.
+  const [error, setError] = useState<string | null>(null);
 
   async function handleFile(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
     setProgress(0);
+    setError(null);
     try {
       const url = await uploadToCloudinaryWithProgress(file, {
         folder,
@@ -39,7 +43,7 @@ export default function CloudinaryUploadField({
       });
       onChange(url);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Upload failed");
+      setError(err instanceof Error ? err.message : "Upload failed.");
     } finally {
       setUploading(false);
       setProgress(0);
@@ -74,6 +78,11 @@ export default function CloudinaryUploadField({
           onChange={handleFile}
         />
       </div>
+      {error && (
+        <p role="alert" className="mt-2 text-xs text-red-300">
+          {error}
+        </p>
+      )}
       {uploading && (
         <div className="mt-2">
           <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
@@ -83,7 +92,7 @@ export default function CloudinaryUploadField({
             />
           </div>
           <p className="text-xs text-gray-400 mt-1">
-            Uploading… {progress}% {progress < 100 ? "(sending to server)" : "(processing)"}
+            Uploading… {progress}% {progress < 100 ? "(uploading)" : "(processing)"}
           </p>
         </div>
       )}
