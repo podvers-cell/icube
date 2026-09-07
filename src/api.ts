@@ -76,7 +76,28 @@ async function listByCreatedAtDesc<T>(name: string, max = 500) {
 }
 
 // A compatibility layer so existing dashboard code can keep calling api.get("/dashboard/...").
-export const api = {
+/**
+ * Refresh the server-rendered public pages after a write.
+ *
+ * The public site is cached for five minutes. Individual dashboard screens used to call
+ * invalidateSiteCache by hand and most of them did not, so an edit sat invisible until the window
+ * expired. Doing it here covers every write through this layer.
+ */
+async function refreshPublicSite(path: string): Promise<void> {
+  if (!path.startsWith("/dashboard/")) return;
+  try {
+    const user = requireAuth().currentUser;
+    if (!user) return;
+    await fetch("/api/revalidate", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${await user.getIdToken()}` },
+    });
+  } catch {
+    // The edit still appears when the cache expires on its own.
+  }
+}
+
+const rawApi = {
   get: async <T>(path: string): Promise<T> => {
     if (path === "/site/settings") return (await getSettingsDoc()) as T;
     if (path === "/services") return (await listCollection("services")) as T;
@@ -364,6 +385,35 @@ export const api = {
   },
 };
 
+/**
+ * Public reads pass through untouched; every write refreshes the cached public pages once it has
+ * actually succeeded. Doing it here rather than in each screen fixes the nine dashboard pages that
+ * never called invalidateSiteCache, and guarantees the refresh runs after the write, not before.
+ */
+export const api = {
+  get: rawApi.get,
+  post: async <T>(path: string, body: unknown): Promise<T> => {
+    const result = await rawApi.post<T>(path, body);
+    void refreshPublicSite(path);
+    return result;
+  },
+  put: async <T>(path: string, body: unknown): Promise<T> => {
+    const result = await rawApi.put<T>(path, body);
+    void refreshPublicSite(path);
+    return result;
+  },
+  patch: async <T>(path: string, body?: unknown): Promise<T> => {
+    const result = await rawApi.patch<T>(path, body);
+    void refreshPublicSite(path);
+    return result;
+  },
+  delete: async <T>(path: string): Promise<T> => {
+    const result = await rawApi.delete<T>(path);
+    void refreshPublicSite(path);
+    return result;
+  },
+};
+
 // Public site content
 export async function getSiteSettings() {
   return api.get<Record<string, string>>("/site/settings");
@@ -646,6 +696,7 @@ export async function createRentalEquipment(data: Omit<RentalEquipment, "id">): 
   });
   const body = await parseRentalEquipmentResponse(response);
   if (!body.item) throw new Error("No equipment item returned.");
+  void refreshPublicSite("/dashboard/rental-equipment");
   return body.item;
 }
 
@@ -656,6 +707,7 @@ export async function updateRentalEquipment(id: string, data: Omit<RentalEquipme
     body: JSON.stringify(data),
   });
   await parseRentalEquipmentResponse(response);
+  void refreshPublicSite("/dashboard/rental-equipment");
 }
 
 export async function deleteRentalEquipment(id: string): Promise<void> {
@@ -664,6 +716,7 @@ export async function deleteRentalEquipment(id: string): Promise<void> {
     headers: await adminAuthHeaders(),
   });
   await parseRentalEquipmentResponse(response);
+  void refreshPublicSite("/dashboard/rental-equipment");
 }
 
 export async function getPaymentIncidents(): Promise<PaymentIncident[]> {

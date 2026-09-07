@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import DashboardModal from "./DashboardModal";
 
@@ -73,6 +74,47 @@ describe("DashboardModal", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     expect(onSubmit).toHaveBeenCalledTimes(1);
+  });
+
+  // The bug this guards: onClose was in the effect's dependency list, callers pass an inline
+  // arrow, so every keystroke re-ran the effect and re-focused the panel — you could only type one
+  // character at a time. The original tests never re-rendered, so they missed it.
+  it("keeps focus in the field while typing, across re-renders", () => {
+    function Host() {
+      const [value, setValue] = useState("");
+      return (
+        <DashboardModal title="Edit project" onClose={() => setValue("")}>
+          <input aria-label="title" value={value} onChange={(e) => setValue(e.target.value)} />
+        </DashboardModal>
+      );
+    }
+
+    render(<Host />);
+    const input = screen.getByLabelText("title");
+    input.focus();
+    expect(input).toHaveFocus();
+
+    for (const char of "hello") {
+      fireEvent.change(input, { target: { value: (input as HTMLInputElement).value + char } });
+      expect(input).toHaveFocus();
+    }
+    expect(input).toHaveValue("hello");
+  });
+
+  it("still closes on Escape after re-rendering", () => {
+    const onClose = vi.fn();
+    function Host() {
+      const [value, setValue] = useState("");
+      return (
+        <DashboardModal title="Edit" onClose={onClose}>
+          <input aria-label="title" value={value} onChange={(e) => setValue(e.target.value)} />
+        </DashboardModal>
+      );
+    }
+    render(<Host />);
+    fireEvent.change(screen.getByLabelText("title"), { target: { value: "x" } });
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it("omits the footer when no actions are given", () => {

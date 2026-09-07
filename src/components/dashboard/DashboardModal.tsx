@@ -53,20 +53,27 @@ export default function DashboardModal({
 
   useFocusTrap(panelRef, true);
 
+  /**
+   * Held in a ref so the Escape listener never has to be re-registered.
+   *
+   * Callers pass an inline arrow for onClose, which is a new function on every render. With
+   * onClose in the effect's dependencies the whole effect re-ran on each keystroke and re-focused
+   * the panel, pulling focus out of whatever field was being typed into.
+   */
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   useEffect(() => {
-    // Move focus into the dialog explicitly. Relying on the trap hook to focus the first control
-    // left focus on <body> here, which meant Tab started outside the dialog and screen readers
-    // never announced it.
+    // Mount only: move focus into the dialog, hold the page still behind it, and undo both when
+    // the dialog goes away.
     const opener = document.activeElement as HTMLElement | null;
     panelRef.current?.focus();
 
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") onCloseRef.current();
     }
     document.addEventListener("keydown", onKeyDown);
 
-    // Hold the page still behind the dialog, and keep its width so it does not jump when the
-    // scrollbar disappears.
     const { overflow, paddingRight } = document.body.style;
     const scrollbar = window.innerWidth - document.documentElement.clientWidth;
     document.body.style.overflow = "hidden";
@@ -79,7 +86,7 @@ export default function DashboardModal({
       // Hand focus back to whatever opened the dialog, when it is still on the page.
       if (opener?.isConnected) opener.focus();
     };
-  }, [onClose]);
+  }, []);
 
   const body = (
     <>

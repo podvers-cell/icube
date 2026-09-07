@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef, ty
 import * as api from "./api";
 import { CONTACT_EMAIL } from "./constants/contact";
 import { toUserFriendlyError, isNetworkError } from "./lib/errorMessages";
+import { requireAuth } from "./firebase";
 import type { PublicSiteData } from "./lib/publicSiteData";
 
 type Settings = Record<string, string>;
@@ -384,6 +385,25 @@ export function invalidateSiteCache(): void {
     }
   } catch {
     // ignore
+  }
+
+  // The public pages are server-rendered and cached, so clearing the client store is no longer
+  // enough — without this an edit waited out the five-minute window before it appeared.
+  void revalidatePublicSite();
+}
+
+async function revalidatePublicSite(): Promise<void> {
+  try {
+    const auth = requireAuth();
+    const user = auth.currentUser;
+    if (!user) return;
+    await fetch("/api/revalidate", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${await user.getIdToken()}` },
+    });
+  } catch (err) {
+    // A failed refresh only means the edit appears when the cache expires on its own.
+    console.warn("[site] Could not refresh the public site immediately:", err);
   }
 }
 
