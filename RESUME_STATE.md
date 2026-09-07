@@ -53,7 +53,7 @@ Published; the page revalidates within 5 minutes.
 | `ae89976` | Upload straight to Cloudinary instead of through Vercel |
 | `deb2ffc` | Let the portfolio page paint before the delete prompt |
 | `66aef33` | Separate auth failure modes; rental equipment gallery |
-| `<this>` | Review fixes: image limit in the form, scrollable thumbnails, unified public URL validation, adminApiAuth tests |
+| `94ec504` | Review fixes: image limit in the form, scrollable thumbnails, unified public URL validation, adminApiAuth tests |
 | `44e88d4` | Contact form abuse controls (Turnstile-ready + per-address cooldown) |
 | `bd79682` | Shared store support for rate limiting (Upstash / Vercel KV) |
 
