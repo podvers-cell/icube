@@ -7,6 +7,7 @@ import type { BookingAddon } from "../api";
 import CloudinaryUploadField from "../components/CloudinaryUploadField";
 import DashboardModal from "../components/dashboard/DashboardModal";
 import { Button } from "../components/dashboard/ui";
+import { cloudinaryImage } from "@/lib/cloudinaryImage";
 
 type AddonForm = BookingAddon & { id: string };
 
@@ -206,7 +207,7 @@ export default function DashboardAddons() {
                 <div className="mt-3 rounded-sm overflow-hidden border border-white/10 bg-black/20">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={String(editing.image_url)}
+                    src={cloudinaryImage(String(editing.image_url), 400)}
                     alt=""
                     className="w-full h-36 object-cover"
                     loading="lazy"

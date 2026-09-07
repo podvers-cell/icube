@@ -6,6 +6,7 @@ import { api } from "../api";
 import CloudinaryUploadField from "../components/CloudinaryUploadField";
 import DashboardModal from "../components/dashboard/DashboardModal";
 import { Button } from "../components/dashboard/ui";
+import { cloudinaryImage } from "@/lib/cloudinaryImage";
 
 type Testimonial = { id: number; quote: string; author: string; role: string; image_url: string; sort_order: number };
 
@@ -98,7 +99,7 @@ export default function DashboardTestimonials() {
         <div className="space-y-4">
           {list.map((t) => (
             <div key={t.id} className="border border-white/10 bg-white/[0.03] rounded-xl p-4 flex gap-4 items-start">
-              <img src={t.image_url} alt={t.author} className="w-14 h-14 rounded-full object-cover" />
+              <img src={cloudinaryImage(t.image_url, 112)} alt={t.author} className="w-14 h-14 rounded-full object-cover" />
               <div className="flex-1 min-w-0">
                 <p className="text-gray-300 text-sm line-clamp-2">{t.quote}</p>
                 <p className="font-semibold text-white mt-1">{t.author}</p>

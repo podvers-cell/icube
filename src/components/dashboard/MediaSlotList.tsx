@@ -4,6 +4,7 @@ import { useId } from "react";
 import Image from "next/image";
 import { ArrowDown, ArrowUp, Film, ImageIcon, Plus, Trash2 } from "lucide-react";
 import CloudinaryUploadField from "../CloudinaryUploadField";
+import { cloudinaryImage } from "@/lib/cloudinaryImage";
 
 /**
  * One slot per item, instead of a textarea of newline-separated URLs.
@@ -91,7 +92,7 @@ export default function MediaSlotList({
 
               <div className="relative h-12 w-16 shrink-0 overflow-hidden rounded-md border border-white/10 bg-black/50">
                 {type === "image" && isImageish(value) ? (
-                  <Image src={value} alt="" fill sizes="64px" className="object-cover" unoptimized />
+                  <Image src={cloudinaryImage(value, 160)} alt="" fill sizes="64px" className="object-cover" unoptimized />
                 ) : (
                   <span className="flex h-full w-full items-center justify-center text-white/25">
                     <Icon size={18} aria-hidden />

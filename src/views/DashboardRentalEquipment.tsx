@@ -12,6 +12,7 @@ import {
 } from "../types/rentalEquipment";
 import DashboardModal from "../components/dashboard/DashboardModal";
 import { Button } from "../components/dashboard/ui";
+import { cloudinaryImage } from "@/lib/cloudinaryImage";
 
 const emptyEquipment: RentalEquipment = {
   id: "",
@@ -131,7 +132,7 @@ export default function DashboardRentalEquipment() {
             <article key={item.id} className="overflow-hidden rounded-xl border border-white/10 bg-icube-gray">
               <div className="aspect-[4/3] bg-black/30 overflow-hidden">
                 {item.image_url ? (
-                  <img src={item.image_url} alt={item.name} className="h-full w-full object-cover" referrerPolicy="no-referrer" />
+                  <img src={cloudinaryImage(item.image_url, 300)} alt={item.name} className="h-full w-full object-cover" referrerPolicy="no-referrer" />
                 ) : (
                   <div className="h-full flex items-center justify-center text-gray-600"><Camera size={38} /></div>
                 )}

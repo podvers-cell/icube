@@ -10,6 +10,7 @@ import DashboardModal from "../components/dashboard/DashboardModal";
 import { Badge, Button, Card, EmptyState, IconButton, PageHeader } from "../components/dashboard/ui";
 import { uploadToCloudinaryWithProgress } from "../lib/uploadCloudinary";
 import { getProjectVideos } from "../lib/portfolioMedia";
+import { cloudinaryImage } from "@/lib/cloudinaryImage";
 
 type Project = {
   id: number | string;
@@ -230,7 +231,7 @@ export default function DashboardPortfolio() {
           {list.map((p) => (
             <Card key={p.id} as="article" className="overflow-hidden hover:border-icube-gold/30">
               {p.image_url ? (
-                <img src={p.image_url} alt="" className="h-40 w-full object-cover" />
+                <img src={cloudinaryImage(p.image_url, 400)} alt="" className="h-40 w-full object-cover" />
               ) : (
                 <div className="flex h-40 w-full items-center justify-center bg-black/40 text-white/15">
                   <ImageIcon size={32} />

@@ -7,6 +7,7 @@ import CloudinaryUploadField from "../components/CloudinaryUploadField";
 import { uploadToCloudinaryWithProgress } from "../lib/uploadCloudinary";
 import DashboardModal from "../components/dashboard/DashboardModal";
 import { Button } from "../components/dashboard/ui";
+import { cloudinaryImage } from "@/lib/cloudinaryImage";
 
 type Studio = {
   id: number;
@@ -156,7 +157,7 @@ export default function DashboardStudios() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {sorted.map((s) => (
           <div key={s.id} className="border border-white/10 bg-white/[0.03] rounded-xl overflow-hidden">
-            <img src={s.cover_image_url} alt={s.name} className="w-full h-40 object-cover" referrerPolicy="no-referrer" />
+            <img src={cloudinaryImage(s.cover_image_url, 400)} alt={s.name} className="w-full h-40 object-cover" referrerPolicy="no-referrer" />
               <div className="p-4">
                 <p className="font-semibold text-white">{s.name}</p>
                 <p className="text-gray-500 text-sm line-clamp-2">{s.short_description}</p>
