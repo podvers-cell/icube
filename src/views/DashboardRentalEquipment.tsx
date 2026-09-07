@@ -14,6 +14,7 @@ import {
 import DashboardModal from "../components/dashboard/DashboardModal";
 import { Button } from "../components/dashboard/ui";
 import { cloudinaryImage } from "@/lib/cloudinaryImage";
+import { RENTAL_IMAGE_LIMIT } from "@/schemas/rentalEquipment";
 
 const emptyEquipment: RentalEquipment = {
   id: "",
@@ -67,7 +68,7 @@ export default function DashboardRentalEquipment() {
     e.preventDefault();
     if (!editing || saving) return;
     setSaving(true);
-    const images = (editing.image_urls ?? []).map((url) => url.trim()).filter(Boolean).slice(0, 10);
+    const images = (editing.image_urls ?? []).map((url) => url.trim()).filter(Boolean).slice(0, RENTAL_IMAGE_LIMIT);
     const payload = {
       name: editing.name.trim(),
       category: editing.category.trim(),
@@ -215,6 +216,7 @@ export default function DashboardRentalEquipment() {
                 folder="rental-equipment"
                 addLabel="Add an image"
                 emptyHint="No images yet. The first one you add becomes the cover."
+                maxItems={RENTAL_IMAGE_LIMIT}
               />
 
               <label className="block space-y-1.5 text-sm text-gray-400">

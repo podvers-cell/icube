@@ -76,6 +76,58 @@ describe("MediaSlotList", () => {
 
   // The thumbnail carries no information the URL field does not, so it is decorative and its alt
   // is deliberately empty — which also keeps it out of the "img" role.
+  // Silent truncation on save left the operator guessing which images were dropped.
+  it("stops at maxItems and says so, without truncating quietly", () => {
+    const onChange = vi.fn();
+    render(
+      <MediaSlotList
+        label="Product images"
+        values={["a", "b"]}
+        onChange={onChange}
+        type="image"
+        folder="rental-equipment"
+        addLabel="Add an image"
+        emptyHint="none"
+        maxItems={2}
+      />
+    );
+
+    const add = screen.getByRole("button", { name: /add an image/i });
+    expect(add).toBeDisabled();
+    expect(screen.getByText(/maximum of 2 reached/i)).toBeInTheDocument();
+    expect(screen.getByText("2 / 2 items")).toBeInTheDocument();
+
+    fireEvent.click(add);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("allows adding below the limit", () => {
+    const onChange = vi.fn();
+    render(
+      <MediaSlotList
+        label="Product images"
+        values={["a"]}
+        onChange={onChange}
+        type="image"
+        folder="rental-equipment"
+        addLabel="Add an image"
+        emptyHint="none"
+        maxItems={2}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: /add an image/i }));
+    expect(onChange).toHaveBeenCalledWith(["a", ""]);
+  });
+
+  // Existing callers pass no maxItems and must stay unlimited.
+  it("stays unlimited when no maxItems is given", () => {
+    const onChange = setup(["a", "b", "c"]);
+    const add = screen.getByRole("button", { name: /add a video/i });
+    expect(add).not.toBeDisabled();
+    fireEvent.click(add);
+    expect(onChange).toHaveBeenCalledWith(["a", "b", "c", ""]);
+  });
+
   it("previews an image slot but not a video slot", () => {
     const onChange = vi.fn();
     const { container, rerender } = render(

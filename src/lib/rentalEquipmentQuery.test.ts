@@ -60,6 +60,21 @@ describe("toPublicEquipment", () => {
     expect(Object.keys(result)).toHaveLength(14);
   });
 
+  // The legacy single field used to be published raw, so a pre-schema document could carry a
+  // non-https or malformed URL onto a public page.
+  it("sanitises the legacy image_url as well as the gallery", () => {
+    expect(toPublicEquipment("a", { ...stored, image_url: "http://insecure.example/a.jpg" }).image_url).toBe("");
+    expect(toPublicEquipment("a", { ...stored, image_url: "javascript:alert(1)" }).image_url).toBe("");
+    expect(toPublicEquipment("a", { ...stored, image_url: "not a url" }).image_url).toBe("");
+    expect(toPublicEquipment("a", { ...stored, image_url: 42 }).image_url).toBe("");
+  });
+
+  it("keeps existing https links working", () => {
+    const url = "https://res.cloudinary.com/demo/image/upload/v1/a.jpg";
+    expect(toPublicEquipment("a", { ...stored, image_url: url }).image_url).toBe(url);
+    expect(toPublicEquipment("a", { ...stored, image_urls: [url] }).image_urls).toEqual([url]);
+  });
+
   it("fills sane defaults for a partial document", () => {
     const result = toPublicEquipment("abc", {});
     expect(result.name).toBe("");

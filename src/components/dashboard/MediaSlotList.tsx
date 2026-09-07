@@ -24,6 +24,8 @@ type Props = {
   folder: string;
   addLabel: string;
   emptyHint: string;
+  /** Optional ceiling. Omitted means unlimited, so existing callers are unaffected. */
+  maxItems?: number;
 };
 
 function isImageish(url: string): boolean {
@@ -39,9 +41,13 @@ export default function MediaSlotList({
   folder,
   addLabel,
   emptyHint,
+  maxItems,
 }: Props) {
   const groupId = useId();
   const Icon = type === "video" ? Film : ImageIcon;
+  // Surfaced in the form rather than trimmed silently on save, so the operator is not left
+  // wondering which images were dropped.
+  const atLimit = maxItems != null && values.length >= maxItems;
 
   function update(index: number, url: string) {
     onChange(values.map((value, i) => (i === index ? url : value)));
@@ -69,7 +75,8 @@ export default function MediaSlotList({
           {hint && <p className="mt-0.5 text-xs text-gray-500">{hint}</p>}
         </div>
         <span className="shrink-0 text-xs text-gray-500">
-          {values.length} {values.length === 1 ? "item" : "items"}
+          {values.length}
+          {maxItems != null ? ` / ${maxItems}` : ""} {values.length === 1 ? "item" : "items"}
         </span>
       </div>
 
@@ -143,13 +150,21 @@ export default function MediaSlotList({
         </ol>
       )}
 
-      <button
-        type="button"
-        onClick={() => onChange([...values, ""])}
-        className="mt-2 inline-flex items-center gap-2 rounded-sm border border-white/15 px-3 py-2 text-sm font-medium text-gray-300 transition-colors hover:border-icube-gold/50 hover:text-icube-gold"
-      >
-        <Plus size={15} /> {addLabel}
-      </button>
+      <div className="mt-2 flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          onClick={() => onChange([...values, ""])}
+          disabled={atLimit}
+          className="inline-flex items-center gap-2 rounded-sm border border-white/15 px-3 py-2 text-sm font-medium text-gray-300 transition-colors hover:border-icube-gold/50 hover:text-icube-gold disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-white/15 disabled:hover:text-gray-300"
+        >
+          <Plus size={15} /> {addLabel}
+        </button>
+        {atLimit && (
+          <p role="status" className="text-xs text-gray-500">
+            Maximum of {maxItems} reached. Remove one to add another.
+          </p>
+        )}
+      </div>
     </section>
   );
 }

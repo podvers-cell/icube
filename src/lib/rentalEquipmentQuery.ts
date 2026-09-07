@@ -1,8 +1,27 @@
 import type { Firestore } from "firebase-admin/firestore";
 import type { RentalEquipment } from "@/types/rentalEquipment";
+import { RENTAL_IMAGE_LIMIT } from "@/schemas/rentalEquipment";
 
 /** Upper bound on a single read. See the note in the API route about avoiding a composite index. */
 export const RENTAL_EQUIPMENT_LIMIT = 500;
+
+/**
+ * A URL is only published if it parses and is https.
+ *
+ * startsWith("https://") alone let malformed values through, and the legacy image_url was
+ * published raw — a document written before the schema required https could reach a public page
+ * unchecked. Both fields go through this now. Existing https links are unaffected.
+ */
+function publicImageUrl(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  try {
+    return new URL(trimmed).protocol === "https:" ? trimmed : null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * The exact shape published to unauthenticated callers.
@@ -18,13 +37,12 @@ export function toPublicEquipment(id: string, data: FirebaseFirestore.DocumentDa
     category: data.category ?? "",
     short_description: data.short_description ?? "",
     details: data.details ?? "",
-    image_url: data.image_url ?? "",
-    // Sanitised on the way out as well as on the way in: a document written before the schema
-    // required HTTPS must not reach a public page unchecked.
+    image_url: publicImageUrl(data.image_url) ?? "",
     image_urls: Array.isArray(data.image_urls)
       ? (data.image_urls as unknown[])
-          .filter((url): url is string => typeof url === "string" && url.startsWith("https://"))
-          .slice(0, 10)
+          .map(publicImageUrl)
+          .filter((url): url is string => url !== null)
+          .slice(0, RENTAL_IMAGE_LIMIT)
       : [],
     price_aed: Number(data.price_aed ?? 0),
     price_unit: data.price_unit ?? "day",

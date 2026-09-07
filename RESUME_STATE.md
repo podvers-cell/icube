@@ -1,6 +1,25 @@
 # iCube implementation checkpoint
 
-Updated 2026-09-06.
+Updated 2026-09-07.
+
+## Blocker: Firestore quota exhausted (external)
+
+`icube-817ab` is returning **429 RESOURCE_EXHAUSTED — "Quota exceeded."** Verified repeatedly
+against the Firestore REST API during this session, most recently after the review fixes.
+
+This is not a code fault and cannot be fixed in this repo. Until the quota resets or the plan is
+upgraded:
+
+- **Dashboard uploads will not complete.** The signature endpoint reads the `admins` document, and
+  that read fails. The upload now reports *"Could not verify your access right now"* with HTTP 503
+  rather than the old, misleading *"Invalid or expired authentication"* — but it still cannot
+  proceed.
+- Any other admin API call that checks admin membership is affected the same way.
+- The public site is unaffected: it is server-rendered and cached, so it is not reading Firestore
+  per request.
+
+Do not read a successful deploy as evidence that uploads work. That needs a real admin session
+**and** a working quota.
 
 ## Current phase
 
@@ -30,6 +49,11 @@ Published; the page revalidates within 5 minutes.
 | `a65710b` | Content-Security-Policy (Report-Only) and header consolidation |
 | `0b4f303` | Public Rent Equipment catalogue, navbar link, sitemap entry |
 | `c54b4f9` | Stop duplicating the brand name in every page title |
+| `01188d3` | Fix typing in dialogs, and edits not appearing on the site |
+| `ae89976` | Upload straight to Cloudinary instead of through Vercel |
+| `deb2ffc` | Let the portfolio page paint before the delete prompt |
+| `66aef33` | Separate auth failure modes; rental equipment gallery |
+| `<this>` | Review fixes: image limit in the form, scrollable thumbnails, unified public URL validation, adminApiAuth tests |
 | `44e88d4` | Contact form abuse controls (Turnstile-ready + per-address cooldown) |
 | `bd79682` | Shared store support for rate limiting (Upstash / Vercel KV) |
 
@@ -44,7 +68,7 @@ Also done outside git:
 
 ## Verification evidence
 
-- TypeScript clean; 72 tests across 13 files pass (was 28 across 7).
+- TypeScript clean; **138 tests across 22 files pass** (was 28 across 7).
 - Production build succeeds and reports `Proxy (Middleware)`.
 - Against a running production build on port 3111:
   - All five security headers present on `/`, including `Content-Security-Policy-Report-Only`.
@@ -91,6 +115,26 @@ Also done outside git:
 4. Optional: a cleanup job for orphan `pending_bookings` left by abandoned checkouts.
 5. Optional: a server-side gate on `/dashboard` (plan item 21) for defence in depth.
 
+## Verified for the latest change
+
+- TypeScript clean, production build succeeds, ESLint unchanged at 107 pre-existing problems.
+- 138 tests pass, including direct coverage of `verifyAdminApiRequest`: invalid token → 401,
+  valid token with no admins record → 403, admins read failing → 503, real admin → success.
+- Both new regression suites were confirmed to fail when their fix is reverted, rather than
+  passing vacuously.
+- Live: `/api/upload/signature` returns 401 without auth and with a bogus token, and the public
+  pages return 200.
+
+## Cannot be verified without an admin session
+
+These need a signed-in admin **and** a working Firestore quota, so they remain untested:
+
+1. A real image or video upload completing end to end.
+2. The single token retry firing against a genuinely expired token.
+3. Adding, reordering and removing several images on one product.
+4. Opening a pre-gallery product, saving unchanged, and confirming its image survives.
+5. The public gallery strip, which needs a published product with more than one image.
+
 ## Notes for whoever continues
 
 - Records created before `6c6e2ac` have no `checkout_token_hash`. They stay payable and log a
@@ -102,3 +146,8 @@ Also done outside git:
   generic error responses, explicit public field shapes.
 - Abandoned checkouts leave orphan `pending_bookings` documents, since each attempt creates a new
   record. Not harmful, but the dashboard's pending list will accumulate them; worth a cleanup job.
+- Rental products carry `image_urls` (max 10, first is the cover) and still write `image_url` as
+  the first image. Older products are never migrated; `rentalImages()` in
+  `src/types/rentalEquipment.ts` is the one place that reconciles the two.
+- Removing an image from a product detaches the reference only. Cloudinary files are never deleted
+  automatically, so orphaned assets accumulate there and need a manual clear-out eventually.

@@ -14,6 +14,9 @@ const httpsImage = z.union([
     .refine((value) => value.toLowerCase().startsWith("https://"), "Image URL must use HTTPS"),
 ]);
 
+/** Shared by the schema, the save path and the dashboard form. */
+export const RENTAL_IMAGE_LIMIT = 10;
+
 export const rentalEquipmentSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(160),
   category: z.string().trim().min(1, "Category is required").max(100),
@@ -30,7 +33,7 @@ export const rentalEquipmentSchema = z.object({
    */
   image_urls: z
     .array(httpsImage)
-    .max(10, "A product can have at most 10 images")
+    .max(RENTAL_IMAGE_LIMIT, `A product can have at most ${RENTAL_IMAGE_LIMIT} images`)
     .optional()
     .default([]),
   price_aed: z.number().min(0).max(10_000_000),

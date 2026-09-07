@@ -69,13 +69,17 @@ function EquipmentCard({ item }: { item: RentalEquipment }) {
 
       {images.length > 1 && (
         <div
-          className="flex gap-2 border-b border-white/10 bg-black/20 px-3 py-2"
+          /* Scrolls rather than wrapping or overflowing: ten thumbnails would otherwise burst the
+             card on a phone. Momentum scrolling on touch, and the row keeps a single line. */
+          className="flex gap-2 overflow-x-auto overscroll-x-contain border-b border-white/10 bg-black/20 px-3 py-2 [-webkit-overflow-scrolling:touch] [scrollbar-width:thin]"
           role="group"
           aria-label={`${item.name} images`}
         >
           {images.map((image, index) => (
             <button
-              key={image}
+              /* Index-based: the same URL can legitimately appear twice, and a duplicate key
+                 would collapse the two thumbnails into one. */
+              key={`${index}-${image}`}
               type="button"
               onClick={() => setActive(index)}
               aria-label={`Show image ${index + 1} of ${images.length}`}
