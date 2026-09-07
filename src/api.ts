@@ -19,6 +19,7 @@ import { requireAuth, requireFirestore } from "./firebase";
 import { contactFormSchema } from "./schemas/contact";
 import type { RentalEquipment } from "./types/rentalEquipment";
 import type { PaymentIncident } from "./types/paymentIncident";
+import { revalidatePublicSite } from "./lib/revalidatePublicSite";
 
 type IdDoc<T> = T & { id: string };
 
@@ -77,25 +78,14 @@ async function listByCreatedAtDesc<T>(name: string, max = 500) {
 
 // A compatibility layer so existing dashboard code can keep calling api.get("/dashboard/...").
 /**
- * Refresh the server-rendered public pages after a write.
- *
- * The public site is cached for five minutes. Individual dashboard screens used to call
- * invalidateSiteCache by hand and most of them did not, so an edit sat invisible until the window
- * expired. Doing it here covers every write through this layer.
+ * Refresh the public pages after a write. Coalesced in the shared helper, so a screen that also
+ * calls invalidateSiteCache does not produce a second identical request.
  */
 async function refreshPublicSite(path: string): Promise<void> {
   if (!path.startsWith("/dashboard/")) return;
-  try {
-    const user = requireAuth().currentUser;
-    if (!user) return;
-    await fetch("/api/revalidate", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${await user.getIdToken()}` },
-    });
-  } catch {
-    // The edit still appears when the cache expires on its own.
-  }
+  await revalidatePublicSite();
 }
+
 
 const rawApi = {
   get: async <T>(path: string): Promise<T> => {

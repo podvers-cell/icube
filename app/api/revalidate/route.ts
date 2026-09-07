@@ -11,8 +11,9 @@ import { RENTAL_EQUIPMENT_TAG } from "@/lib/rentalEquipmentQuery";
  * rendered pages are invalidated. The first page to re-render refetches once and every other page
  * reuses that result — previously each of ~43 routes ran its own ten Firestore queries.
  *
- * Equipment has its own tag so a hero edit does not force the catalogue to be re-read, and vice
- * versa.
+ * Both tags are cleared on every write. The datasets are kept separate so a narrower invalidation
+ * is possible later, but nothing scopes it today: the api layer does not tell this route which
+ * section changed, and guessing from the path would be wrong more often than it helped.
  */
 export async function POST(request: Request) {
   const auth = await verifyAdminApiRequest(request);

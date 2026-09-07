@@ -46,6 +46,24 @@ The build figure is 16 rather than 1 because Next builds routes across parallel 
 not share an in-memory cache. Runtime, which is what actually consumes quota, is the row that
 matters.
 
+### /api/revalidate requests per save
+
+Five screens called `invalidateSiteCache()` *and* went through the api wrapper, which also fires a
+refresh, so one save sent **two** identical `/api/revalidate` requests. Both paths now go through
+one coalescing helper: a call made while a request is in flight joins it.
+
+| | Before | After |
+|---|---|---|
+| Requests per save on those five screens | **2** | **1** |
+
+A leading-plus-trailing variant was tried first and removed — the trailing follow-up put the count
+straight back to two. The cost of dropping it: a second, genuinely separate save landing while a
+refresh is still in flight joins that refresh, so that edit appears when the cache window expires
+rather than immediately. A delay, not a loss.
+
+The two datasets keep distinct tags, but `/api/revalidate` clears **both** on every write. Comments
+and tests now say that rather than implying the separation scopes anything today.
+
 **Trade-off, stated plainly:** failures are cached too. That is what stops the retry storm, and it
 means during a Firestore outage public content can disappear or stay stale for up to the TTL, or
 until a dashboard write clears the tag.

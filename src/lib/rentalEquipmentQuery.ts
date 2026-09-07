@@ -82,8 +82,9 @@ export const RENTAL_EQUIPMENT_TAG = "rental-equipment";
 /**
  * Shared between the public catalogue page and the public GET, so the two do not read separately.
  *
- * Its own tag rather than the site-wide one: equipment changes far more often than hero copy, and
- * clearing one should not force the other to be re-read.
+ * Kept under its own tag so the two datasets can be invalidated independently. /api/revalidate
+ * currently clears both on every write; the separation is what would make scoping possible, not
+ * something that scopes anything today.
  */
 export const getPublishedRentalEquipment = unstable_cache(
   async (): Promise<RentalEquipment[] | null> => {

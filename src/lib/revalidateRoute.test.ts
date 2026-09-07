@@ -74,7 +74,9 @@ describe("POST /api/revalidate", () => {
     expect(order).toEqual(["tag", "tag", "path"]);
   });
 
-  it("uses two separate tags, so one section does not force the other to be re-read", () => {
+  // Both are cleared on every write today. This only pins that they are distinct keys, which is
+  // what would allow scoping later — it does not claim any scoping exists.
+  it("keeps the two datasets under distinct tags", () => {
     expect(PUBLIC_SITE_DATA_TAG).not.toBe(RENTAL_EQUIPMENT_TAG);
   });
 });
