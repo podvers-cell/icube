@@ -4,6 +4,7 @@ import { z } from "zod";
 import { getAdminFirestore, isFirebaseAdminConfigError } from "@/firebase-admin";
 import { resolveCanonicalWorkshopPricing } from "@/lib/bookingPricing";
 import { createCheckoutToken } from "@/lib/checkoutToken";
+import { toApiError } from "@/lib/apiErrors";
 
 const workshopEnrollmentSchema = z.object({
   workshop_id: z.string().trim().min(1).max(100),
@@ -78,8 +79,11 @@ export async function POST(request: Request) {
         { status: 503 }
       );
     }
-    const message = error instanceof Error ? error.message : "Failed to start workshop enrollment.";
-    const status = message.includes("unavailable") ? 404 : 500;
+    const { message, status } = toApiError(
+      "workshops/enroll",
+      error,
+      "Could not start the enrolment. Please try again."
+    );
     return NextResponse.json({ error: message }, { status });
   }
 }

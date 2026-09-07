@@ -254,8 +254,16 @@ export async function POST(request: Request) {
     if (!ziinaResponse.ok || !ziinaBody.id || !ziinaBody.redirect_url) {
       await clearPaymentInitialization(db, target, initializationToken);
       initializationToken = null;
-      const providerError = ziinaBody.error?.message || ziinaBody.message || "Ziina request failed.";
-      return NextResponse.json({ error: providerError }, { status: 502 });
+      // The provider's own wording can carry account and request detail, so it is logged rather
+      // than returned.
+      console.error("[payments/create-intent] Ziina rejected the request:", {
+        status: ziinaResponse.status,
+        message: ziinaBody.error?.message || ziinaBody.message,
+      });
+      return NextResponse.json(
+        { error: "Could not start the payment. Please try again shortly." },
+        { status: 502 }
+      );
     }
 
     await db.runTransaction(async (tx) => {
