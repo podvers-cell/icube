@@ -1,14 +1,24 @@
 # iCube implementation checkpoint
 
-Updated 2026-09-07.
+Updated 2026-09-08.
 
-## Blocker: Firestore quota exhausted (external)
+## Firestore quota incident: resolved after daily reset
 
-`icube-817ab` is returning **429 RESOURCE_EXHAUSTED — "Quota exceeded."** Verified repeatedly
-against the Firestore REST API during this session, most recently after the review fixes.
+On 2026-09-08 the daily quota reset and production recovered without a billing change:
 
-This is not a code fault and cannot be fixed in this repo. Until the quota resets or the plan is
-upgraded:
+- `GET /api/rental-equipment` returned 200 (previously 503 while quota was exhausted).
+- `/rent-equipment` and `/` returned 200.
+- The authenticated Rental Equipment dashboard showed `Connected`, loaded the empty catalogue,
+  and opened the multi-image editor normally.
+- The editor exposed ten image slots, disabled further additions at 10/10, and showed move/remove
+  controls. The modal was cancelled without saving test data.
+
+The original incident was:
+
+`icube-817ab` returned **429 RESOURCE_EXHAUSTED — "Quota exceeded."** This was verified repeatedly
+against the Firestore REST API on 2026-09-07 after the review fixes.
+
+This was not a code fault and could not be fixed in this repo. While the quota was exhausted:
 
 - **Dashboard uploads will not complete.** The signature endpoint reads the `admins` document, and
   that read fails. The upload now reports *"Could not verify your access right now"* with HTTP 503
