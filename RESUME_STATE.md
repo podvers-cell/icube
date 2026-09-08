@@ -78,6 +78,38 @@ and tests now say that rather than implying the separation scopes anything today
 means during a Firestore outage public content can disappear or stay stale for up to the TTL, or
 until a dashboard write clears the tag.
 
+## Rent Equipment catalogue: details and enquiry (local, not deployed)
+
+The catalogue card showed a summary and nothing else — no way to read the full `details` text, see
+the rest of the gallery, or act on an item. Added, without touching the schema, Firestore,
+Cloudinary or the dependency list:
+
+- The card clamps `short_description` to two lines and carries two actions: a WhatsApp enquiry
+  (primary) and **View details**. The product name opens the details too; the cover image does not,
+  because the thumbnail strip already owns clicks on that image.
+- `EquipmentDetailsDialog` (`src/components/EquipmentDetailsDialog.tsx`) shows the whole record:
+  the full gallery with thumbnails, category, availability, name, summary, `details` with its line
+  breaks preserved, price and unit, and the quantity available. It opens on whichever gallery image
+  the card was showing.
+- The dialog is a sheet on a phone and a centred modal from `sm` up. It closes from a button,
+  Escape and the backdrop, but not from a press that starts inside it; it locks the page behind it,
+  traps focus, and hands focus back to the control that opened it. The backdrop listens for
+  `pointerdown`, so a tap closes on the touch rather than on the emulated mouse event that follows,
+  and that press calls `preventDefault()` — otherwise the browser's own focus move lands on the
+  body *after* the trap has restored focus, stranding it there. Escape was never affected, which is
+  why the two close paths behaved differently.
+- The grid repeats the same two labels on every card, so each card action carries an accessible
+  name with the product in it (`View details for Sony FX6`, `Request to rent Sony FX6`). The
+  visible text is unchanged and stays at the front of that name, which keeps voice control
+  working. The dialog's own buttons are left alone — its title already supplies the product.
+- Enquiry copy is honest about what it does. There is no checkout here, so an `unavailable` item
+  reads **Ask about availability** and everything else reads **Request to rent**. Both open
+  `wa.me` in a new tab with `rel="noopener noreferrer"` and a URL-encoded message naming the item.
+- Presentation shared by the card and the dialog lives in `src/lib/rentalPresentation.ts` so the
+  two cannot drift.
+
+Read-only throughout: no booking or checkout flow was introduced.
+
 ## Current phase
 
 **All work is pushed and live.** Two deploys verified on production: the security batch
@@ -174,13 +206,23 @@ Also done outside git:
 
 ## Verified for the latest change
 
-- TypeScript clean, production build succeeds, ESLint unchanged at 107 pre-existing problems.
-- 138 tests pass, including direct coverage of `verifyAdminApiRequest`: invalid token → 401,
-  valid token with no admins record → 403, admins read failing → 503, real admin → success.
-- Both new regression suites were confirmed to fail when their fix is reverted, rather than
+- TypeScript clean, production build succeeds, `/rent-equipment` still prerenders as static.
+- ESLint unchanged at 107 problems across `src` and `app`, none in the changed files. (`eslint .`
+  reports far more only because it also lints the `.next` build output — pre-existing.)
+- 171 tests pass across 24 files, up from 152. `RentEquipmentPage.test.tsx` covers the clamped
+  summary, both card actions, per-product accessible names, opening details from the name and the
+  button, the full record in the dialog, line breaks surviving in `details`, gallery switching,
+  scroll lock, Escape and pointer-down backdrop close, a press starting inside not closing, focus
+  returning to the trigger after *both* close paths, and the WhatsApp message's encoding and
+  unavailable wording.
+- jsdom implements neither the compatibility mouse event nor the focus move a real pointer press
+  triggers, so the test helper models that default explicitly. Without it the focus bug cannot be
+  reproduced in a test at all — worth knowing before anyone simplifies the helper away.
+- The dialog tests were confirmed to fail when the focus trap, the backdrop target check, the
+  `whitespace-pre-line` handling, the clamp, the `aria-label`s or the backdrop `preventDefault()`
+  is removed, and the backdrop test fails if the handler is put back on `mousedown` — they are not
   passing vacuously.
-- Live: `/api/upload/signature` returns 401 without auth and with a bogus token, and the public
-  pages return 200.
+- **Not deployed.** Nothing in this change has been verified on production.
 
 ## Cannot be verified without an admin session
 

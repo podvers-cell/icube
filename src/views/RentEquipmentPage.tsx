@@ -4,31 +4,32 @@ import { useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { Camera, PackageX } from "lucide-react";
+import { Camera, MessageCircle, PackageX } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import AnimatedStaggerItem from "../components/AnimatedStaggerItem";
 import { AnimatedSectionHeader } from "../components/ScrollReveal";
+import EquipmentDetailsDialog from "../components/EquipmentDetailsDialog";
 import { WHATSAPP_URL } from "../constants/whatsapp";
+import {
+  rentalAvailabilityClasses,
+  rentalCtaAccessibleName,
+  rentalCtaLabel,
+  rentalPriceUnitLabel,
+  rentalWhatsappUrl,
+} from "../lib/rentalPresentation";
 import { rentalAvailabilityLabel, rentalImages, type RentalEquipment } from "../types/rentalEquipment";
 import { cloudinaryImage } from "@/lib/cloudinaryImage";
 
 const ALL = "All";
 
-function priceUnitLabel(unit: RentalEquipment["price_unit"]): string {
-  if (unit === "day") return "per day";
-  if (unit === "week") return "per week";
-  if (unit === "session") return "per session";
-  return "per project";
-}
-
-function availabilityClasses(status: RentalEquipment["availability_status"]): string {
-  if (status === "available") return "border-emerald-400/40 bg-emerald-500/15 text-emerald-300";
-  if (status === "unavailable") return "border-red-400/40 bg-red-500/15 text-red-300";
-  return "border-icube-gold/40 bg-icube-gold/10 text-icube-gold";
-}
-
-function EquipmentCard({ item }: { item: RentalEquipment }) {
+function EquipmentCard({
+  item,
+  onOpenDetails,
+}: {
+  item: RentalEquipment;
+  onOpenDetails: (imageIndex: number) => void;
+}) {
   const images = rentalImages(item);
   const [active, setActive] = useState(0);
   const cover = images[active] ?? images[0];
@@ -61,7 +62,7 @@ function EquipmentCard({ item }: { item: RentalEquipment }) {
           </span>
         )}
         <span
-          className={`absolute right-3 top-3 rounded-full border px-3 py-1 text-[11px] font-semibold backdrop-blur ${availabilityClasses(item.availability_status)}`}
+          className={`absolute right-3 top-3 rounded-full border px-3 py-1 text-[11px] font-semibold backdrop-blur ${rentalAvailabilityClasses(item.availability_status)}`}
         >
           {rentalAvailabilityLabel(item.availability_status)}
         </span>
@@ -106,12 +107,23 @@ function EquipmentCard({ item }: { item: RentalEquipment }) {
 
       <div className="flex flex-1 flex-col p-6">
         <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-icube-gold">{item.category}</p>
-        <h3 className="mb-2 font-display text-lg font-semibold tracking-tight text-white transition-colors group-hover:text-icube-gold">
-          {item.name}
+        <h3 className="mb-2 font-display text-lg font-semibold tracking-tight text-white">
+          {/* The name opens the details. The cover deliberately does not: the thumbnail strip below
+              already owns clicks on the image, and a second meaning for the same picture would be
+              ambiguous to a pointer and unnameable to a screen reader. */}
+          <button
+            type="button"
+            onClick={() => onOpenDetails(active)}
+            className="text-left transition-colors hover:text-icube-gold group-hover:text-icube-gold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-icube-gold"
+          >
+            {item.name}
+          </button>
         </h3>
 
         {item.short_description && (
-          <p className="mb-4 flex-1 text-sm font-light leading-relaxed text-gray-400">{item.short_description}</p>
+          <p className="mb-4 line-clamp-2 text-sm font-light leading-relaxed text-gray-400">
+            {item.short_description}
+          </p>
         )}
 
         <div className="mt-auto flex items-end justify-between gap-3 border-t border-white/10 pt-4">
@@ -119,11 +131,34 @@ function EquipmentCard({ item }: { item: RentalEquipment }) {
             <p className="font-display text-xl font-bold text-white">
               AED {item.price_aed.toLocaleString("en-AE")}
             </p>
-            <p className="text-xs text-gray-500">{priceUnitLabel(item.price_unit)}</p>
+            <p className="text-xs text-gray-500">{rentalPriceUnitLabel(item.price_unit)}</p>
           </div>
           {(item.quantity_available ?? 0) > 0 && (
             <p className="text-xs text-gray-500">{item.quantity_available} available</p>
           )}
+        </div>
+
+        {/* Stacked rather than side by side: "Ask about availability" wraps badly in half a card. */}
+        <div className="mt-4 flex flex-col gap-2">
+          <a
+            href={rentalWhatsappUrl(item)}
+            target="_blank"
+            rel="noopener noreferrer"
+            /* One card among many: the label alone repeats, so the name carries the product. */
+            aria-label={rentalCtaAccessibleName(item)}
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-icube-gold px-4 py-2.5 text-sm font-semibold text-icube-dark transition-colors hover:bg-icube-gold-light focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-icube-gold"
+          >
+            <MessageCircle size={16} aria-hidden />
+            {rentalCtaLabel(item)}
+          </a>
+          <button
+            type="button"
+            onClick={() => onOpenDetails(active)}
+            aria-label={`View details for ${item.name}`}
+            className="inline-flex items-center justify-center rounded-md border border-white/15 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:border-icube-gold/50 hover:text-icube-gold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-icube-gold"
+          >
+            View details
+          </button>
         </div>
       </div>
     </motion.article>
@@ -141,6 +176,10 @@ export default function RentEquipmentPage({ items }: { items: RentalEquipment[] 
   }, [items]);
 
   const [active, setActive] = useState<string>(ALL);
+
+  // The item whose details are open, with the gallery image its card was showing. One dialog for
+  // the whole grid rather than one per card, so only the open item is ever in the DOM.
+  const [details, setDetails] = useState<{ item: RentalEquipment; imageIndex: number } | null>(null);
 
   const visible = useMemo(
     () => (active === ALL ? items : items.filter((item) => item.category.trim() === active)),
@@ -218,7 +257,10 @@ export default function RentEquipmentPage({ items }: { items: RentalEquipment[] 
               <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {visible.map((item, index) => (
                   <AnimatedStaggerItem key={item.id} index={index}>
-                    <EquipmentCard item={item} />
+                    <EquipmentCard
+                      item={item}
+                      onOpenDetails={(imageIndex) => setDetails({ item, imageIndex })}
+                    />
                   </AnimatedStaggerItem>
                 ))}
               </div>
@@ -253,6 +295,16 @@ export default function RentEquipmentPage({ items }: { items: RentalEquipment[] 
       </main>
 
       <Footer />
+
+      {details && (
+        <EquipmentDetailsDialog
+          /* Keyed by item so switching products resets the dialog's own gallery state. */
+          key={details.item.id}
+          item={details.item}
+          initialImage={details.imageIndex}
+          onClose={() => setDetails(null)}
+        />
+      )}
     </div>
   );
 }
